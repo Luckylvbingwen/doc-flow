@@ -12,6 +12,7 @@
 1. `frontend-nuxt3-feature-delivery`
 2. `backend-nitro-prisma-api-delivery`
 3. `testing-docflow-fullstack-audit`
+4. `prototype-html-driven-delivery`
 
 ## 中文调用模板
 
