@@ -1,25 +1,38 @@
 ---
 name: req
-description: Requirement clarification workflow with Micro/Lite/Standard/Full detail levels before implementation.
+description: 开发前的需求澄清流程，按 Micro/Lite/Standard/Full 四档输出可实施需求。
 ---
 
-# Requirement Clarification
+# 需求澄清
 
-## Goal
+## 目标
 
-Produce implementation-ready requirement notes before coding.
+在编码前形成可执行的需求说明，降低返工和歧义。
 
-## Levels
+## 分级
 
-- Micro: one-story quick change.
-- Lite: small feature with 1-2 pages or endpoints.
-- Standard: medium module with FE/BE/DB impact.
-- Full: cross-module feature with release risk.
+- Micro：单故事快速改动。
+- Lite：1-2 个页面或接口的小功能。
+- Standard：影响 FE/BE/DB 的中型模块。
+- Full：跨模块且具备上线风险的大功能。
 
-## Output
+## 输出
 
-- Scope boundary.
-- Non-goals.
-- Acceptance criteria.
-- Technical constraints.
-- Risk list.
+- 范围边界。
+- 非目标项。
+- 验收标准。
+- 技术约束。
+- 风险清单。
+
+## 中文调用示例
+
+```text
+用 req（Standard）澄清“文档版本对比”需求。
+
+输出：
+- 范围边界
+- 非目标
+- 验收标准
+- 技术约束
+- 风险清单
+```

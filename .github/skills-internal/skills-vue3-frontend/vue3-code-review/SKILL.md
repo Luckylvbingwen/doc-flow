@@ -1,21 +1,27 @@
 ---
 name: vue3-code-review
-description: Review Vue3/Nuxt3 code for maintainability, SSR-safety, and FE-BE contract consistency.
+description: 对 Vue3/Nuxt3 代码进行可维护性、SSR 安全性与前后端契约一致性审查。
 ---
 
-# Vue3 Code Review
+# Vue3 代码审查
 
-## Focus Areas
+## 关注点
 
-- Route and page composition clarity.
-- Component boundaries and reusability.
-- Data flow and state ownership.
-- API field mapping consistency.
-- Loading/error/empty states.
-- SSR and hydration safety.
+- 路由与页面结构是否清晰。
+- 组件边界与复用性是否合理。
+- 数据流与状态归属是否明确。
+- API 字段映射是否一致。
+- 加载态/错误态/空态是否完整。
+- SSR 与 hydration 是否安全。
 
-## Output
+## 输出
 
-- Findings ordered by severity.
-- Risk summary.
-- Refactor suggestions.
+- 按严重级别排序的问题清单。
+- 风险摘要。
+- 重构建议。
+
+## 中文调用示例
+
+```text
+用 vue3-code-review 审查“文档详情页”实现，重点关注 SSR 安全与接口字段映射。
+```

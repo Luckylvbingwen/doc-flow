@@ -1,21 +1,33 @@
 ---
 name: dev-workflow
-description: Requirement-driven execution loop for solo delivery: plan, implement, verify, document, ship.
+description: 面向单人全栈交付的需求驱动工作流：计划、实现、验证、复盘、交付。
 ---
 
-# Dev Workflow
+# 开发工作流
 
-## Steps
+## 执行步骤
 
-1. Plan: break tasks by FE/BE/DB.
-2. Implement: ship vertical slices, not isolated layers.
-3. Verify: run build/tests and basic smoke path.
-4. Review: confirm contract and data consistency.
-5. Deliver: update changelog and deployment notes.
+1. 计划：按 FE/BE/DB 拆解任务。
+2. 实施：按纵向功能切片交付，而非孤立分层开发。
+3. 验证：执行构建、测试与主链路冒烟。
+4. 复核：确认接口契约与数据一致性。
+5. 交付：更新变更记录与部署说明。
 
-## Output
+## 输出
 
-- Task breakdown.
-- Current progress.
-- Verification evidence.
-- Remaining risks.
+- 任务拆解。
+- 当前进度。
+- 验证证据。
+- 剩余风险。
+
+## 中文调用示例
+
+```text
+用 dev-workflow 规划“文件上传+预览”这一轮迭代。
+
+要求：
+- FE/BE/DB 拆解
+- 本周可交付范围
+- 验证清单
+- 风险项
+```

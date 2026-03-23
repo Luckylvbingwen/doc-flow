@@ -1,51 +1,51 @@
 ---
 name: testing-docflow-fullstack-audit
-description: Audit FE/BE/DB consistency for DocFlow business flows and attribute failures to FE, BE, DB, CONTRACT, RULE, or TEST_GAP.
+description: 对 DocFlow 业务链路进行 FE/BE/DB 一致性审计，并将问题归因为 FE、BE、DB、CONTRACT、RULE 或 TEST_GAP。
 ---
 
-# Testing DocFlow Fullstack Audit
+# DocFlow 全栈一致性审计
 
-## Use When
+## 适用场景
 
-- Requirements are implemented but behavior is uncertain.
-- Need to locate ownership of defects across FE/BE/DB.
-- Need a first-round quality baseline before release.
+- 需求已开发，但行为是否符合预期不确定。
+- 需要定位问题归属（前端/后端/数据库）。
+- 上线前需要建立第一轮质量基线。
 
-## Required Input
+## 输入要求
 
-- Target flow (example: upload -> preview -> version compare -> notify).
-- Related pages, APIs, and Prisma models.
-- Source docs (PRD/API docs).
+- 目标链路（例如：上传 -> 预览 -> 版本对比 -> 通知）。
+- 相关页面、接口与 Prisma 模型。
+- 来源文档（PRD/API 文档）。
 
-## Workflow
+## 执行步骤
 
-1. Build a capability matrix by PRD story and current implementation.
-2. Verify UI actions and visible state transitions.
-3. Verify API path/method/field/error responses.
-4. Verify DB model support for lifecycle, relation, and audit fields.
-5. Classify each failure: FE, BE, DB, CONTRACT, RULE, TEST_GAP.
-6. Provide fix priority with evidence.
+1. 按 PRD 故事构建“应有能力 vs 实有能力”矩阵。
+2. 检查 UI 操作路径与可见状态流转。
+3. 检查 API 路径/方法/字段/错误结构。
+4. 检查数据库模型对生命周期、关系与审计字段的支撑。
+5. 对每个问题进行归因：FE、BE、DB、CONTRACT、RULE、TEST_GAP。
+6. 给出带证据的修复优先级建议。
 
-## Output Format
+## 输出格式
 
-- Consistency matrix.
-- Gap and risk list.
-- Root-cause attribution.
-- Suggested test cases (unit/integration/e2e).
+- 一致性矩阵。
+- 缺口与风险清单。
+- 根因归因结果。
+- 建议测试用例（单测/集成/E2E）。
 
-## Suggested Invocation
+## 中文调用示例
 
 ```text
-Use testing-docflow-fullstack-audit for document version workflow.
+用 testing-docflow-fullstack-audit 审计“文档版本链路”。
 
-Scope:
-- Pages: ...
-- APIs: ...
-- Models: ...
+范围：
+- 页面：...
+- API：...
+- 模型：...
 
-Output:
-- Matrix
-- Gaps
-- Attribution
-- Prioritized fixes
+输出：
+- 一致性矩阵
+- 缺口清单
+- 归因结果
+- 优先级修复建议
 ```
