@@ -1,0 +1,41 @@
+{
+  "name": "docflow",
+  "version": "1.0.0",
+  "description": "DocFlow monorepo-like fullstack starter built with Nuxt3 + Nitro + Prisma",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "generate": "nuxt generate",
+    "postinstall": "nuxt prepare",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "keywords": [
+    "nuxt3",
+    "nitro",
+    "prisma",
+    "mysql",
+    "pinia",
+    "element-plus"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@element-plus/nuxt": "^1.1.5",
+    "@pinia/nuxt": "^0.11.3",
+    "@prisma/client": "^6.19.2",
+    "element-plus": "^2.13.6",
+    "nuxt": "^3.21.2",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.30"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.2",
+    "sass": "^1.98.0",
+    "typescript": "^5.9.3"
+  }
+}

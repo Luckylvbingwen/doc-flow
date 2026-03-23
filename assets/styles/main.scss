@@ -1,0 +1,18 @@
+:root {
+  --df-bg: #f4f6f8;
+  --df-panel: #ffffff;
+  --df-text: #1f2937;
+  --df-subtext: #6b7280;
+  --df-primary: #0f766e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--df-text);
+  background: radial-gradient(circle at top right, #dff6f0 0%, #f4f6f8 30%, #f4f6f8 100%);
+}

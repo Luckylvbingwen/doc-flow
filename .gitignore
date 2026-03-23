@@ -1,0 +1,24 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules
+
+# Nuxt output
+.nuxt
+.output
+.nitro
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Prisma
+prisma/migrations
+
+# OS
+.DS_Store
+Thumbs.db
