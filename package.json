@@ -29,11 +29,13 @@
     "@pinia/nuxt": "^0.11.3",
     "@prisma/client": "^6.19.2",
     "element-plus": "^2.13.6",
+    "nprogress": "^0.2.0",
     "nuxt": "^3.21.2",
     "pinia": "^3.0.4",
     "vue": "^3.5.30"
   },
   "devDependencies": {
+    "@types/nprogress": "^0.2.3",
     "prisma": "^6.19.2",
     "sass": "^1.98.0",
     "typescript": "^5.9.3"

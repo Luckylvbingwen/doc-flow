@@ -1,9 +1,21 @@
 :root {
-  --df-bg: #f4f6f8;
+  --df-bg: #f5f5f5;
   --df-panel: #ffffff;
   --df-text: #1f2937;
-  --df-subtext: #6b7280;
-  --df-primary: #0f766e;
+  --df-subtext: #71717a;
+  --df-primary: #6366f1;
+  --df-primary-soft: #eef2ff;
+  --df-primary-hover: #4f46e5;
+  --df-border: #e4e4e7;
+  --df-surface: #fafafa;
+  --df-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 4px rgba(0, 0, 0, 0.04);
+  --df-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  --el-color-primary: #6366f1;
+  --el-color-primary-light-3: #a5b4fc;
+  --el-color-primary-light-8: #eef2ff;
+  --el-border-radius-base: 10px;
+  --el-border-radius-small: 6px;
 }
 
 * {
@@ -14,11 +26,11 @@ body {
   margin: 0;
   font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   color: var(--df-text);
-  background: radial-gradient(circle at top right, #dff6f0 0%, #f4f6f8 30%, #f4f6f8 100%);
+  background: radial-gradient(circle at top right, #eef2ff 0%, #f5f5f5 28%, #f5f5f5 100%);
 }
 
 a {
-  color: #3557d6;
+  color: var(--df-primary);
   text-decoration: none;
 }
 
@@ -29,11 +41,16 @@ a {
 
 .pf-sidebar {
   width: 240px;
-  background: #1e2a3a;
-  color: #94a3b8;
+  background: var(--df-panel);
+  color: #303133;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #273447;
+  border-right: 1px solid var(--df-border);
+  transition: width 0.24s ease;
+}
+
+.pf-sidebar.collapsed {
+  width: 72px;
 }
 
 .pf-brand {
@@ -42,14 +59,35 @@ a {
   align-items: center;
   gap: 10px;
   padding: 0 18px;
-  border-bottom: 1px solid #2f4158;
+  border-bottom: 1px solid var(--df-border);
+}
+
+.pf-sidebar-toggle {
+  margin-left: auto;
+  border: 1px solid var(--df-border);
+  background: var(--df-surface);
+  color: var(--df-subtext);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pf-sidebar-toggle:hover {
+  color: var(--df-primary);
+  border-color: #c7d2fe;
+  background: var(--df-primary-soft);
 }
 
 .pf-brand-logo {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #4f6ef7, #7e8dff);
+  background: linear-gradient(135deg, #6366f1, #a5b4fc);
   color: #fff;
   display: flex;
   align-items: center;
@@ -59,7 +97,7 @@ a {
 }
 
 .pf-brand-text {
-  color: #fff;
+  color: var(--df-text);
   font-size: 16px;
   font-weight: 600;
 }
@@ -75,35 +113,83 @@ a {
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 14px 10px 6px;
-  color: #7e8ea3;
+  color: #a1a1aa;
 }
 
 .pf-nav-item {
-  display: block;
-  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #52525b;
   padding: 9px 12px;
   border-radius: 8px;
   margin-bottom: 3px;
   transition: 0.2s ease;
+  font-size: 13px;
+}
+
+.pf-nav-icon {
+  width: 18px;
+  min-width: 18px;
+  font-size: 16px;
+}
+
+.pf-nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pf-sidebar.collapsed .pf-nav {
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.pf-sidebar.collapsed .pf-nav-title {
+  display: none;
+}
+
+.pf-sidebar.collapsed .pf-nav-item {
+  justify-content: center;
+  gap: 0;
+  padding-left: 0;
+  padding-right: 0;
+  min-height: 38px;
+}
+
+.pf-sidebar.collapsed .pf-nav-label {
+  display: none;
+}
+
+.pf-sidebar.collapsed .pf-nav-icon {
+  font-size: 18px;
+}
+
+.pf-sidebar.collapsed .pf-user {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .pf-nav-item:hover {
-  background: #2a3a4e;
-  color: #dbe4ef;
+  background: var(--df-primary-soft);
+  color: var(--df-primary);
 }
 
 .pf-nav-item.active {
-  background: #354a62;
-  color: #fff;
+  background: var(--df-primary-soft);
+  color: var(--df-primary);
   font-weight: 600;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--df-primary) 20%, #fff 80%);
 }
 
 .pf-user {
-  border-top: 1px solid #2f4158;
+  border-top: 1px solid var(--df-border);
   padding: 14px 16px;
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 64px;
 }
 
 .pf-user-avatar {
@@ -126,12 +212,12 @@ a {
 }
 
 .pf-user-name {
-  color: #e2e8f0;
+  color: var(--df-text);
   font-size: 13px;
 }
 
 .pf-user-role {
-  color: #97a7bc;
+  color: var(--df-subtext);
   font-size: 11px;
 }
 
@@ -144,8 +230,9 @@ a {
 
 .pf-header {
   height: 60px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #fff;
+  border-bottom: 1px solid var(--df-border);
+  background: #ffffffe0;
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -160,7 +247,7 @@ a {
 
 .pf-header p {
   margin: 1px 0 0;
-  color: #6b7280;
+  color: var(--df-subtext);
   font-size: 12px;
 }
 
@@ -183,10 +270,11 @@ a {
 }
 
 .pf-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--df-panel);
+  border: 1px solid var(--df-border);
   border-radius: 12px;
   padding: 16px;
+  box-shadow: var(--df-shadow);
 }
 
 .pf-card h4,
@@ -196,7 +284,7 @@ a {
 }
 
 .pf-muted {
-  color: #6b7280;
+  color: var(--df-subtext);
 }
 
 .pf-section-head {
@@ -214,22 +302,27 @@ a {
 }
 
 .pf-btn {
-  border: 1px solid #d2d8e5;
+  border: 1px solid var(--df-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--df-panel);
   color: #374151;
   padding: 6px 12px;
   font-size: 13px;
 }
 
 .pf-btn.primary {
-  background: #4f6ef7;
-  border-color: #4f6ef7;
+  background: var(--df-primary);
+  border-color: var(--df-primary);
   color: #fff;
 }
 
+.pf-btn.primary:hover {
+  background: var(--df-primary-hover);
+  border-color: var(--df-primary-hover);
+}
+
 .pf-btn.ghost {
-  background: #f7f8fb;
+  background: var(--df-surface);
 }
 
 .pf-btn.danger {
@@ -247,17 +340,17 @@ a {
   align-items: center;
   gap: 12px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #edf0f3;
+  border-bottom: 1px solid var(--df-border);
   margin-bottom: 12px;
 }
 
 .pf-tabs span {
-  color: #6b7280;
+  color: var(--df-subtext);
   font-size: 13px;
 }
 
 .pf-tabs span.active {
-  color: #3557d6;
+  color: var(--df-primary);
   font-weight: 600;
 }
 
@@ -268,7 +361,7 @@ a {
 .pf-link-btn {
   background: transparent;
   border: none;
-  color: #3557d6;
+  color: var(--df-primary);
   padding: 0;
 }
 
@@ -279,7 +372,7 @@ a {
 }
 
 .pf-card.stat p {
-  color: #6b7280;
+  color: var(--df-subtext);
   font-size: 12px;
 }
 
@@ -296,7 +389,7 @@ a {
 }
 
 .explorer-tree {
-  border-right: 1px solid #edf0f3;
+  border-right: 1px solid var(--df-border);
   padding-right: 10px;
 }
 
@@ -320,10 +413,10 @@ a {
 }
 
 .repo-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--df-border);
   border-radius: 10px;
   padding: 14px;
-  background: #fff;
+  background: var(--df-panel);
 }
 
 .repo-card h5 {
@@ -331,7 +424,7 @@ a {
 }
 
 .repo-card p {
-  color: #6b7280;
+  color: var(--df-subtext);
   margin-bottom: 8px;
   font-size: 13px;
 }
@@ -345,14 +438,14 @@ a {
 .pf-table td {
   text-align: left;
   padding: 10px;
-  border-bottom: 1px solid #edf0f3;
+  border-bottom: 1px solid var(--df-border);
   font-size: 13px;
 }
 
 .pf-table th {
   font-size: 12px;
-  color: #6b7280;
-  background: #f8fafc;
+  color: var(--df-subtext);
+  background: #fafafa;
 }
 
 .file-header {
@@ -397,11 +490,11 @@ a {
 
 .version-pane li {
   margin-bottom: 7px;
-  color: #6b7280;
+  color: var(--df-subtext);
 }
 
 .version-pane li.active {
-  color: #3557d6;
+  color: var(--df-primary);
   font-weight: 600;
 }
 
@@ -412,14 +505,14 @@ a {
 }
 
 .notice-item {
-  border: 1px solid #edf0f3;
+  border: 1px solid var(--df-border);
   border-radius: 10px;
   padding: 12px;
 }
 
 .notice-item.unread {
-  border-color: #bfd0ff;
-  background: #f7f9ff;
+  border-color: #c7d2fe;
+  background: var(--df-primary-soft);
 }
 
 .notice-item h5 {
@@ -432,7 +525,7 @@ a {
 }
 
 .notice-item span {
-  color: #6b7280;
+  color: var(--df-subtext);
   font-size: 12px;
 }
 
@@ -447,7 +540,7 @@ a {
 }
 
 .pf-card.sub p {
-  color: #6b7280;
+  color: var(--df-subtext);
   font-size: 13px;
 }
 
@@ -469,13 +562,14 @@ a {
 
 .login-card {
   width: min(420px, 100%);
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--df-panel);
+  border: 1px solid var(--df-border);
   border-radius: 12px;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-shadow: var(--df-shadow-md);
 }
 
 .login-card h2 {
@@ -484,20 +578,44 @@ a {
 
 .login-card p {
   margin: 0 0 6px;
-  color: #6b7280;
+  color: var(--df-subtext);
   font-size: 13px;
 }
 
 .login-card label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--df-subtext);
 }
 
 .login-card input {
-  border: 1px solid #d4dbe5;
+  border: 1px solid var(--df-border);
   border-radius: 8px;
   height: 36px;
   padding: 0 10px;
+}
+
+.login-card input:focus {
+  border-color: var(--df-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--df-primary) 16%, #fff 84%);
+}
+
+#nprogress {
+  pointer-events: none;
+}
+
+#nprogress .bar {
+  background: var(--df-primary);
+  height: 3px;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--df-primary) 45%, #fff 55%);
+  z-index: 2147483600;
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px var(--df-primary), 0 0 5px var(--df-primary);
+}
+
+#nprogress .spinner {
+  display: none;
 }
 
 @media (max-width: 1024px) {
@@ -512,7 +630,7 @@ a {
 
   .explorer-tree {
     border-right: none;
-    border-bottom: 1px solid #edf0f3;
+    border-bottom: 1px solid var(--df-border);
     padding-right: 0;
     padding-bottom: 10px;
   }
@@ -531,6 +649,39 @@ a {
 
   .pf-sidebar {
     width: 100%;
+  }
+
+  .pf-sidebar.collapsed {
+    width: 100%;
+  }
+
+  .pf-sidebar-toggle {
+    display: none;
+  }
+
+  .pf-sidebar.collapsed .pf-nav-title {
+    display: block;
+  }
+
+  .pf-sidebar.collapsed .pf-nav-item {
+    justify-content: flex-start;
+    padding-left: 12px;
+    padding-right: 12px;
+    gap: 10px;
+  }
+
+  .pf-sidebar.collapsed .pf-nav-label {
+    display: inline;
+  }
+
+  .pf-sidebar.collapsed .pf-nav-icon {
+    font-size: 16px;
+  }
+
+  .pf-sidebar.collapsed .pf-user {
+    justify-content: flex-start;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .pf-nav {

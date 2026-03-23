@@ -1,27 +1,44 @@
 <template>
   <div class="pf-app">
-    <aside class="pf-sidebar">
+    <aside class="pf-sidebar" :class="{ collapsed: isSidebarCollapsed }">
       <div class="pf-brand">
         <div class="pf-brand-logo">DF</div>
-        <div class="pf-brand-text">DocFlow</div>
+        <div v-show="!isSidebarCollapsed" class="pf-brand-text">DocFlow</div>
+        <button
+          class="pf-sidebar-toggle"
+          type="button"
+          :aria-label="isSidebarCollapsed ? '展开侧栏' : '收起侧栏'"
+          @click="toggleSidebar"
+        >
+          <el-icon>
+            <Expand v-if="isSidebarCollapsed" />
+            <Fold v-else />
+          </el-icon>
+        </button>
       </div>
 
       <nav class="pf-nav">
-        <p class="pf-nav-title">文档协同</p>
-        <NuxtLink class="pf-nav-item" :class="{ active: isActive('/docs') }" to="/docs">共享文档</NuxtLink>
-        <NuxtLink class="pf-nav-item" :class="{ active: isExact('/approvals') }" to="/approvals">审批中心</NuxtLink>
-        <NuxtLink class="pf-nav-item" :class="{ active: isExact('/logs') }" to="/logs">操作日志</NuxtLink>
-        <NuxtLink class="pf-nav-item" :class="{ active: isExact('/recycle-bin') }" to="/recycle-bin">回收站</NuxtLink>
-
-        <p class="pf-nav-title">系统</p>
-        <NuxtLink class="pf-nav-item" :class="{ active: isExact('/notifications') }" to="/notifications">通知中心</NuxtLink>
-        <NuxtLink class="pf-nav-item" :class="{ active: isExact('/admin') }" to="/admin">系统管理</NuxtLink>
-        <NuxtLink class="pf-nav-item" :class="{ active: isExact('/profile') }" to="/profile">个人中心</NuxtLink>
+        <template v-for="group in menuGroups" :key="group.title">
+          <p class="pf-nav-title">{{ group.title }}</p>
+          <NuxtLink
+            v-for="item in group.items"
+            :key="item.to"
+            class="pf-nav-item"
+            :class="{ active: isItemActive(item) }"
+            :to="item.to"
+            :title="item.label"
+          >
+            <el-icon class="pf-nav-icon">
+              <component :is="item.icon" />
+            </el-icon>
+            <span class="pf-nav-label">{{ item.label }}</span>
+          </NuxtLink>
+        </template>
       </nav>
 
       <div class="pf-user">
         <div class="pf-user-avatar">刘</div>
-        <div>
+        <div v-show="!isSidebarCollapsed">
           <div class="pf-user-name">刘思远</div>
           <div class="pf-user-role">系统管理员</div>
         </div>
@@ -48,7 +65,51 @@
 </template>
 
 <script setup>
+import {
+  Bell,
+  Collection,
+  Delete,
+  Expand,
+  Fold,
+  Histogram,
+  Management,
+  User
+} from '@element-plus/icons-vue'
+import { storeToRefs } from 'pinia'
+
+import { useAppStore } from '~/stores/app'
+
 const route = useRoute()
+const appStore = useAppStore()
+const { sidebarCollapsed: isSidebarCollapsed } = storeToRefs(appStore)
+
+const menuGroups = [
+  {
+    title: '文档协同',
+    items: [
+      { to: '/docs', label: '共享文档', icon: Collection, activeMode: 'prefix' },
+      { to: '/approvals', label: '审批中心', icon: Management, activeMode: 'exact' },
+      { to: '/logs', label: '操作日志', icon: Histogram, activeMode: 'exact' },
+      { to: '/recycle-bin', label: '回收站', icon: Delete, activeMode: 'exact' }
+    ]
+  },
+  {
+    title: '系统',
+    items: [
+      { to: '/notifications', label: '通知中心', icon: Bell, activeMode: 'exact' },
+      { to: '/admin', label: '系统管理', icon: Management, activeMode: 'exact' },
+      { to: '/profile', label: '个人中心', icon: User, activeMode: 'exact' }
+    ]
+  }
+]
+
+const toggleSidebar = () => {
+  appStore.toggleSidebarCollapsed()
+}
+
+onMounted(() => {
+  appStore.hydrateSidebarCollapsed()
+})
 
 const pageMeta = computed(() => {
   const path = route.path
@@ -75,6 +136,5 @@ const pageMeta = computed(() => {
   return map[path] || { title: 'DocFlow', subtitle: '原型驱动开发' }
 })
 
-const isExact = (path) => route.path === path
-const isActive = (prefix) => route.path.startsWith(prefix)
+const isItemActive = (item) => (item.activeMode === 'prefix' ? route.path.startsWith(item.to) : route.path === item.to)
 </script>
