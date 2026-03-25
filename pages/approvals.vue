@@ -1,5 +1,7 @@
 <template>
   <section class="pf-page-stack">
+    <PageTitle title="审批中心" subtitle="待我审批、我发起、归档记录" />
+
     <div class="pf-card">
       <div class="pf-tabs">
         <span class="active">待我审批</span>

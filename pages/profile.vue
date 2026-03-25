@@ -1,5 +1,7 @@
 <template>
   <section class="pf-page-stack">
+    <PageTitle title="个人中心" subtitle="我的信息、我的文档、偏好配置" />
+
     <div class="pf-card profile-head">
       <div class="pf-user-avatar lg">刘</div>
       <div>

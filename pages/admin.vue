@@ -1,5 +1,7 @@
 <template>
   <section class="pf-page-stack">
+    <PageTitle title="系统管理" subtitle="组织、角色、权限与配置" />
+
     <div class="pf-card">
       <div class="pf-tabs">
         <span class="active">组织与角色</span>

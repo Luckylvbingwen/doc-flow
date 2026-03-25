@@ -1,5 +1,7 @@
 <template>
   <section class="pf-page-stack">
+    <PageTitle title="共享文档" subtitle="组织树、仓库卡片、快速入口" />
+
     <div class="pf-stat-grid">
       <article class="pf-card stat">
         <p>文档总数</p>

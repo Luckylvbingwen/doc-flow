@@ -1,5 +1,7 @@
 <template>
   <section class="pf-page-stack">
+    <PageTitle title="原型落地导航" subtitle="从这里进入各展示页面雏形" />
+
     <article class="pf-card">
       <h4>原型页面导航</h4>
       <p class="pf-muted">

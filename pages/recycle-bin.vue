@@ -1,5 +1,7 @@
 <template>
   <section class="pf-page-stack">
+    <PageTitle title="回收站" subtitle="文件恢复与永久删除" />
+
     <div class="pf-card">
       <div class="pf-section-head">
         <h4>回收站文件（雏形）</h4>

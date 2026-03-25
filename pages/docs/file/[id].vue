@@ -1,13 +1,15 @@
 <template>
   <section class="pf-page-stack">
-    <div class="pf-card file-header">
-      <div>
-        <h4>{{ fileName }}</h4>
-        <p class="pf-muted">文件ID：{{ route.params.id }} · 当前版本：v3.2 · 状态：审批中</p>
-      </div>
-      <div class="pf-inline-actions">
+    <PageTitle :title="fileName" subtitle="预览、版本、评论与审批记录">
+      <template #actions>
         <button class="pf-btn">提交审批</button>
         <button class="pf-btn ghost">导入飞书评论</button>
+      </template>
+    </PageTitle>
+
+    <div class="pf-card file-header">
+      <div>
+        <p class="pf-muted">文件ID：{{ route.params.id }} · 当前版本：v3.2 · 状态：审批中</p>
       </div>
     </div>
 

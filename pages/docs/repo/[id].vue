@@ -1,12 +1,15 @@
 <template>
   <section class="pf-page-stack">
+    <PageTitle title="仓库详情" subtitle="文件列表与分组配置">
+      <template #actions>
+        <NuxtLink class="pf-btn ghost" to="/docs">返回仓库列表</NuxtLink>
+        <button class="pf-btn">新建文档</button>
+      </template>
+    </PageTitle>
+
     <div class="pf-card">
       <div class="pf-section-head">
         <h4>仓库信息</h4>
-        <div class="pf-inline-actions">
-          <NuxtLink class="pf-btn ghost" to="/docs">返回仓库列表</NuxtLink>
-          <button class="pf-btn">新建文档</button>
-        </div>
       </div>
       <p class="pf-muted">仓库ID：{{ route.params.id }}，这里是文件列表与筛选区的雏形。</p>
     </div>

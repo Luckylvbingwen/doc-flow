@@ -1,5 +1,7 @@
 <template>
   <section class="pf-page-stack">
+    <PageTitle title="通知中心" subtitle="系统通知、审批通知、提醒消息" />
+
     <div class="pf-card notification-list">
       <article v-for="n in notifications" :key="n.id" class="notice-item" :class="{ unread: !n.read }">
         <h5>{{ n.title }}</h5>

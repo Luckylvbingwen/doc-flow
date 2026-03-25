@@ -1,5 +1,7 @@
 <template>
   <section class="pf-page-stack">
+    <PageTitle title="操作日志" subtitle="系统行为审计与检索" />
+
     <div class="pf-card">
       <div class="pf-section-head">
         <h4>操作日志检索（雏形）</h4>
