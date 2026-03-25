@@ -166,7 +166,7 @@ const getEnumLabel = (value, enumMap) => {
 
 const getEnumType = (value, enumMap) => {
 	const item = enumMap.find((e) => e.value === value)
-	return item?.type ?? 'info'
+	return item?.type || 'info'
 }
 
 // ── 日期格式化 ──

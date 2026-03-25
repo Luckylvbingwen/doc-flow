@@ -190,14 +190,14 @@ const statusEnum = [
 	{ value: 'published', label: '已发布', type: 'success' },
 	{ value: 'draft', label: '草稿', type: 'info' },
 	{ value: 'review', label: '审核中', type: 'warning' },
-	{ value: 'archived', label: '已归档', type: '' }
+	{ value: 'archived', label: '已归档', type: 'info' }
 ]
 
 const statusEnumMap = {
 	published: { label: '已发布', type: 'success' },
 	draft: { label: '草稿', type: 'info' },
 	review: { label: '审核中', type: 'warning' },
-	archived: { label: '已归档', type: '' }
+	archived: { label: '已归档', type: 'info' }
 }
 
 const docColumns = [
@@ -268,7 +268,7 @@ const logPageSize = ref(10)
 
 const actionEnum = [
 	{ value: 'create', label: '创建', type: 'success' },
-	{ value: 'edit', label: '编辑', type: '' },
+	{ value: 'edit', label: '编辑', type: 'info' },
 	{ value: 'delete', label: '删除', type: 'danger' },
 	{ value: 'publish', label: '发布', type: 'success' },
 	{ value: 'review', label: '提交审核', type: 'warning' },
