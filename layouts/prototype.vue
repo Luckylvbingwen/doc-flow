@@ -37,10 +37,10 @@
       </nav>
 
       <div class="pf-user">
-        <div class="pf-user-avatar">刘</div>
+        <div class="pf-user-avatar">{{ userInitial }}</div>
         <div v-show="!isSidebarCollapsed">
-          <div class="pf-user-name">刘思远</div>
-          <div class="pf-user-role">系统管理员</div>
+          <div class="pf-user-name">{{ authStore.user?.name || '未登录用户' }}</div>
+          <div class="pf-user-role">{{ authStore.user?.email || '请先登录' }}</div>
         </div>
       </div>
     </aside>
@@ -52,8 +52,38 @@
           <p>{{ pageMeta.subtitle }}</p>
         </div>
         <div class="pf-header-actions">
-          <NuxtLink class="pf-btn ghost" to="/login">查看登录页</NuxtLink>
-          <NuxtLink class="pf-btn primary" to="/docs">返回原型主链路</NuxtLink>
+          <button
+            class="pf-dark-toggle"
+            type="button"
+            :aria-label="appStore.darkMode ? '切换亮色模式' : '切换暗黑模式'"
+            @click="appStore.toggleDarkMode()"
+          >
+            <el-icon :size="18">
+              <Sunny v-if="appStore.darkMode" />
+              <Moon v-else />
+            </el-icon>
+          </button>
+
+          <el-dropdown
+            v-if="authStore.isAuthenticated && authStore.user"
+            trigger="click"
+            placement="bottom-end"
+            @command="handleUserMenuCommand"
+          >
+            <button class="pf-user-entry" type="button">
+              <span class="pf-user-entry-avatar">{{ userInitial }}</span>
+              <span class="pf-user-entry-name">{{ authStore.user.name }}</span>
+              <el-icon class="pf-user-entry-caret"><ArrowDownBold /></el-icon>
+            </button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+
+          <NuxtLink v-else class="pf-btn ghost" to="/login">去登录</NuxtLink>
         </div>
       </header>
 
@@ -73,15 +103,26 @@ import {
   Fold,
   Histogram,
   Management,
+  ArrowDownBold,
+  Moon,
+  Sunny,
   User
 } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { storeToRefs } from 'pinia'
 
 import { useAppStore } from '~/stores/app'
+import { useAuthStore } from '~/stores/auth'
 
 const route = useRoute()
 const appStore = useAppStore()
+const authStore = useAuthStore()
 const { sidebarCollapsed: isSidebarCollapsed } = storeToRefs(appStore)
+
+const userInitial = computed(() => {
+  const name = authStore.user?.name?.trim() || '访客'
+  return name.slice(0, 1)
+})
 
 const menuGroups = [
   {
@@ -109,7 +150,37 @@ const toggleSidebar = () => {
 
 onMounted(() => {
   appStore.hydrateSidebarCollapsed()
+  appStore.hydrateDarkMode()
+  authStore.hydrateSession()
 })
+
+const handleLogout = async () => {
+  try {
+    await $fetch('/api/auth/logout', {
+      method: 'POST',
+      body: {
+        token: authStore.token
+      }
+    })
+  } catch {
+    // Logout still proceeds locally even if backend call fails.
+  }
+
+  authStore.clearSession()
+  ElMessage.success('已退出登录')
+  await navigateTo('/login')
+}
+
+const handleUserMenuCommand = async (command) => {
+  if (command === 'profile') {
+    await navigateTo('/profile')
+    return
+  }
+
+  if (command === 'logout') {
+    await handleLogout()
+  }
+}
 
 const pageMeta = computed(() => {
   const path = route.path
