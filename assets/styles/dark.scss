@@ -23,8 +23,16 @@ html.dark {
 
   /* ---- Element Plus overrides ---- */
   --el-color-primary: #a78bfa;
+  --el-color-primary-light-1: #b39afb;
+  --el-color-primary-light-2: #bfa9fb;
   --el-color-primary-light-3: #c4b5fd;
+  --el-color-primary-light-4: #d0c3fd;
+  --el-color-primary-light-5: #d3c5fd;
+  --el-color-primary-light-6: #ddd2fe;
+  --el-color-primary-light-7: #e6dffe;
   --el-color-primary-light-8: rgba(167, 139, 250, 0.15);
+  --el-color-primary-light-9: rgba(167, 139, 250, 0.08);
+  --el-color-primary-dark-2: #8b5cf6;
   --el-bg-color: #1a1d26;
   --el-bg-color-overlay: #22262f;
   --el-bg-color-page: #0f1117;
@@ -267,5 +275,107 @@ html.dark {
     .pf-header {
       background: rgba(26, 29, 38, 0.95);
     }
+  }
+
+  /* ---- Element Plus el-table ---- */
+  .el-table {
+    --el-table-bg-color: var(--df-panel);
+    --el-table-tr-bg-color: var(--df-panel);
+    --el-table-header-bg-color: var(--df-surface);
+    --el-table-row-hover-bg-color: rgba(167, 139, 250, 0.08);
+    --el-table-border-color: var(--df-border);
+    --el-table-text-color: var(--df-text);
+    --el-table-header-text-color: var(--df-subtext);
+    color: var(--df-text);
+  }
+
+  .el-table th.el-table__cell {
+    background: var(--df-surface) !important;
+    color: var(--df-subtext);
+  }
+
+  .el-table td.el-table__cell {
+    border-bottom-color: var(--df-border);
+  }
+
+  .el-table__body tr.el-table__row--striped td.el-table__cell {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell {
+    background: rgba(167, 139, 250, 0.08);
+  }
+
+  .el-table--striped .el-table__body tr.el-table__row--striped.hover-row td.el-table__cell {
+    background: rgba(167, 139, 250, 0.08);
+  }
+
+  .el-table__empty-text {
+    color: var(--df-subtext);
+  }
+
+  /* ---- DataTable wrapper ---- */
+  .df-table-wrapper {
+    border-color: var(--df-border);
+    background: var(--df-panel);
+  }
+
+  .df-table-toolbar {
+    background: var(--df-panel);
+    border-color: var(--df-border);
+  }
+
+  /* ---- Pagination ---- */
+  .df-pagination {
+    background: var(--df-panel);
+    border-color: var(--df-border);
+  }
+
+  .df-pagination :deep(.el-pager li),
+  .df-pagination :deep(.btn-prev),
+  .df-pagination :deep(.btn-next) {
+    border-color: var(--df-border);
+    background: var(--df-panel);
+    color: var(--df-subtext);
+  }
+
+  .df-pagination :deep(.el-pager li.is-active) {
+    background: var(--df-primary);
+    border-color: var(--df-primary);
+    color: #fff;
+  }
+
+  /* ---- TabBar ---- */
+  .df-tab-bar {
+    background: var(--df-panel);
+    border-color: var(--df-border);
+  }
+
+  .df-tab-item {
+    background: var(--df-surface);
+    color: var(--df-subtext);
+  }
+
+  .df-tab-item.active {
+    background: var(--df-primary);
+    color: #fff;
+  }
+
+  /* ---- el-descriptions (drawer detail) ---- */
+  .el-descriptions {
+    --el-descriptions-item-bordered-label-background: var(--df-surface);
+  }
+
+  .el-descriptions__label {
+    color: var(--df-subtext);
+  }
+
+  .el-descriptions__body .el-descriptions__table {
+    border-color: var(--df-border);
+  }
+
+  .el-descriptions__body .el-descriptions__table th,
+  .el-descriptions__body .el-descriptions__table td {
+    border-color: var(--df-border);
   }
 }

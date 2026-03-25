@@ -1,0 +1,20 @@
+/* Element Plus SCSS 变量覆盖 — 编译时注入，避免运行时闪烁 */
+@forward 'element-plus/theme-chalk/src/common/var.scss' with (
+  $colors: (
+    'primary': (
+      'base': #6366f1,
+    ),
+    'success': (
+      'base': #10b981,
+    ),
+    'warning': (
+      'base': #f59e0b,
+    ),
+    'danger': (
+      'base': #ef4444,
+    ),
+    'info': (
+      'base': #6b7280,
+    ),
+  ),
+);

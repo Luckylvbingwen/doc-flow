@@ -2,7 +2,19 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-03-23',
   devtools: { enabled: true },
   modules: ['@pinia/nuxt', '@element-plus/nuxt'],
+  elementPlus: {
+    importStyle: 'scss'
+  },
   css: ['~/assets/styles/main.scss', '~/assets/styles/dark.scss'],
+  vite: {
+    css: {
+      preprocessorOptions: {
+        scss: {
+          additionalData: '@use "~/assets/styles/element-overrides.scss" as *;'
+        }
+      }
+    }
+  },
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL,
     feishuWebhookUrl: process.env.FEISHU_WEBHOOK_URL,

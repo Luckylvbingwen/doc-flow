@@ -19,6 +19,7 @@
         </button>
       </div>
 
+      <el-scrollbar class="pf-nav-scrollbar">
       <nav class="pf-nav">
         <template v-for="group in menuGroups" :key="group.title">
           <p class="pf-nav-title">{{ group.title }}</p>
@@ -43,6 +44,7 @@
           </el-tooltip>
         </template>
       </nav>
+      </el-scrollbar>
 
       <div class="pf-user">
         <div class="pf-user-avatar">{{ userInitial }}</div>
@@ -91,9 +93,11 @@
         </div>
       </header>
 
-      <main class="pf-content">
-        <slot />
-      </main>
+      <el-scrollbar class="pf-content-scrollbar">
+        <main class="pf-content">
+          <slot />
+        </main>
+      </el-scrollbar>
     </section>
   </div>
 </template>
