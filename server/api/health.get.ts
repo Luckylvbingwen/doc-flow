@@ -1,7 +1,7 @@
 export default defineEventHandler(() => {
-  return {
-    ok: true,
-    service: 'docflow-api',
-    time: new Date().toISOString()
-  }
+	return {
+		ok: true,
+		service: 'docflow-api',
+		time: new Date().toISOString()
+	}
 })
