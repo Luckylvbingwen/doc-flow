@@ -1,4 +1,18 @@
 import { prisma } from '../../utils/prisma'
+import { signToken } from '../../utils/jwt'
+
+/** 将 '8h'/'24h'/'7d' 格式转为秒数 */
+function parseExpiresIn(value: string): number {
+	const match = value.match(/^(\d+)(h|d|m|s)$/)
+	if (!match) return 28800 // 默认 8h
+	const num = parseInt(match[1], 10)
+	const unit = match[2]
+	if (unit === 's') return num
+	if (unit === 'm') return num * 60
+	if (unit === 'h') return num * 3600
+	if (unit === 'd') return num * 86400
+	return 28800
+}
 
 type LoginBody = {
 	account?: string
@@ -12,22 +26,13 @@ type LoginUserRow = {
 	feishu_open_id: string
 }
 
-const UNAUTHORIZED_STATUS = 401
-const BAD_REQUEST_STATUS = 400
-const INTERNAL_ERROR_STATUS = 500
-
 export default defineEventHandler(async (event) => {
 	const body = await readBody<LoginBody>(event)
 	const account = body.account?.trim() || ''
 	const password = body.password?.trim() || ''
 
 	if (!account || !password) {
-		setResponseStatus(event, BAD_REQUEST_STATUS)
-		return {
-			success: false,
-			code: 'AUTH_INVALID_PARAMS',
-			message: '账号和密码不能为空'
-		}
+		return fail(event, 400, 'AUTH_INVALID_PARAMS', '账号和密码不能为空')
 	}
 
 	const config = useRuntimeConfig(event)
@@ -45,40 +50,33 @@ export default defineEventHandler(async (event) => {
 
 		const user = users[0]
 		if (!user || password !== expectedPassword) {
-			setResponseStatus(event, UNAUTHORIZED_STATUS)
-			return {
-				success: false,
-				code: 'AUTH_INVALID_CREDENTIALS',
-				message: '账号或密码错误'
-			}
+			return fail(event, 401, 'AUTH_INVALID_CREDENTIALS', '账号或密码错误')
 		}
 
 		const userId = Number(user.id)
-		const token = `docflow_${userId}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+		const token = await signToken({
+			uid: userId,
+			name: user.name,
+			email: user.email
+		})
 
-		return {
-			success: true,
-			code: 'OK',
-			message: '登录成功',
-			data: {
-				token,
-				tokenType: 'Bearer',
-				expiresIn: 86400,
-				user: {
-					id: userId,
-					name: user.name,
-					email: user.email,
-					feishuOpenId: user.feishu_open_id
-				}
+		// 过期秒数与 JWT 配置保持一致
+		const jwtExpiresIn = config.jwtExpiresIn || '8h'
+		const expiresInSeconds = parseExpiresIn(jwtExpiresIn)
+
+		return ok({
+			token,
+			tokenType: 'Bearer' as const,
+			expiresIn: expiresInSeconds,
+			user: {
+				id: userId,
+				name: user.name,
+				email: user.email,
+				feishuOpenId: user.feishu_open_id
 			}
-		}
+		}, '登录成功')
 	} catch (error) {
 		console.error('auth.login failed:', error)
-		setResponseStatus(event, INTERNAL_ERROR_STATUS)
-		return {
-			success: false,
-			code: 'AUTH_INTERNAL_ERROR',
-			message: '登录服务暂不可用，请稍后重试'
-		}
+		return fail(event, 500, 'AUTH_INTERNAL_ERROR', '登录服务暂不可用，请稍后重试')
 	}
 })

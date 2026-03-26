@@ -1,7 +1,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2026-03-23',
   devtools: { enabled: true },
-  modules: ['@pinia/nuxt', '@element-plus/nuxt'],
+  modules: ['@pinia/nuxt', '@element-plus/nuxt', '@nuxt/eslint'],
   elementPlus: {
     importStyle: 'scss'
   },
@@ -17,6 +17,8 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL,
+    jwtSecret: process.env.JWT_SECRET || 'docflow-dev-secret-change-in-production!!',
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
     feishuWebhookUrl: process.env.FEISHU_WEBHOOK_URL,
     authDemoPassword: process.env.AUTH_DEMO_PASSWORD || 'Docflow@123',
     public: {

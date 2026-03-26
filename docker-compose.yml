@@ -1,0 +1,36 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=mysql://root:docflow_pwd@db:3306/docflow
+      - JWT_SECRET=change-this-to-a-random-string-at-least-32-chars
+      - AUTH_DEMO_PASSWORD=Docflow@123
+      - APP_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=docflow_pwd
+      - MYSQL_DATABASE=docflow
+      - MYSQL_CHARSET=utf8mb4
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docs/doc.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./docs/doc_seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
