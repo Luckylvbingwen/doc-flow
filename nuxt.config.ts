@@ -1,6 +1,6 @@
 export default defineNuxtConfig({
   compatibilityDate: '2026-03-23',
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.APP_ENV !== 'production' },
   modules: ['@pinia/nuxt', '@element-plus/nuxt', '@nuxt/eslint'],
   elementPlus: {
     importStyle: 'scss'

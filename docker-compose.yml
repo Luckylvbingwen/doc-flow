@@ -5,8 +5,9 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=mysql://root:docflow_pwd@db:3306/docflow
-      - JWT_SECRET=change-this-to-a-random-string-at-least-32-chars
-      - AUTH_DEMO_PASSWORD=Docflow@123
+      - JWT_SECRET=${JWT_SECRET:-please-set-a-strong-random-secret-here-min-32}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-8h}
+      - AUTH_DEMO_PASSWORD=${AUTH_DEMO_PASSWORD:-Docflow@123}
       - APP_ENV=production
     depends_on:
       db:
