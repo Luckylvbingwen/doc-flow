@@ -19,11 +19,15 @@ export default defineNuxtConfig({
     databaseUrl: process.env.DATABASE_URL,
     jwtSecret: process.env.JWT_SECRET || 'docflow-dev-secret-change-in-production!!',
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
+    feishuAppId: process.env.FEISHU_APP_ID || '',
+    feishuAppSecret: process.env.FEISHU_APP_SECRET || '',
     feishuWebhookUrl: process.env.FEISHU_WEBHOOK_URL,
     authDemoPassword: process.env.AUTH_DEMO_PASSWORD || 'Docflow@123',
     public: {
       appName: 'DocFlow',
-      appEnv: process.env.APP_ENV || 'local'
+      appEnv: process.env.APP_ENV || 'local',
+      feishuAppId: process.env.FEISHU_APP_ID || '',
+      feishuSiteUrl: process.env.FEISHU_SITE_URL || '',
     }
   },
   nitro: {

@@ -24,6 +24,7 @@ type LoginUserRow = {
 	name: string
 	email: string | null
 	feishu_open_id: string
+	avatar_url: string | null
 }
 
 export default defineEventHandler(async (event) => {
@@ -40,7 +41,7 @@ export default defineEventHandler(async (event) => {
 
 	try {
 		const users = await prisma.$queryRaw<LoginUserRow[]>`
-      SELECT id, name, email, feishu_open_id
+      SELECT id, name, email, feishu_open_id, avatar_url
       FROM doc_users
       WHERE deleted_at IS NULL
         AND status = 1
@@ -72,7 +73,8 @@ export default defineEventHandler(async (event) => {
 				id: userId,
 				name: user.name,
 				email: user.email,
-				feishuOpenId: user.feishu_open_id
+				feishuOpenId: user.feishu_open_id,
+				avatar: user.avatar_url || '',
 			}
 		}, '登录成功')
 	} catch (error) {

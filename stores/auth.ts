@@ -8,6 +8,7 @@ interface AuthUser {
 	name: string
 	email: string | null
 	feishuOpenId: string
+	avatar: string
 }
 
 interface AuthSession {
@@ -112,6 +113,9 @@ export const useAuthStore = defineStore('auth', {
 			if (res.success && res.data) {
 				this.roles = res.data.roles
 				this.permissions = res.data.permissions
+				if (res.data.avatar && this.user) {
+					this.user.avatar = res.data.avatar
+				}
 				this._persistToStorage()
 			}
 		},

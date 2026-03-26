@@ -70,7 +70,8 @@
               @command="handleUserMenuCommand"
             >
               <button class="pf-user-entry" type="button">
-                <span class="pf-user-entry-avatar">{{ userInitial }}</span>
+                <img v-if="authStore.user?.avatar" class="pf-user-entry-avatar" :src="authStore.user.avatar" />
+                <span v-else class="pf-user-entry-avatar pf-user-entry-avatar--text">{{ userInitial }}</span>
                 <span class="pf-user-entry-name">{{ authStore.user.name }}</span>
                 <el-icon class="pf-user-entry-caret"><ArrowDownBold /></el-icon>
               </button>

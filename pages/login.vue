@@ -10,7 +10,7 @@
 				<img class="login-card-header" :src="loginHeaderSrc" alt="DocFlow" />
 				<header class="login-header">
 					<h2>账号登录</h2>
-					<p>当前为本地账密模式，暂不接入飞书登录。</p>
+					<p>支持账号密码与飞书扫码登录</p>
 				</header>
 
 				<el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="login-form"
@@ -47,6 +47,17 @@
 					</el-button>
 				</el-form>
 
+                <div class="login-divider">
+					<span>或</span>
+				</div>
+
+				<el-button class="feishu-login-btn" :loading="feishuLoading" @click="handleFeishuLogin">
+					<svg class="feishu-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+						<path d="M2.5 3.5L9.37 12.45L2.5 20.5H5.75L10.94 14.54L15.25 20.5H21.5L14.26 11.05L20.72 3.5H17.47L12.69 9.02L8.75 3.5H2.5Z" />
+					</svg>
+					飞书登录
+				</el-button>
+
 				<section class="login-tips">
 					<p>演示账号：admin@docflow.local</p>
 					<p>演示密码：Docflow@123（可通过 AUTH_DEMO_PASSWORD 配置）</p>
@@ -60,14 +71,17 @@
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { Lock, User } from '@element-plus/icons-vue'
-import { apiLogin } from '~/api/auth'
+import { apiLogin, apiFeishuAuthUrl, apiFeishuCallback } from '~/api/auth'
 import loginBgSrc from '~/assets/images/login-bg.png'
 import loginHeaderSrc from '~/assets/images/login-header.png'
 
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
+const feishuLoading = ref(false)
 const rememberSession = ref(true)
 const authStore = useAuthStore()
+const route = useRoute()
+const runtimeConfig = useRuntimeConfig()
 
 const loginPageStyle = computed(() => ({
 	backgroundImage: `linear-gradient(110deg, rgba(8, 31, 74, 0.7), rgba(14, 44, 96, 0.45) 35%, rgba(16, 56, 122, 0.25) 60%, rgba(255, 255, 255, 0) 85%), url('${loginBgSrc}')`
@@ -119,6 +133,78 @@ const handleSubmit = async () => {
 		submitting.value = false
 	}
 }
+
+// ================================================================
+//  飞书 OAuth 登录
+// ================================================================
+const feishuEnabled = computed(() => !!runtimeConfig.public.feishuAppId)
+
+/** 发起飞书授权 */
+const handleFeishuLogin = async () => {
+	if (!feishuEnabled.value) {
+		ElMessage.warning('飞书登录未配置')
+		return
+	}
+
+	feishuLoading.value = true
+	try {
+		const redirectUri = window.location.origin + '/login'
+		const res = await apiFeishuAuthUrl(redirectUri)
+
+		if (!res.success || !res.data) {
+			ElMessage.error(res.message || '获取飞书授权地址失败')
+			return
+		}
+
+		// 存储 state 用于回调校验
+		sessionStorage.setItem('feishu_oauth_state', res.data.state)
+		// 跳转到飞书授权页
+		window.location.href = res.data.authUrl
+	} catch {
+		ElMessage.error('飞书登录发起失败')
+	} finally {
+		feishuLoading.value = false
+	}
+}
+
+/** 处理飞书 OAuth 回调（页面加载时检查 URL 中的 code 参数） */
+const handleFeishuCallback = async () => {
+	const code = route.query.code as string
+	const state = route.query.state as string
+
+	if (!code || !state) return
+
+	// 校验 state
+	const savedState = sessionStorage.getItem('feishu_oauth_state')
+	if (savedState && savedState !== state) {
+		ElMessage.error('飞书授权状态不匹配，请重新登录')
+		return
+	}
+	sessionStorage.removeItem('feishu_oauth_state')
+
+	feishuLoading.value = true
+	try {
+		const res = await apiFeishuCallback({ code, state })
+
+		if (!res.success || !res.data) {
+			ElMessage.error(res.message || '飞书登录失败')
+			return
+		}
+
+		authStore.setSession(res.data)
+		await authStore.fetchProfile().catch(() => {})
+		ElMessage.success('飞书登录成功，正在进入系统')
+		await navigateTo('/docs')
+	} catch {
+		ElMessage.error('飞书登录失败，请稍后重试')
+	} finally {
+		feishuLoading.value = false
+	}
+}
+
+onMounted(() => {
+	handleFeishuCallback()
+})
 
 definePageMeta({
 	layout: 'auth'
@@ -245,6 +331,47 @@ definePageMeta({
 	border-radius: 999px;
 	font-size: 17px;
 	letter-spacing: 3px;
+}
+
+.login-divider {
+	display: flex;
+	align-items: center;
+	margin: 18px 0 14px;
+	color: #9ca3af;
+	font-size: 12px;
+
+	&::before,
+	&::after {
+		content: '';
+		flex: 1;
+		height: 1px;
+		background: #e5e7eb;
+	}
+
+	span {
+		padding: 0 12px;
+	}
+}
+
+.feishu-login-btn {
+	width: 100%;
+	height: 44px;
+	border-radius: 999px;
+	font-size: 15px;
+	letter-spacing: 1px;
+	background: #2b5aed;
+	color: #ffffff;
+	border: none;
+
+	&:hover,
+	&:focus {
+		background: #3d6ef7;
+		color: #ffffff;
+	}
+
+	.feishu-icon {
+		margin-right: 6px;
+	}
 }
 
 .login-tips {

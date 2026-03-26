@@ -69,6 +69,7 @@ export interface UserProfile {
 	id: number
 	name: string
 	email: string | null
+	avatar: string
 	roles: Array<{ id: number; code: string; name: string }>
 	permissions: string[]
 }

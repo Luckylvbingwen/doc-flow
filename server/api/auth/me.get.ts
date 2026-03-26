@@ -42,10 +42,20 @@ export default defineEventHandler(async (event) => {
 		permissions = await getUserPermissions(user.id)
 	}
 
+	// 查询头像
+	let avatar = ''
+	try {
+		const rows = await prisma.$queryRawUnsafe<{ avatar_url: string | null }[]>(
+			'SELECT avatar_url FROM doc_users WHERE id = ? LIMIT 1', user.id,
+		)
+		avatar = rows[0]?.avatar_url || ''
+	} catch { /* 忽略 */ }
+
 	return ok({
 		id: user.id,
 		name: user.name,
 		email: user.email,
+		avatar,
 		roles: roles.map(r => ({ id: Number(r.id), code: r.code, name: r.name })),
 		permissions
 	})

@@ -17,6 +17,7 @@ export interface LoginResult {
 		name: string
 		email: string | null
 		feishuOpenId: string
+		avatar: string
 	}
 }
 
@@ -37,5 +38,24 @@ export function apiLogout() {
 export function apiGetProfile(token: string, tokenType = 'Bearer') {
 	return $fetch<ApiResult<UserProfile>>('/api/auth/me', {
 		headers: { Authorization: `${tokenType} ${token}` },
+	})
+}
+
+// ================================================================
+//  飞书 OAuth
+// ================================================================
+
+/** 获取飞书授权跳转 URL */
+export function apiFeishuAuthUrl(redirectUri: string) {
+	return $fetch<ApiResult<{ authUrl: string; state: string }>>('/api/auth/feishu/auth-url', {
+		query: { redirectUri },
+	})
+}
+
+/** 飞书 OAuth 回调 */
+export function apiFeishuCallback(params: { code: string; state: string }) {
+	return $fetch<ApiResult<LoginResult>>('/api/auth/feishu/callback', {
+		method: 'POST',
+		body: params,
 	})
 }
