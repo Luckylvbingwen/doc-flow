@@ -47,10 +47,10 @@
       </el-scrollbar>
 
       <div class="pf-user">
-        <div class="pf-user-avatar">{{ userInitial }}</div>
+        <div class="pf-user-avatar"><ClientOnly>{{ userInitial }}<template #fallback>访</template></ClientOnly></div>
         <div class="pf-user-info">
-          <div class="pf-user-name">{{ authStore.user?.name || '未登录用户' }}</div>
-          <div class="pf-user-role">{{ authStore.user?.email || '请先登录' }}</div>
+          <div class="pf-user-name"><ClientOnly>{{ authStore.user?.name || '未登录用户' }}<template #fallback>加载中…</template></ClientOnly></div>
+          <div class="pf-user-role"><ClientOnly>{{ authStore.user?.email || '请先登录' }}<template #fallback>&nbsp;</template></ClientOnly></div>
         </div>
       </div>
     </aside>
@@ -70,32 +70,45 @@
             </el-icon>
           </button>
 
-          <el-dropdown
-            v-if="authStore.isAuthenticated && authStore.user"
-            trigger="click"
-            placement="bottom-end"
-            @command="handleUserMenuCommand"
-          >
-            <button class="pf-user-entry" type="button">
-              <span class="pf-user-entry-avatar">{{ userInitial }}</span>
-              <span class="pf-user-entry-name">{{ authStore.user.name }}</span>
-              <el-icon class="pf-user-entry-caret"><ArrowDownBold /></el-icon>
-            </button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="profile">个人中心</el-dropdown-item>
-                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          <ClientOnly>
+            <el-dropdown
+              v-if="authStore.isAuthenticated && authStore.user"
+              trigger="click"
+              placement="bottom-end"
+              @command="handleUserMenuCommand"
+            >
+              <button class="pf-user-entry" type="button">
+                <span class="pf-user-entry-avatar">{{ userInitial }}</span>
+                <span class="pf-user-entry-name">{{ authStore.user.name }}</span>
+                <el-icon class="pf-user-entry-caret"><ArrowDownBold /></el-icon>
+              </button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                  <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
 
-          <NuxtLink v-else class="pf-btn ghost" to="/login">去登录</NuxtLink>
+            <NuxtLink v-else class="pf-btn ghost" to="/login">去登录</NuxtLink>
+          </ClientOnly>
         </div>
       </header>
 
       <el-scrollbar class="pf-content-scrollbar">
         <main class="pf-content">
-          <slot />
+          <div v-if="pageLoading" class="df-page-skeleton">
+            <div class="df-skeleton-block" style="width: 180px; height: 22px; border-radius: 4px; margin-bottom: 8px;" />
+            <div class="df-skeleton-block" style="width: 280px; height: 14px; border-radius: 4px; margin-bottom: 24px;" />
+            <div class="df-page-skeleton-cards">
+              <div v-for="i in 4" :key="i" class="df-page-skeleton-card">
+                <div class="df-skeleton-block" style="width: 60%; height: 12px; border-radius: 4px; margin-bottom: 12px;" />
+                <div class="df-skeleton-block" style="width: 40%; height: 28px; border-radius: 4px;" />
+              </div>
+            </div>
+            <div class="df-skeleton-block" style="width: 100%; height: 240px; border-radius: 12px; margin-top: 20px;" />
+          </div>
+          <slot v-else />
         </main>
       </el-scrollbar>
     </section>
@@ -156,6 +169,18 @@ const menuGroups = [
 const toggleSidebar = () => {
   appStore.toggleSidebarCollapsed()
 }
+
+// ── 页面切换骨架屏 ──
+const nuxtApp = useNuxtApp()
+const pageLoading = ref(false)
+
+nuxtApp.hook('page:start', () => {
+  pageLoading.value = true
+})
+
+nuxtApp.hook('page:finish', () => {
+  pageLoading.value = false
+})
 
 onMounted(() => {
   appStore.hydrateSidebarCollapsed()
