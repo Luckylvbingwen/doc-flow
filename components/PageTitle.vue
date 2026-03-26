@@ -3,6 +3,8 @@
 		<div class="page-title-text">
 			<div class="page-title-main">
 				<h2>{{ title }}</h2>
+				<el-button v-if="showRefresh" class="title-refresh-btn" link circle :icon="RefreshRight"
+					:loading="refreshing" @click="onRefresh" />
 				<slot name="after-title" />
 			</div>
 			<p v-if="subtitle">{{ subtitle }}</p>
@@ -14,10 +16,21 @@
 </template>
 
 <script setup>
-defineProps({
+import { RefreshRight } from '@element-plus/icons-vue'
+
+const props = defineProps({
 	title: { type: String, required: true },
-	subtitle: { type: String, default: '' }
+	subtitle: { type: String, default: '' },
+	showRefresh: { type: Boolean, default: true },
+	refreshing: { type: Boolean, default: false }
 })
+
+const emit = defineEmits(['refresh'])
+
+const onRefresh = () => {
+	if (props.refreshing) return
+	emit('refresh')
+}
 </script>
 
 <style lang="scss" scoped>
@@ -32,6 +45,15 @@ defineProps({
 		display: flex;
 		align-items: center;
 		gap: 8px;
+
+		.title-refresh-btn {
+			font-size: 16px;
+			color: var(--df-subtext);
+
+			&:hover {
+				color: var(--el-color-primary);
+			}
+		}
 	}
 
 	&-text {

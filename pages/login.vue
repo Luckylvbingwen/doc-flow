@@ -60,6 +60,7 @@
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { Lock, User } from '@element-plus/icons-vue'
+import { apiLogin } from '~/api/auth'
 import loginBgSrc from '~/assets/images/login-bg.png'
 import loginHeaderSrc from '~/assets/images/login-header.png'
 
@@ -94,27 +95,9 @@ const handleSubmit = async () => {
 
 	submitting.value = true
 	try {
-		const response = await $fetch<{
-			success: boolean
-			code: string
-			message: string
-			data?: {
-				token: string
-				tokenType: 'Bearer'
-				expiresIn: number
-				user: {
-					id: number
-					name: string
-					email: string | null
-					feishuOpenId: string
-				}
-			}
-		}>('/api/auth/login', {
-			method: 'POST',
-			body: {
-				account: form.account,
-				password: form.password
-			}
+		const response = await apiLogin({
+			account: form.account,
+			password: form.password,
 		})
 
 		if (!response.success || !response.data) {
@@ -123,6 +106,8 @@ const handleSubmit = async () => {
 		}
 
 		authStore.setSession(response.data)
+		// 加载用户角色与权限
+		await authStore.fetchProfile().catch(() => {})
 		ElMessage.success('登录成功，正在进入系统')
 		await navigateTo('/docs')
 	} catch (error: unknown) {

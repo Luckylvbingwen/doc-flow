@@ -1,34 +1,56 @@
 <template>
 	<section class="pf-page-stack">
-		<PageTitle title="系统管理" subtitle="组织、角色、权限与配置" />
+		<PageTitle title="系统管理" subtitle="角色权限与用户授权" :refreshing="refreshing" @refresh="onRefresh">
+			<template #after-title>
+				<ClientOnly>
+					<el-tag v-if="authStore.roles.length" type="info" size="small" disable-transitions>
+						{{ authStore.roles.map(r => r.name).join('、') }}
+					</el-tag>
+				</ClientOnly>
+			</template>
+		</PageTitle>
 
-		<div class="pf-card">
-			<div class="pf-tabs">
-				<span class="active">组织与角色</span>
-				<span>权限策略</span>
-				<span>系统配置</span>
-			</div>
+		<TabBar v-model="activeTab" :tabs="tabs" />
 
-			<div class="admin-grid">
-				<article class="pf-card sub">
-					<h5>组织管理</h5>
-					<p>部门、产品线、团队层级维护入口。</p>
-				</article>
-				<article class="pf-card sub">
-					<h5>角色管理</h5>
-					<p>系统管理员、部门管理员、组负责人等角色策略。</p>
-				</article>
-				<article class="pf-card sub">
-					<h5>系统设置</h5>
-					<p>回收站保留天数、通知策略、默认审批流。</p>
-				</article>
-			</div>
+		<div class="admin-content">
+			<AdminRoleManager v-if="activeTab === 'roles'" ref="roleManagerRef" />
+			<AdminUserRoleManager v-else-if="activeTab === 'users'" ref="userRoleManagerRef" />
 		</div>
 	</section>
 </template>
 
-<script setup>
+<script setup lang="ts">
+const authStore = useAuthStore()
+
+const activeTab = ref('roles')
+const roleManagerRef = ref<{ refresh: () => Promise<void>; loading: boolean } | null>(null)
+const userRoleManagerRef = ref<{ refresh: () => Promise<void>; loading: boolean } | null>(null)
+
+const refreshing = computed(() => {
+	if (activeTab.value === 'roles') return roleManagerRef.value?.loading ?? false
+	return userRoleManagerRef.value?.loading ?? false
+})
+
+const tabs = [
+	{ label: '角色管理', value: 'roles' },
+	{ label: '用户授权', value: 'users' }
+]
+
+const onRefresh = () => {
+	if (activeTab.value === 'roles') {
+		roleManagerRef.value?.refresh()
+	} else {
+		userRoleManagerRef.value?.refresh()
+	}
+}
+
 definePageMeta({
 	layout: 'prototype'
 })
 </script>
+
+<style lang="scss" scoped>
+.admin-content {
+	margin-top: 14px;
+}
+</style>

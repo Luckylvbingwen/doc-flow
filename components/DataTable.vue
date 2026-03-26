@@ -68,6 +68,7 @@
 
 <script setup>
 import { Search } from '@element-plus/icons-vue'
+import { formatTime } from '~/utils/format'
 
 const props = defineProps({
 	// 数据
@@ -171,12 +172,10 @@ const getEnumType = (value, enumMap) => {
 
 // ── 日期格式化 ──
 const formatDate = (value, format) => {
-	if (!value) return '-'
-	const d = new Date(value)
-	if (Number.isNaN(d.getTime())) return value
-	if (format === 'date') return d.toLocaleDateString('zh-CN')
-	if (format === 'datetime') return d.toLocaleString('zh-CN')
-	return value
+	if (format === 'date') return formatTime(value, 'YYYY-MM-DD')
+	if (format === 'datetime') return formatTime(value, 'YYYY-MM-DD HH:mm:ss')
+	// format 为自定义模板
+	return formatTime(value, format)
 }
 
 // ── 暴露 ref 供父组件调用 ──

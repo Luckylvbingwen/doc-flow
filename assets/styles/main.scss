@@ -30,11 +30,37 @@
   box-sizing: border-box;
 }
 
+/* ── 全局滚动条美化 ── */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d8 transparent;
+}
+
 body {
   margin: 0;
   font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   color: var(--df-text);
   background: radial-gradient(circle at top right, #eef2ff 0%, #f5f5f5 28%, #f5f5f5 100%);
+  overflow-x: auto;
 }
 
 a {
@@ -45,10 +71,12 @@ a {
 .pf-app {
   display: flex;
   height: 100vh;
+  min-width: 768px;
 }
 
 .pf-sidebar {
   width: 240px;
+  flex-shrink: 0;
   background: var(--df-panel);
   color: #303133;
   display: flex;
@@ -196,6 +224,36 @@ a {
   transition: opacity 0.18s ease;
 }
 
+.pf-nav-badge {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.pf-sidebar.collapsed .pf-nav-badge {
+  position: absolute;
+  top: 2px;
+  right: -2px;
+  margin-left: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
+  line-height: 16px;
+  border-radius: 8px;
+}
+
 .pf-sidebar.collapsed .pf-nav {
   padding-left: 6px;
   padding-right: 6px;
@@ -220,6 +278,7 @@ a {
   min-height: 40px;
   width: 40px;
   margin: 0 auto 3px;
+  position: relative;
 }
 
 .pf-sidebar.collapsed .pf-nav-label {
@@ -306,6 +365,7 @@ a {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow: hidden;
 }
 
 .pf-header {
@@ -762,87 +822,6 @@ a {
   }
 }
 
-@media (max-width: 860px) {
-  .pf-app {
-    flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-  }
-
-  .pf-sidebar {
-    width: 100%;
-  }
-
-  .pf-sidebar.collapsed {
-    width: 100%;
-  }
-
-  .pf-sidebar-toggle {
-    display: none;
-  }
-
-  .pf-sidebar.collapsed .pf-nav-title {
-    display: block;
-  }
-
-  .pf-sidebar.collapsed .pf-nav-item {
-    justify-content: flex-start;
-    padding-left: 12px;
-    padding-right: 12px;
-    gap: 10px;
-  }
-
-  .pf-sidebar.collapsed .pf-nav-label {
-    display: inline;
-  }
-
-  .pf-sidebar.collapsed .pf-nav-icon {
-    font-size: 16px;
-  }
-
-  .pf-sidebar.collapsed .pf-user {
-    justify-content: flex-start;
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
-  .pf-nav {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-  }
-
-  .pf-nav-title {
-    grid-column: 1 / -1;
-  }
-
-  .pf-main {
-    min-height: calc(100vh - 280px);
-  }
-
-  .pf-header {
-    height: auto;
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 12px;
-  }
-
-  .pf-content {
-    padding: 12px;
-  }
-
-  .pf-stat-grid,
-  .repo-grid,
-  .admin-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .file-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
 /* =========================
    Design System V2 Overrides
    ========================= */
@@ -1096,14 +1075,6 @@ body {
 }
 
 @media (max-width: 860px) {
-  .pf-header {
-    padding: 12px 14px;
-  }
-
-  .pf-content {
-    padding: 14px;
-  }
-
   .pf-card {
     padding: 14px;
   }

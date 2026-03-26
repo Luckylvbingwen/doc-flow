@@ -9,7 +9,8 @@ export default defineEventHandler(async (event) => {
 
 	// 白名单：不需要鉴权的接口
 	if (
-		path.startsWith('/api/auth/') ||
+		path === '/api/auth/login' ||
+		path === '/api/auth/logout' ||
 		path === '/api/health' ||
 		!path.startsWith('/api/')
 	) {

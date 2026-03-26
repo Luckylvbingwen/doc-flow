@@ -159,6 +159,7 @@ const menuGroups = [
 ]
 
 const toggleSidebar = () => {
+  _userManualToggle = true
   appStore.toggleSidebarCollapsed()
 }
 
@@ -177,7 +178,28 @@ nuxtApp.hook('page:finish', () => {
 onMounted(() => {
   appStore.hydrateSidebarCollapsed()
   appStore.hydrateDarkMode()
+  handleResize()
+  window.addEventListener('resize', handleResize)
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+})
+
+// ── 响应式侧栏折叠 ──
+const COLLAPSE_BREAKPOINT = 1024
+let _userManualToggle = false
+
+const handleResize = () => {
+  const narrow = window.innerWidth < COLLAPSE_BREAKPOINT
+  if (narrow && !isSidebarCollapsed.value) {
+    appStore.setSidebarCollapsed(true)
+    _userManualToggle = false
+  } else if (!narrow && isSidebarCollapsed.value && !_userManualToggle) {
+    // 宽屏且非用户手动折叠 → 自动展开
+    appStore.setSidebarCollapsed(false)
+  }
+}
 
 const handleLogout = async () => {
   try {

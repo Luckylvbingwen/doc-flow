@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { apiGetProfile } from '~/api/auth'
 
 const AUTH_STORAGE_KEY = 'docflow:auth:session'
 
@@ -16,12 +17,20 @@ interface AuthSession {
 	user: AuthUser
 }
 
+interface AuthRole {
+	id: number
+	code: string
+	name: string
+}
+
 export const useAuthStore = defineStore('auth', {
 	state: () => ({
 		token: '',
 		tokenType: 'Bearer' as 'Bearer',
 		expiresAt: 0,
-		user: null as AuthUser | null
+		user: null as AuthUser | null,
+		roles: [] as AuthRole[],
+		permissions: [] as string[]
 	}),
 	getters: {
 		isAuthenticated: (state) => {
@@ -43,21 +52,15 @@ export const useAuthStore = defineStore('auth', {
 				return
 			}
 
-			window.localStorage.setItem(
-				AUTH_STORAGE_KEY,
-				JSON.stringify({
-					token: this.token,
-					tokenType: this.tokenType,
-					expiresAt: this.expiresAt,
-					user: this.user
-				})
-			)
+			this._persistToStorage()
 		},
 		clearSession() {
 			this.token = ''
 			this.tokenType = 'Bearer'
 			this.expiresAt = 0
 			this.user = null
+			this.roles = []
+			this.permissions = []
 
 			if (!import.meta.client) {
 				return
@@ -82,12 +85,16 @@ export const useAuthStore = defineStore('auth', {
 					tokenType?: 'Bearer'
 					expiresAt?: number
 					user?: AuthUser | null
+					roles?: AuthRole[]
+					permissions?: string[]
 				}
 
 				this.token = parsed.token || ''
 				this.tokenType = parsed.tokenType || 'Bearer'
 				this.expiresAt = parsed.expiresAt || 0
 				this.user = parsed.user || null
+				this.roles = parsed.roles || []
+				this.permissions = parsed.permissions || []
 
 				if (!this.isAuthenticated) {
 					this.clearSession()
@@ -95,6 +102,34 @@ export const useAuthStore = defineStore('auth', {
 			} catch {
 				this.clearSession()
 			}
+		},
+		/** 调用 /api/auth/me 刷新角色与权限 */
+		async fetchProfile() {
+			if (!this.isAuthenticated) return
+
+			const res = await apiGetProfile(this.token, this.tokenType)
+
+			if (res.success && res.data) {
+				this.roles = res.data.roles
+				this.permissions = res.data.permissions
+				this._persistToStorage()
+			}
+		},
+		/** 持久化完整会话到 localStorage */
+		_persistToStorage() {
+			if (!import.meta.client) return
+
+			window.localStorage.setItem(
+				AUTH_STORAGE_KEY,
+				JSON.stringify({
+					token: this.token,
+					tokenType: this.tokenType,
+					expiresAt: this.expiresAt,
+					user: this.user,
+					roles: this.roles,
+					permissions: this.permissions
+				})
+			)
 		}
 	}
 })
