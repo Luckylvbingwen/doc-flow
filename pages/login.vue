@@ -144,7 +144,7 @@ definePageMeta({
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .login-page {
 	position: relative;
 	min-height: 100vh;
@@ -199,44 +199,46 @@ definePageMeta({
 	min-height: 450px;
 	padding: 24px 30px 28px;
 	box-shadow: 0 18px 38px rgba(15, 48, 138, 0.24);
+
+	&-header {
+		width: 100%;
+		height: 92px;
+		object-fit: cover;
+		border-radius: 8px;
+		display: block;
+		margin-bottom: 16px;
+	}
 }
 
-.login-card-header {
-	width: 100%;
-	height: 92px;
-	object-fit: cover;
-	border-radius: 8px;
-	display: block;
-	margin-bottom: 16px;
-}
+.login-header {
+	h2 {
+		margin: 0;
+		text-align: center;
+		color: var(--df-primary);
+		font-size: 26px;
+		font-weight: 700;
+	}
 
-.login-header h2 {
-	margin: 0;
-	text-align: center;
-	color: var(--df-primary);
-	font-size: 26px;
-	font-weight: 700;
-}
-
-.login-header p {
-	margin: 8px 0 0;
-	color: var(--df-subtext);
-	font-size: 13px;
-	text-align: center;
+	p {
+		margin: 8px 0 0;
+		color: var(--df-subtext);
+		font-size: 13px;
+		text-align: center;
+	}
 }
 
 .login-form {
 	margin-top: 20px;
-}
 
-.login-form :deep(.el-form-item) {
-	margin-bottom: 18px;
-}
+	:deep(.el-form-item) {
+		margin-bottom: 18px;
+	}
 
-.login-form :deep(.el-input__wrapper) {
-	min-height: 42px;
-	border-radius: 6px;
-	box-shadow: 0 0 0 1px #d7dde9 inset;
+	:deep(.el-input__wrapper) {
+		min-height: 42px;
+		border-radius: 6px;
+		box-shadow: 0 0 0 1px #d7dde9 inset;
+	}
 }
 
 .login-row {
@@ -249,10 +251,10 @@ definePageMeta({
 .preview-link {
 	font-size: 12px;
 	color: #6b7280;
-}
 
-.preview-link:hover {
-	color: var(--df-primary);
+	&:hover {
+		color: var(--df-primary);
+	}
 }
 
 .login-submit {
@@ -270,16 +272,16 @@ definePageMeta({
 	border-radius: 10px;
 	border: 1px dashed #c7d2fe;
 	background: #eef2ff;
-}
 
-.login-tips p {
-	margin: 0;
-	font-size: 12px;
-	color: #4338ca;
-}
+	p {
+		margin: 0;
+		font-size: 12px;
+		color: #4338ca;
 
-.login-tips p+p {
-	margin-top: 4px;
+		& + p {
+			margin-top: 4px;
+		}
+	}
 }
 
 @media (max-width: 900px) {

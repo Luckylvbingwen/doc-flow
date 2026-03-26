@@ -335,18 +335,20 @@ const onChangePwd = () => {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .profile-head {
 	display: flex;
 	align-items: center;
 	gap: 20px;
-}
 
-.profile-head-info h4 {
-	margin: 0 0 4px;
-	font-size: 18px;
-	font-weight: 600;
-	color: var(--df-text);
+	&-info {
+		h4 {
+			margin: 0 0 4px;
+			font-size: 18px;
+			font-weight: 600;
+			color: var(--df-text);
+		}
+	}
 }
 
 .profile-stats {
@@ -356,13 +358,13 @@ const onChangePwd = () => {
 	margin-top: 10px;
 	font-size: 13px;
 	color: var(--df-subtext);
-}
 
-.profile-stats strong {
-	font-size: 16px;
-	font-weight: 700;
-	color: var(--df-text);
-	margin-right: 2px;
+	strong {
+		font-size: 16px;
+		font-weight: 700;
+		color: var(--df-text);
+		margin-right: 2px;
+	}
 }
 
 .profile-join {
@@ -375,10 +377,10 @@ const onChangePwd = () => {
 	color: var(--df-primary);
 	cursor: pointer;
 	font-weight: 500;
-}
 
-.doc-title-link:hover {
-	text-decoration: underline;
+	&:hover {
+		text-decoration: underline;
+	}
 }
 
 /* 文档标签间距 */
@@ -389,19 +391,19 @@ const onChangePwd = () => {
 /* 抽屉内文档内容区域 */
 .drawer-doc-content {
 	margin-top: 20px;
-}
 
-.drawer-doc-content h5 {
-	font-size: 14px;
-	font-weight: 600;
-	color: var(--df-text);
-	margin: 0 0 8px;
-}
+	h5 {
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--df-text);
+		margin: 0 0 8px;
+	}
 
-.drawer-doc-content p {
-	font-size: 13px;
-	color: var(--df-subtext);
-	line-height: 1.7;
+	p {
+		font-size: 13px;
+		color: var(--df-subtext);
+		line-height: 1.7;
+	}
 }
 
 /* 安全设置 */
@@ -417,16 +419,16 @@ const onChangePwd = () => {
 	justify-content: space-between;
 	padding: 16px 0;
 	border-bottom: 1px solid var(--df-border);
-}
 
-.security-item:last-child {
-	border-bottom: none;
-}
+	&:last-child {
+		border-bottom: none;
+	}
 
-.security-item h5 {
-	margin: 0 0 4px;
-	font-size: 14px;
-	font-weight: 600;
-	color: var(--df-text);
+	h5 {
+		margin: 0 0 4px;
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--df-text);
+	}
 }
 </style>

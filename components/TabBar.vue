@@ -22,7 +22,7 @@ defineProps({
 const emit = defineEmits(['update:modelValue'])
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .df-tab-bar {
 	display: flex;
 	align-items: center;
@@ -30,16 +30,22 @@ const emit = defineEmits(['update:modelValue'])
 	gap: 16px;
 	padding: 8px 16px;
 	background: var(--df-panel);
-	border: 1px solid var(--df-border);
 	border-radius: 12px;
 	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
 
-.df-tab-bar-left {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	flex-wrap: wrap;
+	&-left {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		flex-wrap: wrap;
+	}
+
+	&-right {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-width: fit-content;
+	}
 }
 
 .df-tab-item {
@@ -56,26 +62,19 @@ const emit = defineEmits(['update:modelValue'])
 	transition: all 0.2s;
 	font-family: inherit;
 	line-height: 1.4;
-}
 
-.df-tab-item:hover {
-	color: var(--df-primary);
-	background: var(--df-primary-soft);
-}
+	&:hover {
+		color: var(--df-primary);
+		background: var(--df-primary-soft);
+	}
 
-.df-tab-item.active {
-	background: var(--df-primary);
-	color: #ffffff;
+	&.active {
+		background: var(--df-primary);
+		color: #ffffff;
+	}
 }
 
 .df-tab-count {
 	font-variant-numeric: tabular-nums;
-}
-
-.df-tab-bar-right {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	min-width: fit-content;
 }
 </style>

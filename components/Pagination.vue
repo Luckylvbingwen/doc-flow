@@ -54,7 +54,7 @@ const onPageChange = (page) => {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .df-pagination {
 	display: flex;
 	align-items: center;
@@ -62,59 +62,58 @@ const onPageChange = (page) => {
 	gap: 16px;
 	padding: 12px 16px;
 	background: var(--df-panel);
-	border: 1px solid var(--df-border);
 	border-radius: 12px;
 	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
 
-.df-pagination-left {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	font-size: 13px;
-	color: var(--df-subtext);
-	flex-wrap: wrap;
-}
+	&-left {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 13px;
+		color: var(--df-subtext);
+		flex-wrap: wrap;
+	}
 
-.df-pagination-summary {
-	color: var(--df-text);
-}
+	&-summary {
+		color: var(--df-text);
+	}
 
-.df-pagination-size-label,
-.df-pagination-size-unit {
-	color: var(--df-subtext);
-}
+	&-size-label,
+	&-size-unit {
+		color: var(--df-subtext);
+	}
 
-.df-pagination-size-select {
-	width: 72px;
-}
+	&-size-select {
+		width: 72px;
+	}
 
-.df-pagination :deep(.df-pagination-size-select .el-input__wrapper) {
-	border-radius: 8px;
-}
+	:deep(.df-pagination-size-select .el-input__wrapper) {
+		border-radius: 8px;
+	}
 
-.df-pagination :deep(.el-pager li),
-.df-pagination :deep(.btn-prev),
-.df-pagination :deep(.btn-next) {
-	min-width: 32px;
-	height: 32px;
-	line-height: 32px;
-	border: 1px solid var(--df-border);
-	border-radius: 8px;
-	background: var(--df-panel);
-	color: var(--df-subtext);
-	font-weight: 500;
-	margin: 0 2px;
-}
+	:deep(.el-pager li),
+	:deep(.btn-prev),
+	:deep(.btn-next) {
+		min-width: 32px;
+		height: 32px;
+		line-height: 32px;
+		border: 1px solid var(--df-border);
+		border-radius: 8px;
+		background: var(--df-panel);
+		color: var(--df-subtext);
+		font-weight: 500;
+		margin: 0 2px;
+	}
 
-.df-pagination :deep(.el-pager li.is-active) {
-	background: var(--df-primary);
-	border-color: var(--df-primary);
-	color: #fff;
-}
+	:deep(.el-pager li.is-active) {
+		background: var(--df-primary);
+		border-color: var(--df-primary);
+		color: #fff;
+	}
 
-.df-pagination :deep(.btn-prev:disabled),
-.df-pagination :deep(.btn-next:disabled) {
-	opacity: 0.45;
+	:deep(.btn-prev:disabled),
+	:deep(.btn-next:disabled) {
+		opacity: 0.45;
+	}
 }
 </style>

@@ -15,7 +15,7 @@ const config = useRuntimeConfig()
 const appName = config.public.appName
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .layout-root {
   min-height: 100vh;
 }

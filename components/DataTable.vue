@@ -78,7 +78,7 @@ const props = defineProps({
 	emptyText: { type: String, default: '暂无数据' },
 
 	// 外观
-	stripe: { type: Boolean, default: true },
+	stripe: { type: Boolean, default: false },
 	border: { type: Boolean, default: false },
 	height: { type: [String, Number], default: undefined },
 	maxHeight: { type: [String, Number], default: undefined },
@@ -189,75 +189,3 @@ defineExpose({
 	toggleRowSelection: (row, selected) => tableRef.value?.toggleRowSelection(row, selected)
 })
 </script>
-
-<style scoped>
-.df-data-table {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-}
-
-/* ── 搜索工具栏（独立块） ── */
-.df-table-toolbar {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	padding: 12px 16px;
-	background: var(--df-panel);
-	border: 1px solid var(--df-border);
-	border-radius: 12px;
-	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.df-table-toolbar-left {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	flex: 1;
-}
-
-.df-table-toolbar-right {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-}
-
-.df-table-search {
-	width: 280px;
-}
-
-/* ── 表格区（独立块） ── */
-.df-table-wrapper {
-	background: var(--df-panel);
-	border: 1px solid var(--df-border);
-	border-radius: 12px;
-	overflow: hidden;
-	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.df-data-table :deep(.el-table) {
-	--el-table-border-color: var(--df-border);
-	border-radius: 0;
-}
-
-.df-data-table :deep(.el-table::before),
-.df-data-table :deep(.el-table::after) {
-	display: none;
-}
-
-.df-data-table :deep(.el-table__inner-wrapper::before) {
-	display: none;
-}
-
-.df-data-table :deep(.el-table th.el-table__cell) {
-	background: var(--df-surface);
-	font-size: 13px;
-	font-weight: 600;
-	color: var(--df-subtext);
-}
-
-.df-data-table :deep(.el-table__body tr:hover > td.el-table__cell) {
-	background: var(--df-primary-soft);
-}
-</style>

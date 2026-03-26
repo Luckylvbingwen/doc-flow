@@ -398,7 +398,6 @@ a {
 
 .pf-card {
   background: var(--df-panel);
-  border: 1px solid var(--df-border);
   border-radius: 12px;
   padding: 16px;
   box-shadow: var(--df-shadow);
@@ -540,7 +539,6 @@ a {
 }
 
 .repo-card {
-  border: 1px solid var(--df-border);
   border-radius: 10px;
   padding: 14px;
   background: var(--df-panel);
@@ -632,13 +630,11 @@ a {
 }
 
 .notice-item {
-  border: 1px solid var(--df-border);
   border-radius: 10px;
   padding: 12px;
 }
 
 .notice-item.unread {
-  border-color: #c7d2fe;
   background: var(--df-primary-soft);
 }
 
@@ -690,7 +686,6 @@ a {
 .login-card {
   width: min(420px, 100%);
   background: var(--df-panel);
-  border: 1px solid var(--df-border);
   border-radius: 12px;
   padding: 20px;
   display: flex;
@@ -995,7 +990,6 @@ body {
 
 .pf-card {
   border-radius: var(--df-radius-md);
-  border: 1px solid var(--df-border);
   padding: 18px;
   box-shadow: var(--df-shadow);
 }
@@ -1066,7 +1060,6 @@ body {
 }
 
 .notice-item.unread {
-  border-color: #c7d2fe;
   background: #eef2ff;
 }
 

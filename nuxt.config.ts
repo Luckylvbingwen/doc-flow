@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   elementPlus: {
     importStyle: 'scss'
   },
-  css: ['~/assets/styles/main.scss', '~/assets/styles/dark.scss'],
+  css: ['~/assets/styles/main.scss', '~/assets/styles/components.scss', '~/assets/styles/dark.scss'],
   vite: {
     css: {
       preprocessorOptions: {
