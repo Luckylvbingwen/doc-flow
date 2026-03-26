@@ -51,7 +51,6 @@
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		flex: 1;
 	}
 
 	&-right {
@@ -88,7 +87,7 @@
 }
 
 /* ── 搜索框 ── */
-.df-table-search {
+.df-table-search.el-input {
 	width: var(--df-search-width, 280px);
 
 	.el-input__wrapper {

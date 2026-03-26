@@ -34,7 +34,7 @@
 				v-model:pageSize="docPageSize" :loading="docLoading" show-search search-placeholder="搜索文档标题…"
 				:action-width="160" @search="onDocSearch" @row-click="onDocRowClick">
 				<template #toolbar>
-					<el-button size="small" @click="onExportClick">
+					<el-button @click="onExportClick">
 						<el-icon>
 							<Download />
 						</el-icon>导出列表

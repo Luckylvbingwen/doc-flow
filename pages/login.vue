@@ -135,10 +135,6 @@ const handleSubmit = async () => {
 	}
 }
 
-onMounted(() => {
-	authStore.hydrateSession()
-})
-
 definePageMeta({
 	layout: 'auth'
 })

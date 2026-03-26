@@ -160,7 +160,6 @@ const toggleSidebar = () => {
 onMounted(() => {
   appStore.hydrateSidebarCollapsed()
   appStore.hydrateDarkMode()
-  authStore.hydrateSession()
 })
 
 const handleLogout = async () => {
