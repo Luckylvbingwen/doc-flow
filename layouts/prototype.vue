@@ -45,14 +45,6 @@
         </template>
       </nav>
       </el-scrollbar>
-
-      <div class="pf-user">
-        <div class="pf-user-avatar"><ClientOnly>{{ userInitial }}<template #fallback>访</template></ClientOnly></div>
-        <div class="pf-user-info">
-          <div class="pf-user-name"><ClientOnly>{{ authStore.user?.name || '未登录用户' }}<template #fallback>加载中…</template></ClientOnly></div>
-          <div class="pf-user-role"><ClientOnly>{{ authStore.user?.email || '请先登录' }}<template #fallback>&nbsp;</template></ClientOnly></div>
-        </div>
-      </div>
     </aside>
 
     <section class="pf-main">

@@ -63,6 +63,7 @@ export const useAuthStore = defineStore('auth', {
 				return
 			}
 
+			wsDisconnect()
 			window.localStorage.removeItem(AUTH_STORAGE_KEY)
 		},
 		hydrateSession() {
