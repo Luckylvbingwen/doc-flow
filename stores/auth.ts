@@ -1,28 +1,8 @@
 import { defineStore } from 'pinia'
 import { apiGetProfile } from '~/api/auth'
+import type { AuthUser, AuthSession, AuthRole } from '~/types/api'
 
 const AUTH_STORAGE_KEY = 'docflow:auth:session'
-
-interface AuthUser {
-	id: number
-	name: string
-	email: string | null
-	feishuOpenId: string
-	avatar: string
-}
-
-interface AuthSession {
-	token: string
-	tokenType: 'Bearer'
-	expiresIn: number
-	user: AuthUser
-}
-
-interface AuthRole {
-	id: number
-	code: string
-	name: string
-}
 
 export const useAuthStore = defineStore('auth', {
 	state: () => ({

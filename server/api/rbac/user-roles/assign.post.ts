@@ -2,7 +2,7 @@
  * POST /api/rbac/user-roles/assign
  * 为用户分配角色
  */
-import { prisma } from '../../../utils/prisma'
+import { prisma } from '~/server/utils/prisma'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:assign')

@@ -5,15 +5,8 @@
  * - requirePermission: 接口级权限校验（无权限返回 403）
  */
 import type { H3Event } from 'h3'
-import { prisma } from './prisma'
-
-interface RoleCodeRow {
-	code: string
-}
-
-interface PermissionCodeRow {
-	code: string
-}
+import { prisma } from '~/server/utils/prisma'
+import type { RoleCodeRow, PermissionCodeRow } from '~/server/types/rbac'
 
 /** 获取用户的角色 code 列表 */
 export async function getUserRoleCodes(userId: number): Promise<string[]> {

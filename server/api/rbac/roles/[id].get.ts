@@ -2,26 +2,8 @@
  * GET /api/rbac/roles/:id
  * 获取角色详情（含已分配的权限列表）
  */
-import { prisma } from '../../../utils/prisma'
-
-interface RoleDetailRow {
-	id: bigint | number
-	code: string
-	name: string
-	description: string | null
-	is_system: number
-	status: number
-	created_at: Date
-}
-
-interface PermRow {
-	id: bigint | number
-	code: string
-	name: string
-	module: string
-	description: string | null
-	sort_order: number
-}
+import { prisma } from '~/server/utils/prisma'
+import type { RoleDetailRow, PermRow } from '~/server/types/rbac'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:read')

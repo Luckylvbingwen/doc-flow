@@ -37,6 +37,7 @@ export interface AuthUser {
 	name: string
 	email: string | null
 	feishuOpenId: string
+	avatar: string
 }
 
 /** 登录响应 data */
@@ -45,4 +46,28 @@ export interface LoginData {
 	tokenType: 'Bearer'
 	expiresIn: number
 	user: AuthUser
+}
+
+/** 前端会话结构（localStorage 持久化） */
+export interface AuthSession {
+	token: string
+	tokenType: 'Bearer'
+	expiresIn: number
+	user: AuthUser
+}
+
+/** 角色简要信息 */
+export interface AuthRole {
+	id: number
+	code: string
+	name: string
+}
+
+/** 验证码数据（GET /api/auth/captcha 返回） */
+export interface CaptchaData {
+	svg: string
+	token: string
+	prompt: string
+	width: number
+	height: number
 }

@@ -5,12 +5,7 @@
  */
 import type { Peer } from 'crossws'
 import type { WsServerMessage } from '~/types/ws'
-
-/** peer 扩展信息 */
-interface PeerMeta {
-	userId: number
-	connectedAt: number
-}
+import type { PeerMeta } from '~/server/types/ws'
 
 /** userId → Set<peerId> */
 const userPeers = new Map<number, Set<string>>()

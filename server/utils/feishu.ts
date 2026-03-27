@@ -6,6 +6,14 @@
  *
  * 飞书开放平台文档：https://open.feishu.cn/document/server-docs
  */
+import type {
+	FeishuApiResponse,
+	FeishuOAuthTokenResponse,
+	FeishuUserInfoResponse,
+	FeishuDept,
+	FeishuContactUser,
+	FeishuSyncResult,
+} from '~/server/types/feishu'
 
 const FEISHU_BASE_URL = 'https://open.feishu.cn/open-apis'
 
@@ -59,12 +67,6 @@ export async function getFeishuTenantToken(): Promise<string> {
 // ================================================================
 //  通用请求
 // ================================================================
-
-interface FeishuApiResponse {
-	code: number
-	msg: string
-	data?: Record<string, unknown>
-}
 
 /** 带鉴权的 GET 请求 */
 export async function feishuGet<T = Record<string, unknown>>(
@@ -181,31 +183,6 @@ export async function feishuSendCard(openId: string, card: Record<string, unknow
 //  OAuth — 授权码换 token + 获取用户信息
 // ================================================================
 
-interface FeishuOAuthTokenResponse {
-	code: number
-	msg: string
-	data: {
-		access_token: string
-		token_type: string
-		expires_in: number
-		refresh_token: string
-	}
-}
-
-interface FeishuUserInfo {
-	code: number
-	msg: string
-	data: {
-		open_id: string
-		union_id: string
-		user_id: string
-		name: string
-		avatar_url: string
-		email?: string
-		mobile?: string
-	}
-}
-
 /**
  * 飞书 OAuth 授权码换取用户信息
  * 流程：app_access_token → user_access_token → user_info
@@ -244,7 +221,7 @@ export async function feishuCodeToUser(code: string) {
 	}
 
 	// 第三步：获取用户信息
-	const userRes = await $fetch<FeishuUserInfo>(
+	const userRes = await $fetch<FeishuUserInfoResponse>(
 		`${FEISHU_BASE_URL}/authen/v1/user_info`,
 		{
 			method: 'GET',
@@ -265,4 +242,183 @@ export async function feishuCodeToUser(code: string) {
 		email: userRes.data.email || '',
 		mobile: userRes.data.mobile || '',
 	}
+}
+
+// ================================================================
+//  通讯录同步
+// ================================================================
+
+/** 递归拉取所有子部门 */
+async function fetchAllDepartments(parentId = '0'): Promise<FeishuDept[]> {
+	const all: FeishuDept[] = []
+
+	async function recurse(pid: string) {
+		let pageToken = ''
+		do {
+			const query: Record<string, string> = {
+				department_id_type: 'open_department_id',
+				page_size: '50',
+			}
+			if (pageToken) query.page_token = pageToken
+
+			const data = await feishuGet<{
+				items?: FeishuDept[]
+				page_token?: string
+				has_more?: boolean
+			}>(`/contact/v3/departments/${pid}/children`, query)
+
+			for (const dept of data.items || []) {
+				all.push(dept)
+				const deptId = dept.open_department_id || dept.department_id || ''
+				if (deptId) await recurse(deptId)
+			}
+
+			pageToken = data.page_token || ''
+		} while (pageToken)
+	}
+
+	await recurse(parentId)
+	return all
+}
+
+/** 拉取某部门下的全部用户（自动翻页） */
+async function fetchUsersByDepartment(departmentId: string): Promise<FeishuContactUser[]> {
+	const users: FeishuContactUser[] = []
+	let pageToken = ''
+
+	do {
+		const query: Record<string, string> = {
+			department_id: departmentId,
+			page_size: '50',
+			department_id_type: 'open_department_id',
+			user_id_type: 'user_id',
+		}
+		if (pageToken) query.page_token = pageToken
+
+		const data = await feishuGet<{
+			items?: FeishuContactUser[]
+			page_token?: string
+			has_more?: boolean
+		}>('/contact/v3/users/find_by_department', query)
+
+		for (const u of data.items || []) {
+			users.push(u)
+		}
+
+		pageToken = data.page_token || ''
+	} while (pageToken)
+
+	return users
+}
+
+/** 遍历所有部门拉取全部用户（去重） */
+async function fetchAllUsers(departments: FeishuDept[]): Promise<Map<string, FeishuContactUser>> {
+	const userMap = new Map<string, FeishuContactUser>()
+
+	const rootUsers = await fetchUsersByDepartment('0')
+	for (const u of rootUsers) {
+		if (u.user_id && !userMap.has(u.user_id)) userMap.set(u.user_id, u)
+	}
+
+	for (const dept of departments) {
+		const deptId = dept.open_department_id || ''
+		if (!deptId) continue
+		const users = await fetchUsersByDepartment(deptId)
+		for (const u of users) {
+			if (u.user_id && !userMap.has(u.user_id)) userMap.set(u.user_id, u)
+		}
+	}
+
+	return userMap
+}
+
+export type { FeishuSyncResult } from '~/server/types/feishu'
+
+/**
+ * 执行飞书通讯录同步（供 API 接口和定时任务共用）
+ * 流程：验证 token → 拉取部门树 → 遍历拉取用户 → upsert → 标记已离职
+ */
+export async function feishuSyncContacts(): Promise<FeishuSyncResult> {
+	const { prisma } = await import('./prisma')
+
+	// 1. 验证 token
+	await getFeishuTenantToken()
+
+	// 2. 拉取部门树
+	const departments = await fetchAllDepartments('0')
+
+	// 3. 拉取全部用户
+	const userMap = await fetchAllUsers(departments)
+
+	if (userMap.size === 0) {
+		return { total: 0, departments: departments.length, created: 0, updated: 0, hidden: 0 }
+	}
+
+	// 4. upsert 到 doc_feishu_users
+	let created = 0
+	let updated = 0
+	const syncedUserIds = new Set<string>()
+
+	for (const [feishuUserId, fu] of userMap) {
+		syncedUserIds.add(feishuUserId)
+
+		const openId = fu.open_id || ''
+		const unionId = fu.union_id || ''
+		const name = fu.name || ''
+		const enName = fu.en_name || ''
+		const email = fu.email || ''
+		const mobile = (fu.mobile || '').replace(/^\+86\s*/, '')
+		const avatar = fu.avatar?.avatar_origin || fu.avatar?.avatar_240 || ''
+		const deptIds = JSON.stringify(fu.department_ids || [])
+
+		const fsStatus = fu.status || {}
+		const isActive = fsStatus.is_activated !== false
+		const isResigned = fsStatus.is_resigned === true
+		const isFrozen = fsStatus.is_frozen === true
+		const localStatus = (isActive && !isResigned && !isFrozen) ? 'normal' : 'hidden'
+		const username = enName || name
+
+		const existing = await prisma.$queryRawUnsafe<{ id: number }[]>(
+			'SELECT id FROM doc_feishu_users WHERE feishu_user_id = ? LIMIT 1',
+			feishuUserId,
+		)
+
+		if (existing.length > 0) {
+			await prisma.$executeRawUnsafe(
+				`UPDATE doc_feishu_users SET
+					username = ?, nickname = ?, email = ?, mobile = ?,
+					avatar = ?, status = ?, feishu_open_id = ?,
+					feishu_union_id = ?, feishu_department_ids = ?
+				WHERE feishu_user_id = ?`,
+				username, name, email, mobile,
+				avatar, localStatus, openId,
+				unionId, deptIds, feishuUserId,
+			)
+			updated++
+		} else {
+			await prisma.$executeRawUnsafe(
+				`INSERT INTO doc_feishu_users
+					(username, nickname, email, mobile, avatar, status,
+					 feishu_open_id, feishu_union_id, feishu_user_id, feishu_department_ids)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				username, name, email, mobile, avatar, localStatus,
+				openId, unionId, feishuUserId, deptIds,
+			)
+			created++
+		}
+	}
+
+	// 5. 将飞书侧已不存在的用户标记为 hidden
+	let hidden = 0
+	if (syncedUserIds.size > 0) {
+		const placeholders = Array.from(syncedUserIds).map(() => '?').join(',')
+		const result = await prisma.$executeRawUnsafe(
+			`UPDATE doc_feishu_users SET status = 'hidden'
+			 WHERE status = 'normal' AND feishu_user_id NOT IN (${placeholders})`,
+			...Array.from(syncedUserIds),
+		)
+		hidden = result
+	}
+
+	return { total: userMap.size, departments: departments.length, created, updated, hidden }
 }

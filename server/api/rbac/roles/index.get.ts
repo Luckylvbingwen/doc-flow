@@ -2,19 +2,8 @@
  * GET /api/rbac/roles
  * 角色列表（含权限数 & 用户数）
  */
-import { prisma } from '../../../utils/prisma'
-
-interface RoleRow {
-	id: bigint | number
-	code: string
-	name: string
-	description: string | null
-	is_system: number
-	status: number
-	permission_count: bigint | number
-	user_count: bigint | number
-	created_at: Date
-}
+import { prisma } from '~/server/utils/prisma'
+import type { RoleListRow as RoleRow } from '~/server/types/rbac'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:read')

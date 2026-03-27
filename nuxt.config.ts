@@ -42,7 +42,12 @@ export default defineNuxtConfig({
   },
   nitro: {
     experimental: {
-      websocket: true
+      websocket: true,
+      tasks: true,
+    },
+    scheduledTasks: {
+      // 每天凌晨 2:00 自动同步飞书通讯录
+      '0 2 * * *': ['feishu:sync-contacts'],
     },
     routeRules: {
       '/api/**': {

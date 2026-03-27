@@ -2,11 +2,8 @@
  * DELETE /api/rbac/roles/:id
  * 软删除角色（系统内置角色不可删除）
  */
-import { prisma } from '../../../utils/prisma'
-
-interface RoleCheckRow {
-	is_system: number
-}
+import { prisma } from '~/server/utils/prisma'
+import type { RoleCheckRow } from '~/server/types/rbac'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:delete')

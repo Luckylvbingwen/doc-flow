@@ -84,14 +84,7 @@
 <script setup lang="ts">
 import { Refresh, RefreshLeft, Loading } from '@element-plus/icons-vue'
 import type { ApiResult } from '~/types/api'
-
-interface CaptchaData {
-	svg: string
-	token: string
-	prompt: string
-	width: number
-	height: number
-}
+import type { CaptchaData } from '~/types/api'
 
 const emit = defineEmits<{
 	confirm: [clicks: { x: number; y: number }[], token: string]

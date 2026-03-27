@@ -2,18 +2,8 @@
  * GET /api/rbac/user-roles
  * 用户-角色关联列表
  */
-import { prisma } from '../../../utils/prisma'
-
-interface UserRoleRow {
-	id: bigint | number
-	user_id: bigint | number
-	user_name: string
-	user_email: string | null
-	role_id: bigint | number
-	role_code: string
-	role_name: string
-	created_at: Date
-}
+import { prisma } from '~/server/utils/prisma'
+import type { UserRoleRow } from '~/server/types/rbac'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:read')

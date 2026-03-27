@@ -2,11 +2,8 @@
  * POST /api/rbac/roles
  * 创建新角色
  */
-import { prisma } from '../../../utils/prisma'
-
-interface ExistRow {
-	cnt: bigint | number
-}
+import { prisma } from '~/server/utils/prisma'
+import type { ExistRow } from '~/server/types/rbac'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:create')

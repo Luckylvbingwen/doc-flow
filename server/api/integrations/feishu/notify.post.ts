@@ -8,13 +8,7 @@
  *   - text?: string         文本消息内容（msgType=text 时必填）
  *   - card?: object         卡片结构体（msgType=card 时必填）
  */
-
-interface NotifyBody {
-	openId?: string
-	msgType?: 'text' | 'card'
-	text?: string
-	card?: Record<string, unknown>
-}
+import type { NotifyBody } from '~/server/types/feishu'
 
 export default defineEventHandler(async (event) => {
 	const body = await readBody<NotifyBody>(event)

@@ -6,22 +6,8 @@
  *   - status: 'normal' | 'hidden' | 'all' (默认 normal)
  *   - keyword: 搜索关键词（模糊匹配 nickname/email）
  */
-import { prisma } from '../../../utils/prisma'
-
-interface FeishuUserRow {
-	id: number | bigint
-	username: string
-	nickname: string
-	email: string | null
-	mobile: string | null
-	avatar: string | null
-	status: string
-	feishu_open_id: string
-	feishu_union_id: string
-	feishu_user_id: string
-	linked_user_id: number | bigint | null
-	linked_user_name: string | null
-}
+import { prisma } from '~/server/utils/prisma'
+import type { FeishuUserRow } from '~/server/types/feishu'
 
 export default defineEventHandler(async (event) => {
 	const query = getQuery(event)

@@ -12,22 +12,10 @@
  * 5. 如果没有关联的 doc_users 则自动创建系统用户
  * 6. 签发 JWT，返回与密码登录相同的 session 结构
  */
-import { prisma } from '../../../utils/prisma'
-import { signToken } from '../../../utils/jwt'
+import { prisma } from '~/server/utils/prisma'
+import { signToken } from '~/server/utils/jwt'
 import { stateCache } from './auth-url.get'
-
-type CallbackBody = {
-	code?: string
-	state?: string
-}
-
-type DocUserRow = {
-	id: bigint | number
-	name: string
-	email: string | null
-	feishu_open_id: string
-	avatar_url: string | null
-}
+import type { CallbackBody, DocUserRow } from '~/server/types/auth'
 
 /** 将 '8h'/'24h'/'7d' 格式转为秒数 */
 function parseExpiresIn(value: string): number {

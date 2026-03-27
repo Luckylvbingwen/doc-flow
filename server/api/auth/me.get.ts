@@ -2,13 +2,8 @@
  * GET /api/auth/me
  * 获取当前登录用户信息（含角色与权限码）
  */
-import { prisma } from '../../utils/prisma'
-
-interface RoleRow {
-	id: bigint | number
-	code: string
-	name: string
-}
+import { prisma } from '~/server/utils/prisma'
+import type { MeRoleRow as RoleRow } from '~/server/types/auth'
 
 export default defineEventHandler(async (event) => {
 	const user = event.context.user

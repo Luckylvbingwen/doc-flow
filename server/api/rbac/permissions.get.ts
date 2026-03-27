@@ -2,16 +2,8 @@
  * GET /api/rbac/permissions
  * 获取全部权限列表（按 module 分组）
  */
-import { prisma } from '../../utils/prisma'
-
-interface PermRow {
-	id: bigint | number
-	code: string
-	name: string
-	module: string
-	description: string | null
-	sort_order: number
-}
+import { prisma } from '~/server/utils/prisma'
+import type { PermRow } from '~/server/types/rbac'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'permission:read')

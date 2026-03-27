@@ -2,12 +2,8 @@
  * PUT /api/rbac/roles/:id
  * 更新角色基本信息
  */
-import { prisma } from '../../../utils/prisma'
-
-interface RoleCheckRow {
-	is_system: number
-	code: string
-}
+import { prisma } from '~/server/utils/prisma'
+import type { RoleCheckRow } from '~/server/types/rbac'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:update')

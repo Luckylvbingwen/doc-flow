@@ -2,13 +2,8 @@
  * GET /api/rbac/users
  * 获取可分配角色的用户列表（简化版，用于下拉选择）
  */
-import { prisma } from '../../utils/prisma'
-
-interface UserRow {
-	id: bigint | number
-	name: string
-	email: string | null
-}
+import { prisma } from '~/server/utils/prisma'
+import type { UserRow } from '~/server/types/rbac'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:assign')

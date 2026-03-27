@@ -1,6 +1,7 @@
-import { prisma } from '../../utils/prisma'
-import { signToken } from '../../utils/jwt'
-import { verifyCaptcha, type ClickPoint } from '../../utils/captcha'
+import { prisma } from '~/server/utils/prisma'
+import { signToken } from '~/server/utils/jwt'
+import { verifyCaptcha } from '~/server/utils/captcha'
+import type { LoginBody, DocUserRow } from '~/server/types/auth'
 
 /** 将 '8h'/'24h'/'7d' 格式转为秒数 */
 function parseExpiresIn(value: string): number {
@@ -13,21 +14,6 @@ function parseExpiresIn(value: string): number {
 	if (unit === 'h') return num * 3600
 	if (unit === 'd') return num * 86400
 	return 28800
-}
-
-type LoginBody = {
-	account?: string
-	password?: string
-	captchaClicks?: ClickPoint[]
-	captchaToken?: string
-}
-
-type LoginUserRow = {
-	id: bigint | number
-	name: string
-	email: string | null
-	feishu_open_id: string
-	avatar_url: string | null
 }
 
 export default defineEventHandler(async (event) => {
@@ -49,7 +35,7 @@ export default defineEventHandler(async (event) => {
 	const expectedPassword = config.authDemoPassword
 
 	try {
-		const users = await prisma.$queryRaw<LoginUserRow[]>`
+		const users = await prisma.$queryRaw<DocUserRow[]>`
       SELECT id, name, email, feishu_open_id, avatar_url
       FROM doc_users
       WHERE deleted_at IS NULL

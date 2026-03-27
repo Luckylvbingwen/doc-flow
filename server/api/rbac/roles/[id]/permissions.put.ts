@@ -2,7 +2,7 @@
  * PUT /api/rbac/roles/:id/permissions
  * 设置角色权限（全量替换）
  */
-import { prisma } from '../../../../utils/prisma'
+import { prisma } from '~/server/utils/prisma'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:update')

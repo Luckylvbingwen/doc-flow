@@ -1,4 +1,4 @@
-import { generateCaptcha } from '../../utils/captcha'
+import { generateCaptcha } from '~/server/utils/captcha'
 
 export default defineEventHandler(() => {
 	const captcha = generateCaptcha()
