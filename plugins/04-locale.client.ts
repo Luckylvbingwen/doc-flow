@@ -1,9 +1,9 @@
 import { useAppStore } from '~/stores/app'
 
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin((nuxtApp) => {
 	const appStore = useAppStore()
-	const { locale } = useI18n()
+	const i18n = nuxtApp.$i18n as { locale: { value: string } }
 
 	appStore.hydrateLocale()
-	locale.value = appStore.locale
+	i18n.locale.value = appStore.locale
 })

@@ -50,8 +50,43 @@ export const useAppStore = defineStore('app', {
 			document.documentElement.classList.toggle('dark', enabled)
 			window.localStorage.setItem(DARK_MODE_KEY, enabled ? '1' : '0')
 		},
-		toggleDarkMode() {
-			this.setDarkMode(!this.darkMode)
+		toggleDarkMode(e?: MouseEvent) {
+			const doc = document.documentElement
+			// Fallback for browsers without View Transition API
+			if (!document.startViewTransition) {
+				this.setDarkMode(!this.darkMode)
+				return
+			}
+
+			const x = e?.clientX ?? window.innerWidth / 2
+			const y = e?.clientY ?? window.innerHeight / 2
+			const endRadius = Math.hypot(
+				Math.max(x, window.innerWidth - x),
+				Math.max(y, window.innerHeight - y),
+			)
+			const isDark = this.darkMode
+
+			const transition = document.startViewTransition(() => {
+				this.setDarkMode(!isDark)
+			})
+
+			transition.ready.then(() => {
+				const clipPath = [
+					`circle(0px at ${x}px ${y}px)`,
+					`circle(${endRadius}px at ${x}px ${y}px)`,
+				]
+				doc.animate(
+					{ clipPath: isDark ? [...clipPath].reverse() : clipPath },
+					{
+						duration: 500,
+						easing: 'ease-in-out',
+						fill: 'forwards',
+						pseudoElement: isDark
+							? '::view-transition-old(root)'
+							: '::view-transition-new(root)',
+					},
+				)
+			})
 		},
 		hydrateLocale() {
 			if (!import.meta.client) return

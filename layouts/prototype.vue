@@ -39,7 +39,7 @@
 			<header class="pf-header">
 				<div class="pf-header-actions">
 					<button class="pf-dark-toggle" type="button" :aria-label="appStore.darkMode ? '切换亮色模式' : '切换暗黑模式'"
-						@click="appStore.toggleDarkMode()">
+						@click="appStore.toggleDarkMode($event)">
 						<el-icon :size="18">
 							<Sunny v-if="appStore.darkMode" />
 							<Moon v-else />

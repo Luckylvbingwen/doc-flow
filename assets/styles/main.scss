@@ -30,6 +30,21 @@
   box-sizing: border-box;
 }
 
+/* ── Dark mode View Transition 圆形动画 ── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* 暗→亮：回调后 html 无 .dark，需要 old(暗色) 在上层才能显示收缩动画 */
+html:not(.dark)::view-transition-old(root) {
+  z-index: 999;
+}
+html:not(.dark)::view-transition-new(root) {
+  z-index: 1;
+}
+
 /* ── 全局滚动条美化 ── */
 *::-webkit-scrollbar {
   width: 6px;
