@@ -1,7 +1,17 @@
 export default defineNuxtConfig({
   compatibilityDate: '2026-03-23',
   devtools: { enabled: process.env.APP_ENV !== 'production' },
-  modules: ['@pinia/nuxt', '@element-plus/nuxt', '@nuxt/eslint'],
+  modules: ['@pinia/nuxt', '@element-plus/nuxt', '@nuxt/eslint', '@nuxtjs/i18n'],
+  i18n: {
+    locales: [
+      { code: 'zh-CN', name: '中文' },
+      { code: 'en-US', name: 'English' },
+    ],
+    defaultLocale: 'zh-CN',
+    strategy: 'no_prefix',
+    vueI18n: './i18n.config.ts',
+    detectBrowserLanguage: false,
+  },
   elementPlus: {
     importStyle: 'scss'
   },

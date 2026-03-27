@@ -2,13 +2,15 @@ import { defineStore } from 'pinia'
 
 const SIDEBAR_COLLAPSE_KEY = 'docflow:prototype:sidebar-collapsed'
 const DARK_MODE_KEY = 'docflow:dark-mode'
+const LOCALE_KEY = 'docflow:locale'
 
 export const useAppStore = defineStore('app', {
 	state: () => ({
 		workspaceReady: true,
 		latestPingAt: '',
 		sidebarCollapsed: false,
-		darkMode: false
+		darkMode: false,
+		locale: 'zh-CN' as 'zh-CN' | 'en-US',
 	}),
 	actions: {
 		markPinged() {
@@ -50,6 +52,18 @@ export const useAppStore = defineStore('app', {
 		},
 		toggleDarkMode() {
 			this.setDarkMode(!this.darkMode)
-		}
+		},
+		hydrateLocale() {
+			if (!import.meta.client) return
+			const stored = window.localStorage.getItem(LOCALE_KEY) as 'zh-CN' | 'en-US' | null
+			if (stored === 'zh-CN' || stored === 'en-US') {
+				this.locale = stored
+			}
+		},
+		setLocale(locale: 'zh-CN' | 'en-US') {
+			this.locale = locale
+			if (!import.meta.client) return
+			window.localStorage.setItem(LOCALE_KEY, locale)
+		},
 	}
 })

@@ -1103,3 +1103,30 @@ body {
   color: var(--df-primary);
   background: var(--df-primary-soft);
 }
+
+/* ---- Locale toggle ---- */
+.pf-locale-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--df-subtext);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pf-locale-toggle:hover {
+  color: var(--df-primary);
+  background: var(--df-primary-soft);
+}
+
+.pf-locale-toggle-text {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}

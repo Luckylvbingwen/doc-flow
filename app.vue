@@ -1,47 +1,55 @@
 <template>
-  <div v-show="!authReady" class="df-skeleton-page">
-    <aside class="df-skeleton-sidebar">
-      <div class="df-skeleton-brand">
-        <div class="df-skeleton-block" style="width: 32px; height: 32px; border-radius: 8px;" />
-        <div class="df-skeleton-block" style="width: 80px; height: 14px; border-radius: 4px;" />
-      </div>
-      <div class="df-skeleton-nav">
-        <div v-for="i in 6" :key="i" class="df-skeleton-nav-item">
-          <div class="df-skeleton-block" style="width: 18px; height: 18px; border-radius: 4px;" />
-          <div class="df-skeleton-block" style="flex: 1; height: 12px; border-radius: 4px;" />
+  <ElConfigProvider :locale="elLocale">
+    <div v-show="!authReady" class="df-skeleton-page">
+      <aside class="df-skeleton-sidebar">
+        <div class="df-skeleton-brand">
+          <div class="df-skeleton-block" style="width: 32px; height: 32px; border-radius: 8px;" />
+          <div class="df-skeleton-block" style="width: 80px; height: 14px; border-radius: 4px;" />
         </div>
-      </div>
-    </aside>
-    <section class="df-skeleton-main">
-      <header class="df-skeleton-header">
-        <div class="df-skeleton-block" style="width: 120px; height: 16px; border-radius: 4px;" />
-        <div class="df-skeleton-block" style="width: 80px; height: 32px; border-radius: 16px;" />
-      </header>
-      <div class="df-skeleton-content">
-        <div class="df-skeleton-block" style="width: 200px; height: 22px; border-radius: 4px; margin-bottom: 8px;" />
-        <div class="df-skeleton-block" style="width: 300px; height: 14px; border-radius: 4px; margin-bottom: 24px;" />
-        <div class="df-skeleton-cards">
-          <div v-for="i in 4" :key="i" class="df-skeleton-card">
-            <div class="df-skeleton-block" style="width: 60%; height: 12px; border-radius: 4px; margin-bottom: 12px;" />
-            <div class="df-skeleton-block" style="width: 40%; height: 28px; border-radius: 4px;" />
+        <div class="df-skeleton-nav">
+          <div v-for="i in 6" :key="i" class="df-skeleton-nav-item">
+            <div class="df-skeleton-block" style="width: 18px; height: 18px; border-radius: 4px;" />
+            <div class="df-skeleton-block" style="flex: 1; height: 12px; border-radius: 4px;" />
           </div>
         </div>
-        <div class="df-skeleton-block" style="width: 100%; height: 200px; border-radius: 12px; margin-top: 20px;" />
-      </div>
-    </section>
-  </div>
-  <div v-show="authReady" style="height: 100%;">
-    <NuxtLayout>
-      <NuxtPage />
-    </NuxtLayout>
-  </div>
+      </aside>
+      <section class="df-skeleton-main">
+        <header class="df-skeleton-header">
+          <div class="df-skeleton-block" style="width: 120px; height: 16px; border-radius: 4px;" />
+          <div class="df-skeleton-block" style="width: 80px; height: 32px; border-radius: 16px;" />
+        </header>
+        <div class="df-skeleton-content">
+          <div class="df-skeleton-block" style="width: 200px; height: 22px; border-radius: 4px; margin-bottom: 8px;" />
+          <div class="df-skeleton-block" style="width: 300px; height: 14px; border-radius: 4px; margin-bottom: 24px;" />
+          <div class="df-skeleton-cards">
+            <div v-for="i in 4" :key="i" class="df-skeleton-card">
+              <div class="df-skeleton-block" style="width: 60%; height: 12px; border-radius: 4px; margin-bottom: 12px;" />
+              <div class="df-skeleton-block" style="width: 40%; height: 28px; border-radius: 4px;" />
+            </div>
+          </div>
+          <div class="df-skeleton-block" style="width: 100%; height: 200px; border-radius: 12px; margin-top: 20px;" />
+        </div>
+      </section>
+    </div>
+    <div v-show="authReady" style="height: 100%;">
+      <NuxtLayout>
+        <NuxtPage />
+      </NuxtLayout>
+    </div>
+  </ElConfigProvider>
 </template>
 
 <script setup>
+import elZhCn from 'element-plus/es/locale/lang/zh-cn'
+import elEn from 'element-plus/es/locale/lang/en'
+import { useAppStore } from '~/stores/app'
+
+const appStore = useAppStore()
 const authReady = ref(false)
 
+const elLocale = computed(() => appStore.locale === 'en-US' ? elEn : elZhCn)
+
 onMounted(() => {
-  // 等待客户端 auth middleware 完成首次路由后再显示实际页面
   nextTick(() => {
     authReady.value = true
   })
