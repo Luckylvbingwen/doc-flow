@@ -83,7 +83,6 @@ import { ElMessage } from 'element-plus'
 import { Lock, User } from '@element-plus/icons-vue'
 import { apiLogin, apiFeishuAuthUrl, apiFeishuCallback } from '~/api/auth'
 import loginBgSrc from '~/assets/images/login-bg.png'
-import loginHeaderSrc from '~/assets/images/login-header.png'
 import feishuIconSrc from '~/assets/images/feishu.png'
 
 const formRef = ref<FormInstance>()

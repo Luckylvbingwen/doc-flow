@@ -1,10 +1,10 @@
 <template>
-	<section class="pf-page-stack">
+	<section v-loading.fullscreen.lock="pageLoading" class="pf-page-stack">
 		<PageTitle title="系统管理" subtitle="角色权限与用户授权" :refreshing="refreshing" @refresh="onRefresh">
 			<template #after-title>
 				<ClientOnly>
 					<el-tag v-if="authStore.roles.length" type="info" size="small" disable-transitions>
-						{{ authStore.roles.map(r => r.name).join('、') }}
+						{{authStore.roles.map(r => r.name).join('、')}}
 					</el-tag>
 				</ClientOnly>
 			</template>
@@ -43,6 +43,12 @@ const onRefresh = () => {
 		userRoleManagerRef.value?.refresh()
 	}
 }
+
+// ── 首次加载全屏遮罩 ──
+const { pageLoading, waitUntil } = usePageLoading(true)
+onMounted(() => {
+	waitUntil(() => roleManagerRef.value != null && !roleManagerRef.value.loading)
+})
 
 definePageMeta({
 	layout: 'prototype'
