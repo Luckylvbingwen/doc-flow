@@ -1,5 +1,17 @@
 <template>
-	<section class="login-page" :style="loginPageStyle">
+	<!-- 飞书回调：全屏 loading，不展示登录页 -->
+	<div v-if="feishuCallbackPending" class="feishu-fullscreen-loading">
+		<div class="feishu-loading-card">
+			<div class="feishu-loading-spinner">
+				<div class="feishu-loading-bounce" />
+				<div class="feishu-loading-bounce" />
+				<div class="feishu-loading-bounce" />
+			</div>
+			<p class="feishu-loading-text">飞书登录中，请稍候…</p>
+		</div>
+	</div>
+
+	<section v-else class="login-page" :style="loginPageStyle">
 		<div class="brand-placeholder">
 			<div class="brand-icon">DF</div>
 			<div class="brand-text">DocFlow 协作平台</div>
@@ -7,10 +19,9 @@
 
 		<div class="login-content">
 			<article class="login-card">
-				<img class="login-card-header" :src="loginHeaderSrc" alt="DocFlow" />
 				<header class="login-header">
 					<h2>账号登录</h2>
-					<p>支持账号密码与飞书扫码登录</p>
+					<p>支持账号密码与飞书登录</p>
 				</header>
 
 				<el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="login-form"
@@ -39,7 +50,6 @@
 
 					<div class="login-row">
 						<el-checkbox v-model="rememberSession" label="保持会话" />
-						<NuxtLink class="preview-link" to="/docs">进入系统预览</NuxtLink>
 					</div>
 
 					<el-button class="login-submit" type="primary" :loading="submitting" @click="handleSubmit">
@@ -52,9 +62,7 @@
 				</div>
 
 				<el-button class="feishu-login-btn" :loading="feishuLoading" @click="handleFeishuLogin">
-					<svg class="feishu-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-						<path d="M2.5 3.5L9.37 12.45L2.5 20.5H5.75L10.94 14.54L15.25 20.5H21.5L14.26 11.05L20.72 3.5H17.47L12.69 9.02L8.75 3.5H2.5Z" />
-					</svg>
+					<img class="feishu-icon" :src="feishuIconSrc" alt="飞书" width="18" height="18" />
 					飞书登录
 				</el-button>
 
@@ -64,6 +72,8 @@
 				</section>
 			</article>
 		</div>
+
+		<CaptchaDialog v-model:visible="captchaVisible" @confirm="handleCaptchaConfirm" @cancel="handleCaptchaCancel" />
 	</section>
 </template>
 
@@ -74,14 +84,23 @@ import { Lock, User } from '@element-plus/icons-vue'
 import { apiLogin, apiFeishuAuthUrl, apiFeishuCallback } from '~/api/auth'
 import loginBgSrc from '~/assets/images/login-bg.png'
 import loginHeaderSrc from '~/assets/images/login-header.png'
+import feishuIconSrc from '~/assets/images/feishu.png'
 
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
 const feishuLoading = ref(false)
 const rememberSession = ref(true)
+const captchaVisible = ref(false)
 const authStore = useAuthStore()
 const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
+
+// 检测是否为飞书回调（URL 带 code）— 立即判定，不等 onMounted
+const feishuCallbackPending = ref(false)
+if (import.meta.client) {
+	const params = new URLSearchParams(window.location.search)
+	feishuCallbackPending.value = !!(params.get('code') && params.get('state'))
+}
 
 const loginPageStyle = computed(() => ({
 	backgroundImage: `linear-gradient(110deg, rgba(8, 31, 74, 0.7), rgba(14, 44, 96, 0.45) 35%, rgba(16, 56, 122, 0.25) 60%, rgba(255, 255, 255, 0) 85%), url('${loginBgSrc}')`
@@ -107,15 +126,24 @@ const handleSubmit = async () => {
 		return
 	}
 
+	// 打开验证码弹窗，实际登录在 handleCaptchaConfirm 中完成
+	captchaVisible.value = true
+}
+
+const handleCaptchaConfirm = async (captchaClicks: { x: number; y: number }[], captchaToken: string) => {
+	captchaVisible.value = false
 	submitting.value = true
 	try {
 		const response = await apiLogin({
 			account: form.account,
 			password: form.password,
+			captchaClicks,
+			captchaToken,
 		})
 
 		if (!response.success || !response.data) {
 			ElMessage.error(response.message || '登录失败')
+			submitting.value = false
 			return
 		}
 
@@ -129,9 +157,12 @@ const handleSubmit = async () => {
 			data?: { message?: string }
 		}
 		ElMessage.error(maybeError?.data?.message || '登录失败，请稍后重试')
-	} finally {
 		submitting.value = false
 	}
+}
+
+const handleCaptchaCancel = () => {
+	submitting.value = false
 }
 
 // ================================================================
@@ -172,12 +203,16 @@ const handleFeishuCallback = async () => {
 	const code = route.query.code as string
 	const state = route.query.state as string
 
-	if (!code || !state) return
+	if (!code || !state) {
+		feishuCallbackPending.value = false
+		return
+	}
 
 	// 校验 state
 	const savedState = sessionStorage.getItem('feishu_oauth_state')
 	if (savedState && savedState !== state) {
 		ElMessage.error('飞书授权状态不匹配，请重新登录')
+		feishuCallbackPending.value = false
 		return
 	}
 	sessionStorage.removeItem('feishu_oauth_state')
@@ -197,8 +232,8 @@ const handleFeishuCallback = async () => {
 		await navigateTo('/docs')
 	} catch {
 		ElMessage.error('飞书登录失败，请稍后重试')
-	} finally {
 		feishuLoading.value = false
+		feishuCallbackPending.value = false
 	}
 }
 
@@ -371,6 +406,9 @@ definePageMeta({
 
 	.feishu-icon {
 		margin-right: 6px;
+		background: #ffffff;
+		border-radius: 4px;
+		padding: 2px;
 	}
 }
 
@@ -416,5 +454,57 @@ definePageMeta({
 		min-height: 420px;
 		padding: 22px 18px 22px;
 	}
+}
+
+/* ---- 飞书全屏 loading ---- */
+.feishu-fullscreen-loading {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(135deg, #f0f4ff 0%, #e8ecf8 100%);
+}
+
+.feishu-loading-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 24px;
+}
+
+.feishu-loading-spinner {
+	display: flex;
+	gap: 8px;
+}
+
+.feishu-loading-bounce {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, #3b82f6, #6366f1);
+	animation: feishu-bounce 1.4s ease-in-out infinite both;
+
+	&:nth-child(1) { animation-delay: -0.32s; }
+	&:nth-child(2) { animation-delay: -0.16s; }
+}
+
+@keyframes feishu-bounce {
+	0%, 80%, 100% {
+		transform: scale(0.4);
+		opacity: 0.4;
+	}
+	40% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+.feishu-loading-text {
+	margin: 0;
+	font-size: 16px;
+	color: #6b7280;
+	letter-spacing: 1px;
 }
 </style>

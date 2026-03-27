@@ -1,5 +1,6 @@
 import { prisma } from '../../utils/prisma'
 import { signToken } from '../../utils/jwt'
+import { verifyCaptcha, type ClickPoint } from '../../utils/captcha'
 
 /** 将 '8h'/'24h'/'7d' 格式转为秒数 */
 function parseExpiresIn(value: string): number {
@@ -17,6 +18,8 @@ function parseExpiresIn(value: string): number {
 type LoginBody = {
 	account?: string
 	password?: string
+	captchaClicks?: ClickPoint[]
+	captchaToken?: string
 }
 
 type LoginUserRow = {
@@ -34,6 +37,12 @@ export default defineEventHandler(async (event) => {
 
 	if (!account || !password) {
 		return fail(event, 400, 'AUTH_INVALID_PARAMS', '账号和密码不能为空')
+	}
+
+	// 验证码校验
+	const captchaResult = verifyCaptcha(body.captchaClicks || [], body.captchaToken || '')
+	if (!captchaResult.valid) {
+		return fail(event, 400, 'CAPTCHA_INVALID', captchaResult.message)
 	}
 
 	const config = useRuntimeConfig(event)

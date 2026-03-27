@@ -5,6 +5,8 @@ import type { UserProfile } from '~/types/rbac'
 export interface LoginParams {
 	account: string
 	password: string
+	captchaClicks: { x: number; y: number }[]
+	captchaToken: string
 }
 
 /** 登录返回 data */

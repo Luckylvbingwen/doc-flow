@@ -70,8 +70,8 @@
               @command="handleUserMenuCommand"
             >
               <button class="pf-user-entry" type="button">
-                <img v-if="authStore.user?.avatar" class="pf-user-entry-avatar" :src="authStore.user.avatar" />
-                <span v-else class="pf-user-entry-avatar pf-user-entry-avatar--text">{{ userInitial }}</span>
+                <img v-show="avatarReady" class="pf-user-entry-avatar" :src="authStore.user.avatar" @load="avatarLoaded = true" @error="avatarLoadFailed = true" />
+                <span v-show="!avatarReady" class="pf-user-entry-avatar pf-user-entry-avatar--text">{{ userInitial }}</span>
                 <span class="pf-user-entry-name">{{ authStore.user.name }}</span>
                 <el-icon class="pf-user-entry-caret"><ArrowDownBold /></el-icon>
               </button>
@@ -137,6 +137,19 @@ const { sidebarCollapsed: isSidebarCollapsed } = storeToRefs(appStore)
 const userInitial = computed(() => {
   const name = authStore.user?.name?.trim() || '访客'
   return name.slice(0, 1)
+})
+
+const avatarLoadFailed = ref(false)
+const avatarLoaded = ref(false)
+const avatarReady = computed(() => {
+	const url = authStore.user?.avatar
+	return !!url && url.startsWith('http') && avatarLoaded.value && !avatarLoadFailed.value
+})
+
+// 用户或头像变化时重置加载状态
+watch(() => authStore.user?.avatar, () => {
+	avatarLoadFailed.value = false
+	avatarLoaded.value = false
 })
 
 const menuGroups = [
