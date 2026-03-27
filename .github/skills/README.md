@@ -9,10 +9,17 @@
 
 ## Skill 列表
 
-1. `frontend-nuxt3-feature-delivery`
-2. `backend-nitro-prisma-api-delivery`
-3. `testing-docflow-fullstack-audit`
-4. `prototype-html-driven-delivery`
+### 业务流程 Skills（自研）
+
+1. `frontend-nuxt3-feature-delivery` — Nuxt3 + Element Plus 功能页面交付流程
+2. `backend-nitro-prisma-api-delivery` — Nitro + Prisma 后端 API 交付流程
+3. `testing-docflow-fullstack-audit` — FE/BE/DB 一致性审计
+4. `prototype-html-driven-delivery` — 原型驱动协同开发
+
+### 框架知识 Skills（社区）
+
+5. `nuxt-framework` — Nuxt 全栈框架参考（来源：[antfu/skills](https://github.com/antfu/skills)），覆盖路由、数据获取、SSR、Server Routes、部署等
+6. `element-plus` — Element Plus 组件库完整参考（来源：[jiaiyan/element-plus-skills](https://github.com/jiaiyan/element-plus-skills)），覆盖 77 个组件 + 主题/i18n/暗色模式/设计规范
 
 ## 中文调用模板
 
