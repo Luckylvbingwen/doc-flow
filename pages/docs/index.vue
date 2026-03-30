@@ -4,30 +4,19 @@
 
 		<section class="doc-explorer">
 			<!-- Left tree panel -->
-			<div
-				class="doc-explorer__tree"
-				:style="{ width: `${treePanelWidth}px` }"
-			>
+			<div class="doc-explorer__tree" :style="{ width: `${treePanelWidth}px` }">
 				<div class="doc-explorer__tree-header">
-					<el-icon :size="14"><Collection /></el-icon>
+					<el-icon :size="14">
+						<Collection />
+					</el-icon>
 					<span>文档导航</span>
 				</div>
-				<DocNavTree
-					v-model="selectedGroupId"
-					:categories="treeCategories"
-					mode="nav"
-					@group-select="onGroupSelect"
-					@category-select="onCategorySelect"
-					@group-create="onGroupCreate"
-					@group-more="onGroupMore"
-				/>
+				<DocNavTree v-model="selectedGroupId" :categories="treeCategories" mode="nav" @group-select="onGroupSelect"
+					@category-select="onCategorySelect" @group-create="onGroupCreate" @group-more="onGroupMore" />
 			</div>
 
 			<!-- Resizer -->
-			<div
-				class="doc-explorer__resizer"
-				@mousedown="startResize"
-			/>
+			<div class="doc-explorer__resizer" @mousedown="startResize" />
 
 			<!-- Right content panel -->
 			<div class="doc-explorer__content">
@@ -46,11 +35,7 @@
 				</div>
 
 				<div v-else class="doc-explorer__cards">
-					<article
-						v-for="repo in filteredRepos"
-						:key="repo.id"
-						class="doc-explorer__card"
-					>
+					<article v-for="repo in filteredRepos" :key="repo.id" class="doc-explorer__card">
 						<h5>{{ repo.name }}</h5>
 						<p>{{ repo.description }}</p>
 						<NuxtLink :to="`/docs/repo/${repo.id}`">查看详情</NuxtLink>
@@ -168,7 +153,7 @@ const treeCategories = ref<NavTreeCategory[]>([
 					{
 						id: 204,
 						name: '学习分享',
-						badge: 3,
+						fileCount: 3,
 						children: [
 							{
 								id: 2041,

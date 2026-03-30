@@ -2,30 +2,20 @@
 	<div class="dn-tree" :class="`dn-tree--${mode}`">
 		<!-- Search -->
 		<div class="dn-search">
-			<el-input
-				v-model="keyword"
-				:placeholder="mode === 'nav' ? '搜索组名称 / 文档名称...' : '搜索组名称...'"
-				clearable
-				:prefix-icon="Search"
-				class="dn-search-input"
-			/>
+			<el-input v-model="keyword" :placeholder="mode === 'nav' ? '搜索组名称 / 文档名称...' : '搜索组名称...'" clearable
+				:prefix-icon="Search" class="dn-search-input" />
 		</div>
 
 		<!-- Tree body -->
 		<el-scrollbar class="dn-body">
 			<template v-for="cat in filteredCategories" :key="cat.id">
 				<!-- Category header -->
-				<div
-					class="dn-node dn-category"
-					:class="{ 'is-active': activeCategoryId === cat.id }"
-					@click="handleCategoryClick(cat)"
-				>
-					<span
-						class="dn-arrow"
-						:class="{ 'is-collapsed': !expandedMap[cat.id] }"
-						@click.stop="toggleExpand(cat.id)"
-					>
-						<el-icon :size="12"><ArrowDown /></el-icon>
+				<div class="dn-node dn-category" :class="{ 'is-active': activeCategoryId === cat.id }"
+					@click="handleCategoryClick(cat)">
+					<span class="dn-arrow" :class="{ 'is-collapsed': !expandedMap[cat.id] }" @click.stop="toggleExpand(cat.id)">
+						<el-icon :size="12">
+							<ArrowDown />
+						</el-icon>
 					</span>
 					<el-icon class="dn-icon" :size="14">
 						<OfficeBuilding v-if="cat.scope === 'company'" />
@@ -37,20 +27,17 @@
 					<span class="dn-right-zone">
 						<span class="dn-badge">{{ cat.badge }}</span>
 						<span v-if="mode === 'nav'" class="dn-hover-actions">
-							<button
-								class="dn-hover-btn"
-								:title="getCategoryCreateLabel(cat.scope)"
-								@click.stop="$emit('category-create', cat)"
-							>
-								<el-icon :size="13"><Plus /></el-icon>
+							<button class="dn-hover-btn" :title="getCategoryCreateLabel(cat.scope)"
+								@click.stop="$emit('category-create', cat)">
+								<el-icon :size="13">
+									<Plus />
+								</el-icon>
 							</button>
-							<button
-								v-if="cat.scope !== 'department' || true"
-								class="dn-hover-btn"
-								title="更多"
-								@click.stop="$emit('category-more', $event, cat)"
-							>
-								<el-icon :size="13"><MoreFilled /></el-icon>
+							<button v-if="cat.scope !== 'department' || true" class="dn-hover-btn" title="更多"
+								@click.stop="$emit('category-more', $event, cat)">
+								<el-icon :size="13">
+									<MoreFilled />
+								</el-icon>
 							</button>
 						</span>
 					</span>
@@ -60,37 +47,22 @@
 				<div v-show="expandedMap[cat.id]" class="dn-children">
 					<!-- Direct groups (company scope) -->
 					<template v-if="cat.groups?.length">
-						<DocNavTreeNode
-							:groups="cat.groups"
-							:depth="1"
-							:mode="mode"
-							:active-id="activeGroupId"
-							:expanded-map="expandedMap"
-							:search-keyword="keyword"
-							:exclude-id="excludeId"
-							@select="handleGroupSelect"
-							@create="(g) => $emit('group-create', g)"
-							@more="(ev, g) => $emit('group-more', ev, g)"
-							@context-menu="(ev, g) => $emit('group-context-menu', ev, g)"
-							@toggle="toggleExpand"
-						/>
+						<DocNavTreeNode :groups="cat.groups" :depth="1" :mode="mode" :active-id="activeGroupId"
+							:expanded-map="expandedMap" :search-keyword="keyword" :exclude-id="excludeId" @select="handleGroupSelect"
+							@create="(g) => $emit('group-create', g)" @more="(ev, g) => $emit('group-more', ev, g)"
+							@context-menu="(ev, g) => $emit('group-context-menu', ev, g)" @toggle="toggleExpand" />
 					</template>
 
 					<!-- Org units (department / productline) -->
 					<template v-if="cat.orgUnits?.length">
 						<template v-for="org in cat.orgUnits" :key="org.id">
 							<!-- Org unit node (部门名 / 产品线名) -->
-							<div
-								class="dn-node dn-org-unit"
-								:style="{ paddingLeft: '32px' }"
-								@click="handleOrgUnitClick(cat, org)"
-							>
-								<span
-									class="dn-arrow"
-									:class="{ 'is-collapsed': !expandedMap[org.id] }"
-									@click.stop="toggleExpand(org.id)"
-								>
-									<el-icon :size="12"><ArrowDown /></el-icon>
+							<div class="dn-node dn-org-unit" :style="{ paddingLeft: '32px' }" @click="handleOrgUnitClick(cat, org)">
+								<span class="dn-arrow" :class="{ 'is-collapsed': !expandedMap[org.id] }"
+									@click.stop="toggleExpand(org.id)">
+									<el-icon :size="12">
+										<ArrowDown />
+									</el-icon>
 								</span>
 								<el-icon class="dn-icon" :size="14">
 									<Folder v-if="cat.scope === 'department'" />
@@ -101,19 +73,15 @@
 								<span class="dn-right-zone">
 									<span class="dn-badge">{{ org.badge }}</span>
 									<span v-if="mode === 'nav'" class="dn-hover-actions">
-										<button
-											class="dn-hover-btn"
-											title="新建组"
-											@click.stop="$emit('org-create', cat, org)"
-										>
-											<el-icon :size="13"><Plus /></el-icon>
+										<button class="dn-hover-btn" title="新建组" @click.stop="$emit('org-create', cat, org)">
+											<el-icon :size="13">
+												<Plus />
+											</el-icon>
 										</button>
-										<button
-											class="dn-hover-btn"
-											title="更多"
-											@click.stop="$emit('org-more', $event, cat, org)"
-										>
-											<el-icon :size="13"><MoreFilled /></el-icon>
+										<button class="dn-hover-btn" title="更多" @click.stop="$emit('org-more', $event, cat, org)">
+											<el-icon :size="13">
+												<MoreFilled />
+											</el-icon>
 										</button>
 									</span>
 								</span>
@@ -121,20 +89,11 @@
 
 							<!-- Org unit groups -->
 							<div v-show="expandedMap[org.id]" class="dn-children">
-								<DocNavTreeNode
-									:groups="org.groups"
-									:depth="2"
-									:mode="mode"
-									:active-id="activeGroupId"
-									:expanded-map="expandedMap"
-									:search-keyword="keyword"
-									:exclude-id="excludeId"
-									@select="handleGroupSelect"
-									@create="(g) => $emit('group-create', g)"
+								<DocNavTreeNode :groups="org.groups" :depth="2" :mode="mode" :active-id="activeGroupId"
+									:expanded-map="expandedMap" :search-keyword="keyword" :exclude-id="excludeId"
+									@select="handleGroupSelect" @create="(g) => $emit('group-create', g)"
 									@more="(ev, g) => $emit('group-more', ev, g)"
-									@context-menu="(ev, g) => $emit('group-context-menu', ev, g)"
-									@toggle="toggleExpand"
-								/>
+									@context-menu="(ev, g) => $emit('group-context-menu', ev, g)" @toggle="toggleExpand" />
 							</div>
 						</template>
 					</template>
@@ -143,7 +102,9 @@
 
 			<!-- Empty state -->
 			<div v-if="keyword && filteredCategories.length === 0" class="dn-empty">
-				<el-icon :size="32" color="var(--df-subtext)" style="opacity: 0.4"><Search /></el-icon>
+				<el-icon :size="32" color="var(--df-subtext)" style="opacity: 0.4">
+					<Search />
+				</el-icon>
 				<p>未找到匹配结果</p>
 			</div>
 		</el-scrollbar>

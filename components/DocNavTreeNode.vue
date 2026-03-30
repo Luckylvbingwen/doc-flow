@@ -1,23 +1,16 @@
 <template>
 	<div v-for="group in groups" :key="group.id">
 		<!-- Group node -->
-		<div
-			class="dn-node"
-			:class="{
-				'is-parent': hasChildren(group),
-				'is-active': activeId === group.id,
-			}"
-			:style="{ paddingLeft: `${indent}px` }"
-			@click="$emit('select', group)"
-			@contextmenu.prevent="mode === 'nav' ? $emit('context-menu', $event, group) : undefined"
-		>
-			<span
-				v-if="expandable(group)"
-				class="dn-arrow"
-				:class="{ 'is-collapsed': !expandedMap[group.id] }"
-				@click.stop="toggleExpand(group.id)"
-			>
-				<el-icon :size="12"><ArrowDown /></el-icon>
+		<div class="dn-node" :class="{
+			'is-parent': hasChildren(group),
+			'is-active': activeId === group.id,
+		}" :style="{ paddingLeft: `${indent}px` }" @click="$emit('select', group)"
+			@contextmenu.prevent="mode === 'nav' ? $emit('context-menu', $event, group) : undefined">
+			<span v-if="expandable(group)" class="dn-arrow" :class="{ 'is-collapsed': !expandedMap[group.id] }"
+				@click.stop="toggleExpand(group.id)">
+				<el-icon :size="12">
+					<ArrowDown />
+				</el-icon>
 			</span>
 			<span v-else class="dn-arrow-placeholder" />
 
@@ -32,61 +25,34 @@
 			<span class="dn-right-zone">
 				<span class="dn-badge">{{ getBadge(group) }}</span>
 				<span v-if="mode === 'nav'" class="dn-hover-actions">
-					<button
-						class="dn-hover-btn"
-						title="新建子组"
-						@click.stop="$emit('create', group)"
-					>
-						<el-icon :size="13"><Plus /></el-icon>
+					<button class="dn-hover-btn" title="新建子组" @click.stop="$emit('create', group)">
+						<el-icon :size="13">
+							<Plus />
+						</el-icon>
 					</button>
-					<button
-						class="dn-hover-btn"
-						title="更多"
-						@click.stop="$emit('more', $event, group)"
-					>
-						<el-icon :size="13"><MoreFilled /></el-icon>
+					<button class="dn-hover-btn" title="更多" @click.stop="$emit('more', $event, group)">
+						<el-icon :size="13">
+							<MoreFilled />
+						</el-icon>
 					</button>
 				</span>
 			</span>
 		</div>
 
 		<!-- Children container (recursive) -->
-		<div
-			v-if="expandable(group)"
-			v-show="expandedMap[group.id]"
-			class="dn-children"
-		>
+		<div v-if="expandable(group)" v-show="expandedMap[group.id]" class="dn-children">
 			<!-- Sub-groups (recursive) -->
-			<DocNavTreeNode
-				v-if="group.children?.length"
-				:groups="group.children"
-				:depth="depth + 1"
-				:mode="mode"
-				:active-id="activeId"
-				:expanded-map="expandedMap"
-				:search-keyword="searchKeyword"
-				:exclude-id="excludeId"
-				@select="$emit('select', $event)"
-				@create="$emit('create', $event)"
-				@more="(ev, g) => $emit('more', ev, g)"
-				@context-menu="(ev, g) => $emit('context-menu', ev, g)"
-				@toggle="$emit('toggle', $event)"
-			/>
+			<DocNavTreeNode v-if="group.children?.length" :groups="group.children" :depth="depth + 1" :mode="mode"
+				:active-id="activeId" :expanded-map="expandedMap" :search-keyword="searchKeyword" :exclude-id="excludeId"
+				@select="$emit('select', $event)" @create="$emit('create', $event)" @more="(ev, g) => $emit('more', ev, g)"
+				@context-menu="(ev, g) => $emit('context-menu', ev, g)" @toggle="$emit('toggle', $event)" />
 
 			<!-- File nodes (nav mode only) -->
 			<template v-if="mode === 'nav' && group.files?.length">
-				<div
-					v-for="file in group.files"
-					:key="`f_${file.id}`"
-					class="dn-node dn-file-node"
-					:style="{ paddingLeft: `${indent + 24}px` }"
-					@click="$emit('select', group, file)"
-				>
+				<div v-for="file in group.files" :key="`f_${file.id}`" class="dn-node dn-file-node"
+					:style="{ paddingLeft: `${indent + 24}px` }" @click="$emit('select', group, file)">
 					<span class="dn-arrow-placeholder" />
-					<span
-						class="dn-file-type-badge"
-						:class="file.type"
-					>{{ getTypeLabel(file.type) }}</span>
+					<span class="dn-file-type-badge" :class="file.type">{{ getTypeLabel(file.type) }}</span>
 					<span class="dn-label dn-file-label" :title="file.name">{{ file.name }}</span>
 				</div>
 			</template>
