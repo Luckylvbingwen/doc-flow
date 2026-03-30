@@ -15,7 +15,8 @@
 import { prisma } from '~/server/utils/prisma'
 import { signToken } from '~/server/utils/jwt'
 import { stateCache } from './auth-url.get'
-import type { CallbackBody, DocUserRow } from '~/server/types/auth'
+import { feishuCallbackBodySchema } from '~/server/schemas/auth'
+import type { DocUserRow } from '~/server/types/auth'
 
 /** 将 '8h'/'24h'/'7d' 格式转为秒数 */
 function parseExpiresIn(value: string): number {
@@ -31,13 +32,9 @@ function parseExpiresIn(value: string): number {
 }
 
 export default defineEventHandler(async (event) => {
-	const body = await readBody<CallbackBody>(event)
-	const code = body.code?.trim() || ''
-	const state = body.state?.trim() || ''
-
-	if (!code || !state) {
-		return fail(event, 400, 'PARAM_MISSING', '缺少飞书授权参数')
-	}
+	const body = await readValidatedBody(event, feishuCallbackBodySchema.parse)
+	const code = body.code.trim()
+	const state = body.state.trim()
 
 	// 校验 state
 	const stateExpiry = stateCache.get(state)

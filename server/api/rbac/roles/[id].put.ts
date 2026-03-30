@@ -3,6 +3,7 @@
  * 更新角色基本信息
  */
 import { prisma } from '~/server/utils/prisma'
+import { roleUpdateSchema } from '~/server/schemas/rbac'
 import type { RoleCheckRow } from '~/server/types/rbac'
 
 export default defineEventHandler(async (event) => {
@@ -14,16 +15,9 @@ export default defineEventHandler(async (event) => {
 		return fail(event, 400, 'INVALID_PARAMS', '无效的角色 ID')
 	}
 
-	const body = await readBody<{
-		name?: string
-		description?: string
-		status?: number
-	}>(event)
+	const body = await readValidatedBody(event, roleUpdateSchema.parse)
 
-	const name = body.name?.trim() || ''
-	if (!name) {
-		return fail(event, 400, 'INVALID_PARAMS', '角色名称不能为空')
-	}
+	const name = body.name.trim()
 
 	// 检查角色存在
 	const rows = await prisma.$queryRaw<RoleCheckRow[]>`
@@ -36,9 +30,8 @@ export default defineEventHandler(async (event) => {
 		return fail(event, 404, 'ROLE_NOT_FOUND', '角色不存在')
 	}
 
-	// 系统内置角色不允许修改 code 和 is_system，但允许改名和描述
 	const description = body.description?.trim() || null
-	const status = body.status === 0 ? 0 : 1
+	const status = body.status ?? 1
 
 	// 系统内置角色不允许停用
 	if (rows[0].is_system === 1 && status === 0) {

@@ -3,25 +3,26 @@
  * 用户-角色关联列表
  */
 import { prisma } from '~/server/utils/prisma'
+import { userRoleListQuerySchema } from '~/server/schemas/rbac'
 import type { UserRoleRow } from '~/server/types/rbac'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:read')
 	if (denied) return denied
 
-	const query = getQuery(event)
-	const page = Math.max(1, Number(query.page) || 1)
-	const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 20))
-	const keyword = (query.keyword as string || '').trim()
-	const roleId = Number(query.roleId) || 0
+	const query = await getValidatedQuery(event, userRoleListQuerySchema.parse)
+	const page = query.page
+	const pageSize = query.pageSize
+	const keyword = query.keyword
+	const roleId = query.roleId ?? 0
 	const offset = (page - 1) * pageSize
 
 	// 动态构建条件（用原始 SQL）
-	let whereClause = 'WHERE 1=1'
-	const params: unknown[] = []
+	let _whereClause = 'WHERE 1=1'
+	const _params: unknown[] = []
 
 	if (roleId > 0) {
-		whereClause += ` AND ur.role_id = ${roleId}`
+		_whereClause += ` AND ur.role_id = ${roleId}`
 	}
 
 	// 总数 & 列表查询

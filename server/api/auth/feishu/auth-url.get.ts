@@ -5,6 +5,7 @@
  * Query: redirectUri — 授权完成后的回调地址（即前端登录页 URL）
  */
 import { randomBytes } from 'node:crypto'
+import { feishuAuthUrlQuerySchema } from '~/server/schemas/auth'
 
 /** OAuth state 缓存（5 分钟有效） */
 const stateCache = new Map<string, number>()
@@ -19,7 +20,7 @@ setInterval(() => {
 
 export { stateCache }
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
 	const config = useRuntimeConfig(event)
 	const appId = String(config.feishuAppId || '')
 
@@ -27,12 +28,8 @@ export default defineEventHandler((event) => {
 		return fail(event, 500, 'FEISHU_NOT_CONFIGURED', '飞书登录未配置 App ID')
 	}
 
-	const query = getQuery(event)
-	const redirectUri = String(query.redirectUri || '').trim()
-
-	if (!redirectUri) {
-		return fail(event, 400, 'PARAM_MISSING', '缺少 redirectUri 参数')
-	}
+	const query = await getValidatedQuery(event, feishuAuthUrlQuerySchema.parse)
+	const redirectUri = query.redirectUri.trim()
 
 	// 生成防 CSRF 的 state 参数
 	const state = randomBytes(16).toString('hex')

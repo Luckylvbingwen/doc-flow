@@ -7,12 +7,13 @@
  *   - keyword: 搜索关键词（模糊匹配 nickname/email）
  */
 import { prisma } from '~/server/utils/prisma'
+import { feishuUsersQuerySchema } from '~/server/schemas/integration'
 import type { FeishuUserRow } from '~/server/types/feishu'
 
 export default defineEventHandler(async (event) => {
-	const query = getQuery(event)
-	const status = String(query.status || 'normal')
-	const keyword = String(query.keyword || '').trim()
+	const query = await getValidatedQuery(event, feishuUsersQuerySchema.parse)
+	const status = query.status
+	const keyword = query.keyword
 
 	let whereClause = '1=1'
 	const params: unknown[] = []

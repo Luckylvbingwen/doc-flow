@@ -1,13 +1,6 @@
 import type { ApiResult } from '~/types/api'
 import type { UserProfile } from '~/types/rbac'
-
-/** 登录参数 */
-export interface LoginParams {
-	account: string
-	password: string
-	captchaClicks: { x: number; y: number }[]
-	captchaToken: string
-}
+import type { LoginBody, FeishuCallbackBody } from '~/server/schemas/auth'
 
 /** 登录返回 data */
 export interface LoginResult {
@@ -24,7 +17,7 @@ export interface LoginResult {
 }
 
 /** 登录 */
-export function apiLogin(params: LoginParams) {
+export function apiLogin(params: LoginBody) {
 	return $fetch<ApiResult<LoginResult>>('/api/auth/login', {
 		method: 'POST',
 		body: params,
@@ -55,7 +48,7 @@ export function apiFeishuAuthUrl(redirectUri: string) {
 }
 
 /** 飞书 OAuth 回调 */
-export function apiFeishuCallback(params: { code: string; state: string }) {
+export function apiFeishuCallback(params: FeishuCallbackBody) {
 	return $fetch<ApiResult<LoginResult>>('/api/auth/feishu/callback', {
 		method: 'POST',
 		body: params,

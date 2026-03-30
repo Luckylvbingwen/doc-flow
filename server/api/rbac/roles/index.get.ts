@@ -3,16 +3,17 @@
  * 角色列表（含权限数 & 用户数）
  */
 import { prisma } from '~/server/utils/prisma'
+import { roleListQuerySchema } from '~/server/schemas/rbac'
 import type { RoleListRow as RoleRow } from '~/server/types/rbac'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:read')
 	if (denied) return denied
 
-	const query = getQuery(event)
-	const page = Math.max(1, Number(query.page) || 1)
-	const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 20))
-	const keyword = (query.keyword as string || '').trim()
+	const query = await getValidatedQuery(event, roleListQuerySchema.parse)
+	const page = query.page
+	const pageSize = query.pageSize
+	const keyword = query.keyword
 	const offset = (page - 1) * pageSize
 
 	// 总数

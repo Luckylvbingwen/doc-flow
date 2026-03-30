@@ -8,28 +8,18 @@
  *   - text?: string         文本消息内容（msgType=text 时必填）
  *   - card?: object         卡片结构体（msgType=card 时必填）
  */
-import type { NotifyBody } from '~/server/types/feishu'
+import { feishuNotifySchema } from '~/server/schemas/integration'
 
 export default defineEventHandler(async (event) => {
-	const body = await readBody<NotifyBody>(event)
-	const openId = body.openId?.trim() || ''
-	const msgType = body.msgType || 'text'
-
-	if (!openId) {
-		return fail(event, 400, 'PARAM_MISSING', '缺少 openId 参数')
-	}
+	const body = await readValidatedBody(event, feishuNotifySchema.parse)
+	const openId = body.openId.trim()
+	const msgType = body.msgType
 
 	try {
 		if (msgType === 'card') {
-			if (!body.card) {
-				return fail(event, 400, 'PARAM_MISSING', '卡片消息缺少 card 参数')
-			}
-			await feishuSendCard(openId, body.card)
+			await feishuSendCard(openId, body.card!)
 		} else {
-			if (!body.text) {
-				return fail(event, 400, 'PARAM_MISSING', '文本消息缺少 text 参数')
-			}
-			await feishuSendText(openId, body.text)
+			await feishuSendText(openId, body.text!)
 		}
 
 		return ok({ sent: true }, '飞书消息发送成功')

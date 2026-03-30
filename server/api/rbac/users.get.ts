@@ -3,14 +3,15 @@
  * 获取可分配角色的用户列表（简化版，用于下拉选择）
  */
 import { prisma } from '~/server/utils/prisma'
+import { userSearchQuerySchema } from '~/server/schemas/rbac'
 import type { UserRow } from '~/server/types/rbac'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:assign')
 	if (denied) return denied
 
-	const query = getQuery(event)
-	const keyword = (query.keyword as string || '').trim()
+	const query = await getValidatedQuery(event, userSearchQuerySchema.parse)
+	const keyword = query.keyword
 
 	let rows: UserRow[]
 	if (keyword) {

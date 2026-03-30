@@ -3,6 +3,7 @@
  * 设置角色权限（全量替换）
  */
 import { prisma } from '~/server/utils/prisma'
+import { rolePermissionsSchema } from '~/server/schemas/rbac'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:update')
@@ -13,12 +14,8 @@ export default defineEventHandler(async (event) => {
 		return fail(event, 400, 'INVALID_PARAMS', '无效的角色 ID')
 	}
 
-	const body = await readBody<{ permissionIds?: number[] }>(event)
+	const body = await readValidatedBody(event, rolePermissionsSchema.parse)
 	const permissionIds = body.permissionIds
-
-	if (!Array.isArray(permissionIds)) {
-		return fail(event, 400, 'INVALID_PARAMS', 'permissionIds 必须为数组')
-	}
 
 	// 检查角色存在
 	const roleCheck = await prisma.$queryRaw<Array<{ cnt: bigint | number }>>`

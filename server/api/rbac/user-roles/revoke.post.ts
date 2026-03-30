@@ -3,22 +3,16 @@
  * 撤销用户角色
  */
 import { prisma } from '~/server/utils/prisma'
+import { userRoleRevokeSchema } from '~/server/schemas/rbac'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:assign')
 	if (denied) return denied
 
-	const body = await readBody<{
-		userId?: number
-		roleId?: number
-	}>(event)
+	const body = await readValidatedBody(event, userRoleRevokeSchema.parse)
 
-	const userId = Number(body.userId)
-	const roleId = Number(body.roleId)
-
-	if (!userId || !roleId) {
-		return fail(event, 400, 'INVALID_PARAMS', '用户 ID 和角色 ID 不能为空')
-	}
+	const userId = body.userId
+	const roleId = body.roleId
 
 	const affected = await prisma.$executeRaw`
 		DELETE FROM sys_user_roles

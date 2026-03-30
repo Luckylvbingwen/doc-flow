@@ -1,10 +1,12 @@
+import { versionCompareSchema } from '~/server/schemas/version'
+
 export default defineEventHandler(async (event) => {
-	const body = await readBody<{ fromVersion: number; toVersion: number }>(event)
+	const body = await readValidatedBody(event, versionCompareSchema.parse)
 
 	return {
 		ok: true,
-		fromVersion: body?.fromVersion ?? null,
-		toVersion: body?.toVersion ?? null,
+		fromVersion: body.fromVersion,
+		toVersion: body.toVersion,
 		summary: 'Version compare endpoint placeholder'
 	}
 })

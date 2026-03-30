@@ -1,5 +1,6 @@
 import type { ApiResult, PaginatedData } from '~/types/api'
 import type { Permission, Role, RoleListItem, UserRoleItem } from '~/types/rbac'
+import type { RoleCreateBody, RoleUpdateBody } from '~/server/schemas/rbac'
 
 // ─── 权限 ───────────────────────────────────
 
@@ -30,29 +31,16 @@ export function apiGetRole(id: number) {
 	return useAuthFetch<ApiResult<Role>>(`/api/rbac/roles/${id}`)
 }
 
-export interface RoleCreateParams {
-	code: string
-	name: string
-	description?: string
-	status?: number
-}
-
 /** 创建角色 */
-export function apiCreateRole(params: RoleCreateParams) {
+export function apiCreateRole(params: RoleCreateBody) {
 	return useAuthFetch<ApiResult>('/api/rbac/roles', {
 		method: 'POST',
 		body: params,
 	})
 }
 
-export interface RoleUpdateParams {
-	name?: string
-	description?: string
-	status?: number
-}
-
 /** 更新角色 */
-export function apiUpdateRole(id: number, params: RoleUpdateParams) {
+export function apiUpdateRole(id: number, params: RoleUpdateBody) {
 	return useAuthFetch<ApiResult>(`/api/rbac/roles/${id}`, {
 		method: 'PUT',
 		body: params,

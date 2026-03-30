@@ -1,7 +1,8 @@
 import { prisma } from '~/server/utils/prisma'
 import { signToken } from '~/server/utils/jwt'
 import { verifyCaptcha } from '~/server/utils/captcha'
-import type { LoginBody, DocUserRow } from '~/server/types/auth'
+import { loginBodySchema } from '~/server/schemas/auth'
+import type { DocUserRow } from '~/server/types/auth'
 
 /** 将 '8h'/'24h'/'7d' 格式转为秒数 */
 function parseExpiresIn(value: string): number {
@@ -17,16 +18,12 @@ function parseExpiresIn(value: string): number {
 }
 
 export default defineEventHandler(async (event) => {
-	const body = await readBody<LoginBody>(event)
-	const account = body.account?.trim() || ''
-	const password = body.password?.trim() || ''
-
-	if (!account || !password) {
-		return fail(event, 400, 'AUTH_INVALID_PARAMS', '账号和密码不能为空')
-	}
+	const body = await readValidatedBody(event, loginBodySchema.parse)
+	const account = body.account.trim()
+	const password = body.password.trim()
 
 	// 验证码校验
-	const captchaResult = verifyCaptcha(body.captchaClicks || [], body.captchaToken || '')
+	const captchaResult = verifyCaptcha(body.captchaClicks, body.captchaToken)
 	if (!captchaResult.valid) {
 		return fail(event, 400, 'CAPTCHA_INVALID', captchaResult.message)
 	}
