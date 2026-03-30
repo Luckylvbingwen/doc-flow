@@ -1,7 +1,8 @@
 <template>
 	<div class="df-file-uploader">
 		<!-- ── 拖拽区域 ── -->
-		<div class="df-upload-dropzone" :class="{ 'is-dragover': isDragover, 'is-disabled': disabled }"
+		<div
+class="df-upload-dropzone" :class="{ 'is-dragover': isDragover, 'is-disabled': disabled }"
 			@dragover.prevent="onDragover" @dragleave.prevent="onDragleave" @drop.prevent="onDrop" @click="triggerFileInput">
 			<el-icon class="df-upload-icon" :size="40">
 				<UploadFilled />
@@ -18,7 +19,8 @@
 				</el-icon>
 				选择文件
 			</el-button>
-			<input ref="fileInputRef" type="file" :multiple="multiple" :accept="acceptString" class="df-upload-input"
+			<input
+ref="fileInputRef" type="file" :multiple="multiple" :accept="acceptString" class="df-upload-input"
 				@change="onFileInputChange">
 		</div>
 
@@ -35,7 +37,8 @@
 				待上传文件（{{ fileList.length }}）
 			</div>
 			<el-scrollbar max-height="240px">
-				<div v-for="(file, index) in fileList" :key="file.uid" class="df-upload-file-item"
+				<div
+v-for="(file, index) in fileList" :key="file.uid" class="df-upload-file-item"
 					:class="{ 'is-error': file.error }">
 					<!-- 文件图标 -->
 					<div class="df-upload-file-icon" :class="getFileTypeClass(file.raw.name)">
@@ -44,16 +47,22 @@
 					<!-- 文件信息 -->
 					<div class="df-upload-file-info">
 						<div class="df-upload-file-name">
-							{{ file.raw.name }}
+							<el-tooltip
+v-if="!file.error && versionTag" :content="getVersionedName(file.raw.name)"
+								placement="top" :show-after="300">
+								<span class="df-upload-file-name-text">{{ file.raw.name }}</span>
+							</el-tooltip>
+							<span v-else class="df-upload-file-name-text">{{ file.raw.name }}</span>
 							<span v-if="!file.error && versionTag" class="df-upload-version-tag">
-								→ {{ getVersionedName(file.raw.name) }}
+								{{ versionTag }}
 							</span>
 						</div>
 						<div class="df-upload-file-meta">
 							{{ formatSize(file.raw.size) }}
 						</div>
 						<!-- 进度条 -->
-						<el-progress v-if="file.status === 'uploading'" :percentage="file.progress" :stroke-width="3"
+						<el-progress
+v-if="file.status === 'uploading'" :percentage="file.progress" :stroke-width="3"
 							:show-text="false" class="df-upload-progress" />
 					</div>
 					<!-- 状态标识 -->
@@ -72,7 +81,8 @@
 						</el-tag>
 					</div>
 					<!-- 移除按钮 -->
-					<el-button v-if="file.status !== 'uploading' && file.status !== 'success'" type="danger" text size="small"
+					<el-button
+v-if="file.status !== 'uploading' && file.status !== 'success'" type="danger" text size="small"
 						class="df-upload-file-remove" @click="removeFile(index)">
 						<el-icon>
 							<Close />

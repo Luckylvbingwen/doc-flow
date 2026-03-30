@@ -42,7 +42,8 @@
 				<div class="upload-modal-label">第 1 步：选择要更新的文件</div>
 				<el-scrollbar max-height="200px" class="upload-target-list">
 					<template v-if="publishedFiles.length > 0">
-						<div v-for="file in publishedFiles" :key="file.id" class="upload-target-item"
+						<div
+v-for="file in publishedFiles" :key="file.id" class="upload-target-item"
 							:class="{ active: selectedTargetId === file.id }" @click="selectTarget(file)">
 							<div class="df-upload-file-icon" :class="getFileTypeClass(file.name)">
 								{{ getFileTypeLabel(file.name) }}
@@ -68,8 +69,11 @@
 						更新「<strong>{{ selectedTarget.name }}</strong>」，版本号将从
 						<strong>{{ selectedTarget.version }} → {{ nextVersion }}</strong>
 						自动递增，文件名以首次上传文件名为准。
+						仅允许上传 <strong>{{ targetExtLabel }}</strong> 格式文件。
 					</el-alert>
-					<FileUploader ref="updateUploaderRef" :multiple="false" :version-tag="nextVersion" @change="onFileChange" />
+					<FileUploader
+ref="updateUploaderRef" :multiple="false" :accept="targetAccept"
+						:version-tag="nextVersion" @change="onFileChange" />
 				</div>
 			</div>
 		</template>
@@ -117,6 +121,22 @@ const nextVersion = computed(() => {
 	const vStr = selectedTarget.value.version || 'v0.0'
 	const vNum = parseFloat(vStr.replace('v', ''))
 	return 'v' + (vNum + 1).toFixed(1)
+})
+
+const targetExt = computed(() => {
+	if (!selectedTarget.value) return ''
+	const name = selectedTarget.value.name
+	const dot = name.lastIndexOf('.')
+	return dot === -1 ? '' : name.substring(dot).toLowerCase()
+})
+
+const targetAccept = computed(() => {
+	if (!targetExt.value) return ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.md', '.txt']
+	return [targetExt.value]
+})
+
+const targetExtLabel = computed(() => {
+	return targetExt.value ? targetExt.value.replace('.', '').toUpperCase() : ''
 })
 
 const canSubmit = computed(() => {

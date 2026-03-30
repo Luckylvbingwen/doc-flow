@@ -1,5 +1,6 @@
 <template>
-	<el-dialog v-model="visible" :title="title" :width="width" :top="top" :fullscreen="fullscreen"
+	<el-dialog
+v-model="visible" :title="title" :width="width" :top="top" :fullscreen="fullscreen"
 		:close-on-click-modal="closeOnClickModal" :close-on-press-escape="closeOnPressEscape"
 		:destroy-on-close="destroyOnClose" :append-to-body="appendToBody" :draggable="draggable" class="df-modal"
 		@close="onClose">
@@ -7,9 +8,9 @@
 			<slot name="header" />
 		</template>
 
-		<div class="df-modal-body">
+		<el-scrollbar max-height="60vh" class="df-modal-body">
 			<slot />
-		</div>
+		</el-scrollbar>
 
 		<template #footer>
 			<slot name="footer">
