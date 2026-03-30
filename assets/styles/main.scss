@@ -83,6 +83,23 @@ a {
   text-decoration: none;
 }
 
+/* ── 登录页关键布局（全局 fallback，防止 scoped CSS 延迟加载导致 FOUC） ── */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 100vh;
+  padding-right: clamp(42px, 7vw, 128px);
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+
+  @media (max-width: 900px) {
+    justify-content: center;
+    padding: 16px;
+  }
+}
+
 .pf-app {
   display: flex;
   height: 100vh;

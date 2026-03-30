@@ -1,6 +1,6 @@
 <template>
   <ElConfigProvider :locale="elLocale">
-    <div v-show="!authReady" class="df-skeleton-page">
+    <div v-show="showSkeleton" class="df-skeleton-page">
       <aside class="df-skeleton-sidebar">
         <div class="df-skeleton-brand">
           <div class="df-skeleton-block" style="width: 32px; height: 32px; border-radius: 8px;" />
@@ -31,7 +31,7 @@
         </div>
       </section>
     </div>
-    <div v-show="authReady" style="height: 100%;">
+    <div v-show="!showSkeleton" style="height: 100%;">
       <NuxtLayout>
         <NuxtPage />
       </NuxtLayout>
@@ -45,7 +45,12 @@ import elEn from 'element-plus/es/locale/lang/en'
 import { useAppStore } from '~/stores/app'
 
 const appStore = useAppStore()
+const route = useRoute()
 const authReady = ref(false)
+
+// 登录等 auth 布局页面不需要侧边栏骨架屏，直接展示内容
+const isAuthLayout = computed(() => route.path === '/login')
+const showSkeleton = computed(() => !authReady.value && !isAuthLayout.value)
 
 const elLocale = computed(() => appStore.locale === 'en-US' ? elEn : elZhCn)
 
