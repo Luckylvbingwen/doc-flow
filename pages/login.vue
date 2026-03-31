@@ -11,7 +11,28 @@
 		</div>
 	</div>
 
-	<section v-else class="login-page" :style="loginPageStyle">
+	<section v-else class="login-page">
+		<!-- 极光背景 -->
+		<div class="aurora-bg">
+			<div class="aurora-ribbon aurora-ribbon--1" />
+			<div class="aurora-ribbon aurora-ribbon--2" />
+			<div class="aurora-ribbon aurora-ribbon--3" />
+			<div class="aurora-glow aurora-glow--tl" />
+			<div class="aurora-glow aurora-glow--br" />
+		</div>
+
+		<!-- 点阵纹理 -->
+		<div class="dot-grid" />
+
+		<!-- 左侧标语区 -->
+		<div class="hero-area">
+			<h1 class="hero-title">
+				<span class="hero-title-line">高效协作</span>
+				<span class="hero-title-line hero-title-line--accent">从文档开始</span>
+			</h1>
+			<p class="hero-desc">统一管理 · 版本追溯 · 流程审批 · 安全可控</p>
+		</div>
+
 		<div class="brand-placeholder">
 			<div class="brand-icon">DF</div>
 			<div class="brand-text">DocFlow 协作平台</div>
@@ -82,7 +103,6 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { Lock, User } from '@element-plus/icons-vue'
 import { apiLogin, apiFeishuAuthUrl, apiFeishuCallback } from '~/api/auth'
-import loginBgSrc from '~/assets/images/login-bg.png'
 import feishuIconSrc from '~/assets/images/feishu.png'
 
 const formRef = ref<FormInstance>()
@@ -100,10 +120,6 @@ if (import.meta.client) {
 	const params = new URLSearchParams(window.location.search)
 	feishuCallbackPending.value = !!(params.get('code') && params.get('state'))
 }
-
-const loginPageStyle = computed(() => ({
-	backgroundImage: `linear-gradient(110deg, rgba(8, 31, 74, 0.7), rgba(14, 44, 96, 0.45) 35%, rgba(16, 56, 122, 0.25) 60%, rgba(255, 255, 255, 0) 85%), url('${loginBgSrc}')`
-}))
 
 const form = reactive({
 	account: 'admin@docflow.local',
@@ -246,6 +262,9 @@ definePageMeta({
 </script>
 
 <style lang="scss" scoped>
+/* ============================================
+   页面
+   ============================================ */
 .login-page {
 	position: relative;
 	min-height: 100vh;
@@ -253,11 +272,151 @@ definePageMeta({
 	align-items: center;
 	justify-content: flex-end;
 	padding-right: clamp(42px, 7vw, 128px);
-	background-position: center center;
-	background-size: cover;
-	background-repeat: no-repeat;
+	overflow: hidden;
+	background: #fafbff;
 }
 
+/* ============================================
+   极光背景
+   ============================================ */
+.aurora-bg {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	overflow: hidden;
+}
+
+/* 三条极光色带 —— 不同色相、不同运动轨迹 */
+.aurora-ribbon {
+	position: absolute;
+	width: 140%;
+	height: 45%;
+	border-radius: 50%;
+	filter: blur(70px);
+	opacity: 0;
+	animation: aurora-breathe 8s ease-in-out infinite;
+
+	&--1 {
+		/* 暖橘 → 珊瑚粉 */
+		top: -18%;
+		left: -20%;
+		background: linear-gradient(135deg, rgba(251, 191, 146, 0.38) 0%, rgba(252, 165, 165, 0.28) 50%, rgba(253, 230, 210, 0.15) 100%);
+		animation-delay: 0s;
+		animation-duration: 10s;
+	}
+
+	&--2 {
+		/* 薄荷 → 天青 */
+		top: 30%;
+		left: -10%;
+		background: linear-gradient(160deg, rgba(167, 243, 208, 0.25) 0%, rgba(147, 220, 252, 0.3) 55%, rgba(196, 231, 253, 0.12) 100%);
+		animation-delay: 2.5s;
+		animation-duration: 12s;
+	}
+
+	&--3 {
+		/* 薰衣草 → 丁香 */
+		bottom: -15%;
+		right: -15%;
+		background: linear-gradient(120deg, rgba(196, 181, 253, 0.22) 0%, rgba(233, 213, 255, 0.3) 50%, rgba(219, 234, 254, 0.12) 100%);
+		animation-delay: 5s;
+		animation-duration: 14s;
+	}
+}
+
+@keyframes aurora-breathe {
+	0%, 100% {
+		opacity: 0.3;
+		transform: translateY(0) scale(1);
+	}
+	50% {
+		opacity: 0.7;
+		transform: translateY(-20px) scale(1.03);
+	}
+}
+
+/* 角落弥散光 */
+.aurora-glow {
+	position: absolute;
+	border-radius: 50%;
+	filter: blur(100px);
+	pointer-events: none;
+
+	&--tl {
+		width: 500px;
+		height: 500px;
+		top: -120px;
+		left: -100px;
+		background: radial-gradient(circle, rgba(251, 207, 177, 0.3), transparent 70%);
+	}
+
+	&--br {
+		width: 420px;
+		height: 420px;
+		bottom: -80px;
+		right: -60px;
+		background: radial-gradient(circle, rgba(196, 181, 253, 0.2), transparent 70%);
+	}
+}
+
+/* ============================================
+   点阵纹理
+   ============================================ */
+.dot-grid {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	background-image: radial-gradient(circle, rgba(148, 163, 184, 0.18) 1px, transparent 1px);
+	background-size: 28px 28px;
+	mask-image: radial-gradient(ellipse 70% 70% at 35% 50%, black 20%, transparent 72%);
+	-webkit-mask-image: radial-gradient(ellipse 70% 70% at 35% 50%, black 20%, transparent 72%);
+}
+
+/* ============================================
+   左侧标语
+   ============================================ */
+.hero-area {
+	position: absolute;
+	left: clamp(48px, 8vw, 140px);
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 1;
+}
+
+.hero-title {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.hero-title-line {
+	display: block;
+	font-size: clamp(32px, 3.8vw, 52px);
+	font-weight: 800;
+	letter-spacing: 2px;
+	color: #334155;
+	line-height: 1.3;
+
+	&--accent {
+		background: linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+}
+
+.hero-desc {
+	margin: 18px 0 0;
+	font-size: 15px;
+	color: #94a3b8;
+	letter-spacing: 3px;
+	font-weight: 400;
+}
+
+/* ============================================
+   品牌
+   ============================================ */
 .brand-placeholder {
 	position: fixed;
 	top: 24px;
@@ -271,35 +430,53 @@ definePageMeta({
 .brand-icon {
 	width: 34px;
 	height: 34px;
-	border-radius: 8px;
-	background: rgba(255, 255, 255, 0.24);
-	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+	border-radius: 10px;
+	background: linear-gradient(135deg, #f97316, #ec4899, #8b5cf6);
 	color: #ffffff;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 13px;
-	font-weight: 700;
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: -0.5px;
+	box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25);
 }
 
 .brand-text {
-	color: #ffffff;
-	font-size: 22px;
+	color: #1e293b;
+	font-size: 20px;
 	font-weight: 700;
-	letter-spacing: 0.6px;
+	letter-spacing: 0.5px;
 }
 
+/* ============================================
+   登录卡片
+   ============================================ */
 .login-content {
-	width: 430px;
+	position: relative;
+	z-index: 1;
+	width: 420px;
 }
 
 .login-card {
-	border-radius: 12px;
-	background: rgba(255, 255, 255, 0.96);
-	backdrop-filter: blur(2px);
+	border-radius: 20px;
+	background: rgba(255, 255, 255, 0.72);
+	backdrop-filter: blur(24px) saturate(1.6);
 	min-height: 450px;
-	padding: 24px 30px 28px;
-	box-shadow: 0 18px 38px rgba(15, 48, 138, 0.24);
+	padding: 28px 32px 30px;
+	box-shadow:
+		0 0 0 1px rgba(255, 255, 255, 0.6),
+		0 1px 2px rgba(0, 0, 0, 0.03),
+		0 8px 32px rgba(0, 0, 0, 0.06);
+	transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s;
+
+	&:hover {
+		transform: translateY(-2px);
+		box-shadow:
+			0 0 0 1px rgba(255, 255, 255, 0.7),
+			0 1px 2px rgba(0, 0, 0, 0.03),
+			0 16px 48px rgba(0, 0, 0, 0.09);
+	}
 
 	&-header {
 		width: 100%;
@@ -315,30 +492,45 @@ definePageMeta({
 	h2 {
 		margin: 0;
 		text-align: center;
-		color: var(--df-primary);
-		font-size: 26px;
+		font-size: 24px;
 		font-weight: 700;
+		color: #1e293b;
 	}
 
 	p {
-		margin: 8px 0 0;
-		color: var(--df-subtext);
+		margin: 6px 0 0;
+		color: #94a3b8;
 		font-size: 13px;
 		text-align: center;
 	}
 }
 
 .login-form {
-	margin-top: 20px;
+	margin-top: 22px;
 
 	:deep(.el-form-item) {
 		margin-bottom: 18px;
 	}
 
+	:deep(.el-form-item__label) {
+		color: #475569;
+		font-weight: 500;
+	}
+
 	:deep(.el-input__wrapper) {
-		min-height: 42px;
-		border-radius: 6px;
-		box-shadow: 0 0 0 1px #d7dde9 inset;
+		min-height: 44px;
+		border-radius: 10px;
+		box-shadow: 0 0 0 1px #e2e8f0 inset;
+		background: rgba(255, 255, 255, 0.65);
+		transition: all 0.2s;
+
+		&:hover {
+			box-shadow: 0 0 0 1px #cbd5e1 inset;
+		}
+
+		&.is-focus {
+			box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.3) inset;
+		}
 	}
 }
 
@@ -360,11 +552,26 @@ definePageMeta({
 
 .login-submit {
 	width: 100%;
-	height: 44px;
+	height: 46px;
 	margin-top: 2px;
-	border-radius: 999px;
-	font-size: 17px;
-	letter-spacing: 3px;
+	border-radius: 12px;
+	font-size: 16px;
+	font-weight: 600;
+	letter-spacing: 2px;
+	border: none;
+	background: linear-gradient(135deg, #f97316 0%, #ec4899 60%, #8b5cf6 100%);
+	color: #fff;
+	box-shadow: 0 4px 16px rgba(249, 115, 22, 0.22);
+	transition: all 0.25s;
+
+	&:hover {
+		box-shadow: 0 6px 24px rgba(249, 115, 22, 0.32);
+		transform: translateY(-1px);
+	}
+
+	&:active {
+		transform: translateY(0);
+	}
 }
 
 .login-divider {
@@ -390,42 +597,52 @@ definePageMeta({
 .feishu-login-btn {
 	width: 100%;
 	height: 44px;
-	border-radius: 999px;
-	font-size: 15px;
-	letter-spacing: 1px;
-	background: #2b5aed;
-	color: #ffffff;
-	border: none;
+	border-radius: 12px;
+	font-size: 14px;
+	font-weight: 500;
+	letter-spacing: 0.5px;
+	background: rgba(255, 255, 255, 0.5);
+	color: #475569;
+	border: 1px solid #e2e8f0;
+	transition: all 0.2s;
 
 	&:hover,
 	&:focus {
-		background: #3d6ef7;
-		color: #ffffff;
+		background: rgba(255, 255, 255, 0.8);
+		color: #1e293b;
+		border-color: #cbd5e1;
 	}
 
 	.feishu-icon {
 		margin-right: 6px;
-		background: #ffffff;
 		border-radius: 4px;
-		padding: 2px;
 	}
 }
 
 .login-tips {
-	margin-top: 14px;
-	padding: 10px 12px;
+	margin-top: 16px;
+	padding: 10px 14px;
 	border-radius: 10px;
-	border: 1px dashed #c7d2fe;
-	background: #eef2ff;
+	border: 1px dashed #e2e8f0;
+	background: rgba(255, 255, 255, 0.4);
 
 	p {
 		margin: 0;
 		font-size: 12px;
-		color: #4338ca;
+		color: #64748b;
 
 		& + p {
-			margin-top: 4px;
+			margin-top: 3px;
 		}
+	}
+}
+
+/* ============================================
+   响应式
+   ============================================ */
+@media (max-width: 1024px) {
+	.hero-area {
+		display: none;
 	}
 }
 
@@ -442,11 +659,10 @@ definePageMeta({
 	.login-page {
 		justify-content: center;
 		padding: 16px;
-		background-position: center left;
 	}
 
 	.login-content {
-		width: min(100%, 430px);
+		width: min(100%, 420px);
 	}
 
 	.login-card {
@@ -463,7 +679,7 @@ definePageMeta({
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: linear-gradient(135deg, #f0f4ff 0%, #e8ecf8 100%);
+	background: linear-gradient(135deg, #fafbff 0%, #f5f3ff 100%);
 }
 
 .feishu-loading-card {
@@ -482,7 +698,7 @@ definePageMeta({
 	width: 12px;
 	height: 12px;
 	border-radius: 50%;
-	background: linear-gradient(135deg, #3b82f6, #6366f1);
+	background: linear-gradient(135deg, #f97316, #ec4899);
 	animation: feishu-bounce 1.4s ease-in-out infinite both;
 
 	&:nth-child(1) { animation-delay: -0.32s; }
