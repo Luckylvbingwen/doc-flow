@@ -11,7 +11,7 @@
 | 组件 | 用途 | 使用页面 |
 |------|------|----------|
 | EmptyState | ~~统一空态（图标+文字+可选操作按钮）~~ ✅ 已完成 | ~~几乎所有列表页~~ |
-| BulkActionBar | 批量操作浮动条（已选N项+操作按钮组） | docs、recycle-bin |
+| BulkActionBar | ~~批量操作浮动药丸栏（已选N项+操作按钮组）~~ ✅ 已完成 | ~~docs、recycle-bin~~ |
 | FileMetaHeader | 文件头信息条（图标+名称+类型+大小+创建人+时间） | file/[id]、approvals |
 | ApprovalDrawer | ~~审批详情抽屉（文件卡+审批链+意见区+操作按钮）~~ ✅ 已完成 | ~~approvals、file/[id]~~ |
 | ApprovalChain | ~~审批流程节点可视化（发起→审批人→…→完成）~~ ✅ 已完成 | ~~approvals、file/[id]~~ |
