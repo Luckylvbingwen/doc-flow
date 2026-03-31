@@ -15,7 +15,7 @@
 | FileMetaHeader | 文件头信息条（图标+名称+类型+大小+创建人+时间） | file/[id]、approvals |
 | ApprovalDrawer | 审批详情抽屉（文件卡+审批链+意见区+操作按钮） | approvals、file/[id] |
 | ApprovalChain | ~~审批流程节点可视化（发起→审批人→…→完成）~~ ✅ 已完成 | ~~approvals、file/[id]~~ |
-| CommentThread | 评论线程（头像+内容+时间+回复） | file/[id] |
+| CommentThread | ~~评论线程（头像+内容+时间+回复）~~ ✅ 已完成 | ~~file/[id]~~ |
 | ActivityFilterBar | 日志筛选条（搜索+时间范围+操作类型 chips） | logs |
 | MemberPicker | 成员选择器（搜索+列表+已选标签） | repo 设置、admin |
 | PermissionEditor | 权限编辑弹窗（继承/自定义+角色矩阵） | repo 设置、file/[id] |
@@ -158,6 +158,7 @@
 | CaptchaDialog | 已有 |
 | EmptyState（缺省页，含 11 种 preset + unDraw 插画） | 2026-03-31 |
 | ApprovalChain（审批链可视化，支持 4 种状态 + 紧凑/垂直模式） | 2026-03-31 |
+| CommentThread（评论线程，支持嵌套回复/删除确认/Ctrl+Enter/动画） | 2026-03-31 |
 
 ### 工具 / 后端
 

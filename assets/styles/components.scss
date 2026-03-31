@@ -1449,7 +1449,10 @@ html.dark .df-upload-file-item.is-error {
   border: 1.5px solid var(--df-border);
   background: var(--df-panel);
   font-size: 13px;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
   position: relative;
 }
 
@@ -1466,7 +1469,9 @@ html.dark .df-upload-file-item.is-error {
   color: #fff;
   background: var(--df-subtext);
   flex-shrink: 0;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
 }
 
 /* ── 文字区 ── */
@@ -1498,7 +1503,9 @@ html.dark .df-upload-file-item.is-error {
   color: var(--df-subtext);
   font-size: 14px;
   opacity: 0.5;
-  transition: color 0.2s, opacity 0.2s;
+  transition:
+    color 0.2s,
+    opacity 0.2s;
 }
 
 .df-chain-arrow--done {
@@ -1548,8 +1555,13 @@ html.dark .df-upload-file-item.is-error {
 }
 
 @keyframes df-chain-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
-  50% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.08); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.08);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1685,4 +1697,292 @@ html.dark .df-upload-file-item.is-error {
 
 .df-approval-chain--vertical.df-approval-chain--compact .df-chain-arrow {
   margin: 2px 0 2px 14px;
+}
+
+/* =============================================
+   CommentThread — 评论线程
+   ============================================= */
+.df-comment-thread {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 评论列表 ── */
+.df-comment-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.df-comment-item {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--df-border);
+}
+
+.df-comment-item:last-child {
+  border-bottom: none;
+}
+
+/* ── 评论行 ── */
+.df-comment-row {
+  display: flex;
+  gap: 12px;
+}
+
+/* ── 头像 ── */
+.df-comment-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.df-comment-avatar--sm {
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+}
+
+/* ── 内容体 ── */
+.df-comment-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.df-comment-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.df-comment-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--df-text);
+}
+
+.df-comment-time {
+  font-size: 12px;
+  color: var(--df-subtext);
+}
+
+.df-comment-content {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--df-text);
+  word-break: break-word;
+}
+
+/* ── @提及 ── */
+.df-comment-mention {
+  color: var(--df-primary);
+  font-size: 12px;
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+/* ── 操作按钮 ── */
+.df-comment-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.df-comment-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 12px;
+  color: var(--df-subtext);
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+.df-comment-action-btn:hover {
+  color: var(--df-text);
+  background: var(--df-surface);
+}
+
+.df-comment-action-btn--danger:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+/* ── 嵌套回复 ── */
+.df-comment-replies {
+  margin-top: 12px;
+  padding-left: 4px;
+  border-left: 2px solid var(--df-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.df-comment-row--reply {
+  padding: 10px 0 10px 12px;
+}
+
+.df-comment-row--reply:not(:last-child) {
+  border-bottom: 1px solid var(--df-border);
+}
+
+.df-comment-row--reply .df-comment-name {
+  font-size: 12px;
+}
+
+.df-comment-row--reply .df-comment-content {
+  font-size: 13px;
+}
+
+/* ── 回复输入框 ── */
+.df-reply-input-wrap {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: var(--df-surface);
+  border-radius: 10px;
+  border: 1px solid var(--df-border);
+}
+
+.df-reply-input-label {
+  font-size: 12px;
+  color: var(--df-subtext);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.df-reply-input-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.df-reply-input-hint {
+  font-size: 11px;
+  color: var(--df-subtext);
+  opacity: 0.7;
+}
+
+.df-reply-input-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── 评论输入区（底部固定） ── */
+.df-comment-composer {
+  display: flex;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--df-border);
+  margin-top: 4px;
+}
+
+.df-comment-composer-body {
+  flex: 1;
+}
+
+.df-comment-composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.df-comment-composer-hint {
+  font-size: 11px;
+  color: var(--df-subtext);
+  opacity: 0.7;
+}
+
+/* ── 加载态 ── */
+.df-comment-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 0;
+  font-size: 13px;
+  color: var(--df-subtext);
+}
+
+/* ── 只读模式 ── */
+.df-comment-thread--readonly .df-comment-item {
+  padding: 12px 0;
+}
+
+/* ── 入场动画 ── */
+.df-comment-enter-active {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.df-comment-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.df-comment-enter-from {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.df-comment-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* 回复框展开动画 */
+.df-reply-box-enter-active {
+  transition:
+    opacity 0.2s ease,
+    max-height 0.25s ease;
+  overflow: hidden;
+}
+
+.df-reply-box-leave-active {
+  transition:
+    opacity 0.15s ease,
+    max-height 0.2s ease;
+  overflow: hidden;
+}
+
+.df-reply-box-enter-from {
+  opacity: 0;
+  max-height: 0;
+}
+
+.df-reply-box-enter-to {
+  max-height: 300px;
+}
+
+.df-reply-box-leave-from {
+  max-height: 300px;
+}
+
+.df-reply-box-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .df-comment-enter-active,
+  .df-comment-leave-active,
+  .df-reply-box-enter-active,
+  .df-reply-box-leave-active {
+    transition: none;
+  }
 }
