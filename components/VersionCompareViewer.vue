@@ -5,7 +5,9 @@
 				<!-- 顶部工具栏 -->
 				<div class="df-compare-toolbar">
 					<div class="ct-title">
-						<span style="font-size: 16px">📋</span>
+						<el-icon :size="18" color="var(--df-primary)">
+							<Switch />
+						</el-icon>
 						版本对比 — {{ data?.fileName }}
 					</div>
 					<span class="ct-meta">
@@ -82,12 +84,17 @@
 				<div v-if="loading" style="
 						flex: 1;
 						display: flex;
+						flex-direction: column;
 						align-items: center;
 						justify-content: center;
+						gap: 12px;
+						color: var(--df-subtext);
+						font-size: 13px;
 					">
 					<el-icon class="is-loading" :size="32" color="var(--df-primary)">
 						<Loading />
 					</el-icon>
+					<span>正在计算版本差异…</span>
 				</div>
 			</div>
 		</Transition>
@@ -95,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { Close, View, Loading } from '@element-plus/icons-vue'
+import { Close, View, Loading, Switch } from '@element-plus/icons-vue'
 import type { CompareMode, CompareResult } from '~/types/version'
 
 const props = defineProps<{

@@ -39,10 +39,14 @@
     "diff": "^8.0.4",
     "element-plus": "^2.13.6",
     "jose": "^6.2.2",
+    "mammoth": "^1.12.0",
+    "markdown-it": "^14.1.1",
     "nprogress": "^0.2.0",
     "nuxt": "^3.21.2",
+    "pdf-parse": "^2.4.5",
     "pinia": "^3.0.4",
     "vue": "^3.5.30",
+    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -50,6 +54,7 @@
     "@nuxt/test-utils": "^4.0.0",
     "@pinia/testing": "^1.0.3",
     "@types/diff": "^7.0.2",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^25.5.0",
     "@types/nprogress": "^0.2.3",
     "@vue/test-utils": "^2.4.6",

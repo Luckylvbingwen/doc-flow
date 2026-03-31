@@ -1,7 +1,10 @@
 <template>
 	<div class="df-version-sidebar">
 		<div class="vs-title">
-			🕐 版本记录
+			<el-icon :size="16">
+				<Clock />
+			</el-icon>
+			版本记录
 			<span class="vs-count">{{ versions.length }} 个版本</span>
 		</div>
 		<el-scrollbar max-height="calc(100vh - 300px)">
@@ -61,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { Download, RefreshLeft, Switch, Upload } from '@element-plus/icons-vue'
+import { Clock, Download, RefreshLeft, Switch, Upload } from '@element-plus/icons-vue'
 import type { VersionInfo } from '~/types/version'
 import { formatTime } from '~/utils/format'
 

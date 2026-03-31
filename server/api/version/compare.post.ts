@@ -1,20 +1,39 @@
 import { versionCompareSchema } from '~/server/schemas/version'
 import { computeLineDiff, mergeAdjacentDiffs, buildDiffSummary, renderDiffHtml } from '~/server/utils/diff'
+import { isSupportedFormat } from '~/server/utils/extract'
 import type { CompareResult } from '~/types/version'
 
 /**
  * POST /api/version/compare
  * 版本对比接口：接收两个版本 ID，返回差异对比结果
+ *
+ * 未来接入存储后流程：
+ * 1. 从 DB 查版本记录 → 获取 storage_key + ext
+ * 2. 从对象存储下载两个版本文件 Buffer
+ * 3. extractText(buffer, ext) 提取文本
+ * 4. computeLineDiff → mergeAdjacentDiffs → buildDiffSummary → renderDiffHtml
  */
 export default defineEventHandler(async (event) => {
 	const body = await readValidatedBody(event, versionCompareSchema.parse)
 
-	// TODO: 从数据库查询版本信息
-	// const fromVersion = await prisma.doc_document_versions.findUnique({ where: { id: body.fromVersionId } })
-	// const toVersion = await prisma.doc_document_versions.findUnique({ where: { id: body.toVersionId } })
-	// TODO: 从对象存储读取文件内容并提取文本
+	// TODO: 接入真实存储
+	// const [fromVer, toVer] = await Promise.all([
+	//   prisma.doc_document_versions.findUnique({ where: { id: body.fromVersionId } }),
+	//   prisma.doc_document_versions.findUnique({ where: { id: body.toVersionId } }),
+	// ])
+	// if (!fromVer || !toVer) return fail(event, 404, 'NOT_FOUND', '版本不存在')
+	// const ext = fromVer.mime_type?.split('/').pop() || 'txt'
+	// if (!isSupportedFormat(ext)) return fail(event, 400, 'UNSUPPORTED_FORMAT', `不支持的文件格式: ${ext}`)
+	// const [fromBuf, toBuf] = await Promise.all([
+	//   storage.getObject(fromVer.storage_bucket, fromVer.storage_key),
+	//   storage.getObject(toVer.storage_bucket, toVer.storage_key),
+	// ])
+	// const [newText, oldText] = await Promise.all([
+	//   extractText(fromBuf, ext),
+	//   extractText(toBuf, ext),
+	// ])
 
-	// Mock 内容 — 模拟 Word 文档的新旧版本文本
+	// Mock 阶段 — 使用内置示例内容
 	const mockData = getMockContent(body.documentId)
 	const fileType = mockData.fileType
 
