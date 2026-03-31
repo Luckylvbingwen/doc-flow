@@ -10,8 +10,7 @@
 		<el-scrollbar class="dn-body">
 			<template v-for="cat in filteredCategories" :key="cat.id">
 				<!-- Category header -->
-				<div class="dn-node dn-category" :class="{ 'is-active': activeCategoryId === cat.id }"
-					@click="handleCategoryClick(cat)">
+				<div class="dn-node dn-category" @click="handleCategoryClick(cat)">
 					<span class="dn-arrow" :class="{ 'is-collapsed': !expandedMap[cat.id] }" @click.stop="toggleExpand(cat.id)">
 						<el-icon :size="12">
 							<ArrowDown />
@@ -169,7 +168,6 @@ const emit = defineEmits<{
 const keyword = ref('')
 
 // ── Active state ──
-const activeCategoryId = ref<string | null>(null)
 const activeGroupId = computed(() => props.modelValue)
 
 // ── Expand state ──
@@ -178,10 +176,6 @@ const expandedMap = reactive<Record<string | number, boolean>>({})
 // 默认展开所有分类
 onMounted(() => {
 	expandAll()
-	// 默认激活第一个分类
-	if (props.categories.length > 0) {
-		activeCategoryId.value = props.categories[0].id
-	}
 })
 
 // ── Filtering ──
@@ -262,7 +256,7 @@ function toggleExpand(id: string | number) {
 }
 
 function handleCategoryClick(cat: NavTreeCategory) {
-	activeCategoryId.value = cat.id
+	toggleExpand(cat.id)
 	emit('category-select', cat)
 }
 
