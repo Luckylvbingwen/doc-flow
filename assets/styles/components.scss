@@ -1362,6 +1362,145 @@ html.dark .df-upload-file-item.is-error {
   color: var(--df-subtext);
 }
 
+/* ── FileMetaHeader — 文件头信息条 ── */
+.df-file-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px;
+  background: var(--df-panel);
+  border: 1px solid var(--df-border);
+  border-radius: 12px;
+}
+
+.df-file-meta__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.df-file-meta__title-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.df-file-meta__name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--df-text);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+.df-file-meta__badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.df-file-meta__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.df-file-meta__props {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-left: 58px; /* 44px icon + 14px gap */
+}
+
+.df-file-meta__prop {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.df-file-meta__prop-label {
+  color: var(--df-subtext);
+  opacity: 0.75;
+  font-weight: 400;
+}
+
+.df-file-meta__prop-value {
+  color: var(--df-text);
+  font-weight: 500;
+}
+
+.df-file-meta__prop-value--highlight {
+  color: var(--df-primary);
+  font-weight: 600;
+}
+
+/* 属性项之间分隔点 */
+.df-file-meta__prop + .df-file-meta__prop::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--df-subtext);
+  opacity: 0.35;
+  margin-right: 15px;
+}
+
+/* FileMetaHeader 紧凑模式 */
+.df-file-meta--compact {
+  padding: 12px 16px;
+  gap: 6px;
+  border-radius: 10px;
+}
+
+.df-file-meta--compact .df-file-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.df-file-meta--compact .df-file-meta__head {
+  gap: 10px;
+}
+
+.df-file-meta--compact .df-file-meta__name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.df-file-meta--compact .df-file-meta__props {
+  padding-left: 44px; /* 34px icon + 10px gap */
+  gap: 16px;
+}
+
+.df-file-meta--compact .df-file-meta__prop {
+  font-size: 12px;
+}
+
+.df-file-meta--compact .df-file-meta__prop + .df-file-meta__prop::before {
+  margin-right: 11px;
+}
+
+/* 新增文件类型色 — pptx */
+.df-file-icon--pptx,
+.df-file-icon--ppt {
+  background: linear-gradient(135deg, #f97316, #fb923c);
+}
+
 /* =============================================
    EmptyState — 缺省页 / 空状态
    ============================================= */
