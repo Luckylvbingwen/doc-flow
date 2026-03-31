@@ -1427,3 +1427,262 @@ html.dark .df-upload-file-item.is-error {
 .df-empty-state--compact .df-empty-state__action {
   margin-top: 14px;
 }
+
+/* =============================================
+   ApprovalChain — 审批链流程可视化
+   ============================================= */
+.df-approval-chain {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 8px 0;
+}
+
+/* ── 节点通用 ── */
+.df-chain-node {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--df-border);
+  background: var(--df-panel);
+  font-size: 13px;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+/* ── 头像 ── */
+.df-chain-node__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--df-subtext);
+  flex-shrink: 0;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+/* ── 文字区 ── */
+.df-chain-node__info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.df-chain-node__name {
+  font-weight: 500;
+  color: var(--df-text);
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.df-chain-node__status {
+  font-size: 11px;
+  color: var(--df-subtext);
+  line-height: 1.3;
+}
+
+/* ── 箭头 ── */
+.df-chain-arrow {
+  display: flex;
+  align-items: center;
+  margin: 0 6px;
+  color: var(--df-subtext);
+  font-size: 14px;
+  opacity: 0.5;
+  transition: color 0.2s, opacity 0.2s;
+}
+
+.df-chain-arrow--done {
+  color: #22c55e;
+  opacity: 0.8;
+}
+
+/* ── 状态：已通过 ── */
+.df-chain-node--approved {
+  border-color: #bbf7d0;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+}
+
+.df-chain-node--approved .df-chain-node__avatar {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.df-chain-node--approved .df-chain-node__name {
+  color: #15803d;
+}
+
+.df-chain-node--approved .df-chain-node__status {
+  color: #16a34a;
+}
+
+/* ── 状态：当前审批中 ── */
+.df-chain-node--current {
+  border-color: #c7d2fe;
+  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.df-chain-node--current .df-chain-node__avatar {
+  background: var(--df-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  animation: df-chain-pulse 2s ease-in-out infinite;
+}
+
+.df-chain-node--current .df-chain-node__name {
+  color: var(--df-primary);
+  font-weight: 600;
+}
+
+.df-chain-node--current .df-chain-node__status {
+  color: #6366f1;
+}
+
+@keyframes df-chain-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+  50% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .df-chain-node--current .df-chain-node__avatar {
+    animation: none;
+  }
+}
+
+/* ── 状态：已驳回 ── */
+.df-chain-node--rejected {
+  border-color: #fecaca;
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+}
+
+.df-chain-node--rejected .df-chain-node__avatar {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.df-chain-node--rejected .df-chain-node__name {
+  color: #dc2626;
+}
+
+.df-chain-node--rejected .df-chain-node__status {
+  color: #ef4444;
+}
+
+/* ── 状态：等待中 ── */
+.df-chain-node--waiting {
+  border-color: var(--df-border);
+  background: var(--df-surface);
+  opacity: 0.7;
+}
+
+.df-chain-node--waiting .df-chain-node__avatar {
+  background: #a1a1aa;
+}
+
+/* ── 首尾端点节点 ── */
+.df-chain-node--endpoint {
+  border-style: dashed;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.df-chain-node__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.df-chain-node__icon--start {
+  background: #a1a1aa;
+}
+
+.df-chain-node__icon--end {
+  background: #22c55e;
+}
+
+.df-chain-node__label {
+  font-size: 12px;
+  color: var(--df-subtext);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.df-chain-node--completed {
+  border-color: #bbf7d0;
+  border-style: solid;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+}
+
+.df-chain-node--completed .df-chain-node__icon--end {
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.df-chain-node--completed .df-chain-node__label {
+  color: #15803d;
+  font-weight: 600;
+}
+
+/* ── 紧凑模式 ── */
+.df-approval-chain--compact .df-chain-node {
+  padding: 5px 10px;
+  gap: 7px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.df-approval-chain--compact .df-chain-node__avatar {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+
+.df-approval-chain--compact .df-chain-node__status {
+  font-size: 10px;
+}
+
+.df-approval-chain--compact .df-chain-arrow {
+  margin: 0 4px;
+  font-size: 12px;
+}
+
+.df-approval-chain--compact .df-chain-node--endpoint {
+  padding: 5px 8px;
+}
+
+.df-approval-chain--compact .df-chain-node__icon {
+  width: 22px;
+  height: 22px;
+}
+
+.df-approval-chain--compact .df-chain-node__label {
+  font-size: 11px;
+}
+
+/* ── 垂直布局 ── */
+.df-approval-chain--vertical {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.df-approval-chain--vertical .df-chain-arrow {
+  margin: 4px 0 4px 18px;
+  transform: rotate(90deg);
+}
+
+.df-approval-chain--vertical.df-approval-chain--compact .df-chain-arrow {
+  margin: 2px 0 2px 14px;
+}
