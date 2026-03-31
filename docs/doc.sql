@@ -83,8 +83,8 @@ name VARCHAR(150) NOT NULL,
 description VARCHAR(500) DEFAULT NULL,
 owner_user_id BIGINT UNSIGNED NOT NULL COMMENT '组负责人',
 approval_enabled TINYINT NOT NULL DEFAULT 1 COMMENT '1开启审批 0关闭',
-approval_mode TINYINT NOT NULL DEFAULT 1 COMMENT '1依次审批 2会签审批',
 file_size_limit_mb INT NOT NULL DEFAULT 50 COMMENT '单文件大小限制',
+allowed_file_types VARCHAR(500) DEFAULT NULL COMMENT '文件类型白名单JSON，如["docx","pdf"]',
 file_name_regex VARCHAR(300) DEFAULT NULL COMMENT '命名规范正则',
 status TINYINT NOT NULL DEFAULT 1 COMMENT '1启用 0停用',
 created_by BIGINT UNSIGNED NOT NULL,
@@ -133,6 +133,7 @@ title VARCHAR(255) NOT NULL COMMENT '文档名(逻辑名)',
 ext VARCHAR(20) DEFAULT NULL COMMENT '文件扩展名',
 status TINYINT NOT NULL COMMENT '1待审批 2审批中 3已发布 4已驳回 5已撤回 6已删除',
 current_version_id BIGINT UNSIGNED DEFAULT NULL COMMENT '当前发布版本ID',
+download_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '下载次数',
 created_by BIGINT UNSIGNED NOT NULL,
 updated_by BIGINT UNSIGNED DEFAULT NULL,
 created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -301,6 +302,8 @@ approver_user_id BIGINT UNSIGNED NOT NULL,
 action_status TINYINT NOT NULL DEFAULT 1 COMMENT '1待处理 2通过 3驳回',
 action_comment VARCHAR(500) DEFAULT NULL,
 action_at DATETIME(3) DEFAULT NULL,
+remind_count TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '已催办次数',
+last_reminded_at DATETIME(3) DEFAULT NULL COMMENT '最后催办时间',
 created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
 UNIQUE KEY uk_instance_order (instance_id, node_order),
@@ -365,5 +368,26 @@ KEY idx_group_updated (group_id, updated_at),
 CONSTRAINT fk_search_index_docs_doc FOREIGN KEY (document_id) REFERENCES doc_documents(id),
 CONSTRAINT fk_search_index_docs_group FOREIGN KEY (group_id) REFERENCES doc_groups(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='全文检索索引（可选）';
+
+-- =========================
+-- 6. 全局配置
+-- =========================
+DROP TABLE IF EXISTS doc_system_config;
+CREATE TABLE doc_system_config (
+id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+config_key VARCHAR(100) NOT NULL COMMENT '配置键',
+config_value VARCHAR(2000) NOT NULL COMMENT '配置值',
+description VARCHAR(300) DEFAULT NULL COMMENT '说明',
+created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+UNIQUE KEY uk_config_key (config_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='全局配置表';
+
+INSERT INTO doc_system_config (config_key, config_value, description) VALUES
+('file_size_limit_mb',      '200',                           '单文件大小上限(MB)'),
+('allowed_file_types',      '["docx","xlsx","pdf","md","pptx"]', '支持的文件类型'),
+('version_retention_limit', '50',                            '版本保留数上限'),
+('approval_timeout_hours',  '24',                            '审批超时默认时间(小时)'),
+('remind_max_count',        '3',                             '催办次数上限');
 
 SET FOREIGN_KEY_CHECKS = 1;

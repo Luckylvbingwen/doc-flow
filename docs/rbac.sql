@@ -68,10 +68,13 @@ CREATE TABLE sys_user_roles (
 	id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 	user_id    BIGINT UNSIGNED NOT NULL,
 	role_id    BIGINT UNSIGNED NOT NULL,
+	scope_type TINYINT         DEFAULT NULL COMMENT '管理范围类型: 1部门 2产品线, NULL表示全局',
+	scope_ref_id BIGINT UNSIGNED DEFAULT NULL COMMENT '关联 doc_departments/doc_product_lines.id',
 	created_by BIGINT UNSIGNED DEFAULT NULL,
 	created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-	UNIQUE KEY uk_user_role (user_id, role_id),
+	UNIQUE KEY uk_user_role_scope (user_id, role_id, scope_type, scope_ref_id),
 	KEY idx_role (role_id),
+	KEY idx_scope (scope_type, scope_ref_id),
 	CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES doc_users(id),
 	CONSTRAINT fk_user_roles_role FOREIGN KEY (role_id) REFERENCES sys_roles(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户-角色关联';
