@@ -16,6 +16,7 @@
 definePageMeta({
 	layout: 'prototype'
 })
+useHead({ title: '通知中心 - DocFlow' })
 
 const notifications = [
 	{ id: 1, title: '审批提醒', content: '你有 2 条待审批文档，请及时处理。', time: '10分钟前', read: false },

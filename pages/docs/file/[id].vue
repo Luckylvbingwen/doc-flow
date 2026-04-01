@@ -3,11 +3,15 @@
 		<PageTitle :title="fileName" subtitle="预览、版本管理与对比">
 			<template #actions>
 				<el-button @click="navigateTo(`/docs/repo/${repoId}`)">
-					<el-icon><Back /></el-icon>
+					<el-icon>
+						<Back />
+					</el-icon>
 					返回仓库
 				</el-button>
 				<el-button type="primary" @click="handleSubmitApproval">
-					<el-icon><Promotion /></el-icon>
+					<el-icon>
+						<Promotion />
+					</el-icon>
 					提交审批
 				</el-button>
 			</template>
@@ -27,10 +31,7 @@
 								currentVersion?.versionNo || '-'
 							}}
 						</span>
-						<span
-							class="file-status"
-							:class="`file-status--${statusKey}`"
-						>
+						<span class="file-status" :class="`file-status--${statusKey}`">
 							{{ statusText }}
 						</span>
 					</p>
@@ -44,25 +45,21 @@
 			<div class="df-preview-pane">
 				<!-- 页内对比模式条 -->
 				<div v-if="inlineComparing" class="df-compare-exit">
-					<el-icon><Switch /></el-icon>
+					<el-icon>
+						<Switch />
+					</el-icon>
 					<span>版本对比模式</span>
 					<span style="font-weight: 600">
 						{{ currentVersion?.versionNo }} vs
 						{{ compareTarget?.versionNo }}
 					</span>
-					<el-button
-						size="small"
-						style="margin-left: auto"
-						@click="exitInlineCompare"
-					>
+					<el-button size="small" style="margin-left: auto" @click="exitInlineCompare">
 						退出对比
 					</el-button>
-					<el-button
-						size="small"
-						type="primary"
-						@click="openFullscreenCompare"
-					>
-						<el-icon><FullScreen /></el-icon>
+					<el-button size="small" type="primary" @click="openFullscreenCompare">
+						<el-icon>
+							<FullScreen />
+						</el-icon>
 						全屏对比
 					</el-button>
 				</div>
@@ -74,31 +71,23 @@
 							{{ currentVersion?.versionNo || '-' }}（当前）
 						</span>
 						<span
-							style="
+style="
 								width: 1px;
 								height: 14px;
 								background: var(--df-border);
-							"
-						></span>
+							"/>
 						<span>{{ fileTypeText }} 文档</span>
-						<span style="margin-left: auto"></span>
-						<el-button
-							size="small"
-							text
-							:disabled="!compareTarget"
-							@click="openFullscreenCompare"
-						>
-							<el-icon><FullScreen /></el-icon>
+						<span style="margin-left: auto"/>
+						<el-button size="small" text :disabled="!compareTarget" @click="openFullscreenCompare">
+							<el-icon>
+								<FullScreen />
+							</el-icon>
 							全屏对比
 						</el-button>
 					</div>
 					<el-scrollbar>
 						<div class="df-preview-body">
-							<DocPreview
-								:file-type="fileType"
-								:content="mockPreviewContent"
-								:loading="previewLoading"
-							/>
+							<DocPreview :file-type="fileType" :content="mockPreviewContent" :loading="previewLoading" />
 						</div>
 					</el-scrollbar>
 				</template>
@@ -107,8 +96,7 @@
 				<template v-else>
 					<!-- 对比加载中 -->
 					<div
-						v-if="compareLoading"
-						style="
+v-if="compareLoading" style="
 							flex: 1;
 							display: flex;
 							align-items: center;
@@ -116,13 +104,8 @@
 							gap: 10px;
 							color: var(--df-subtext);
 							font-size: 13px;
-						"
-					>
-						<el-icon
-							class="is-loading"
-							:size="24"
-							color="var(--df-primary)"
-						>
+						">
+						<el-icon class="is-loading" :size="24" color="var(--df-primary)">
 							<Loading />
 						</el-icon>
 						<span>正在计算差异…</span>
@@ -132,12 +115,11 @@
 						<div class="df-compare-pane">
 							<div class="cp-header">
 								<span
-									style="
+style="
 										padding: 2px 8px;
 										background: #fecaca;
 										border-radius: 4px;
-									"
-								>
+									">
 									旧版
 								</span>
 								<span>{{
@@ -145,21 +127,17 @@
 								}}</span>
 							</div>
 							<el-scrollbar>
-								<div
-									class="cp-body"
-									v-html="compareResult.oldVersion.html"
-								></div>
+								<div class="cp-body" v-html="sanitize(compareResult.oldVersion.html)"/>
 							</el-scrollbar>
 						</div>
 						<div class="df-compare-pane">
 							<div class="cp-header">
 								<span
-									style="
+style="
 										padding: 2px 8px;
 										background: #bbf7d0;
 										border-radius: 4px;
-									"
-								>
+									">
 									新版
 								</span>
 								<span>{{
@@ -167,10 +145,7 @@
 								}}</span>
 							</div>
 							<el-scrollbar>
-								<div
-									class="cp-body"
-									v-html="compareResult.newVersion.html"
-								></div>
+								<div class="cp-body" v-html="sanitize(compareResult.newVersion.html)"/>
 							</el-scrollbar>
 						</div>
 					</div>
@@ -179,94 +154,65 @@
 
 			<!-- 右侧：版本侧边栏 -->
 			<VersionSidebar
-				:versions="versions"
-				@download="handleDownload"
-				@rollback="handleRollback"
-				@compare="handleCompare"
-				@upload="handleUpload"
-			/>
+:versions="versions" @download="handleDownload" @rollback="handleRollback"
+				@compare="handleCompare" @upload="handleUpload" />
 		</div>
 
 		<!-- 变更摘要（仅在对比时显示） -->
 		<Transition name="slide-fade">
-			<div
-				v-if="compareResult && compareResult.summary"
-				class="pf-card"
-				style="padding: 16px"
-			>
+			<div v-if="compareResult && compareResult.summary" class="pf-card" style="padding: 16px">
 				<h5
-					style="
+style="
 						margin: 0 0 12px;
 						font-size: 14px;
 						display: flex;
 						align-items: center;
 						gap: 8px;
-					"
-				>
-					<el-icon color="var(--df-primary)"><DataAnalysis /></el-icon>
+					">
+					<el-icon color="var(--df-primary)">
+						<DataAnalysis />
+					</el-icon>
 					版本变更摘要
 					<span
-						style="
+style="
 							font-size: 12px;
 							font-weight: 400;
 							color: var(--df-subtext);
-						"
-					>
+						">
 						{{ compareResult.newVersion.versionNo }} vs
 						{{ compareResult.oldVersion.versionNo }}
 					</span>
 				</h5>
 				<div
-					style="
+style="
 						display: flex;
 						gap: 10px;
 						margin-bottom: 12px;
 						flex-wrap: wrap;
-					"
-				>
-					<el-tag
-						v-if="compareResult.summary.addCount > 0"
-						type="success"
-						size="small"
-					>
+					">
+					<el-tag v-if="compareResult.summary.addCount > 0" type="success" size="small">
 						+ 新增 {{ compareResult.summary.addCount }} 处
 					</el-tag>
-					<el-tag
-						v-if="compareResult.summary.delCount > 0"
-						type="danger"
-						size="small"
-					>
+					<el-tag v-if="compareResult.summary.delCount > 0" type="danger" size="small">
 						- 删除 {{ compareResult.summary.delCount }} 处
 					</el-tag>
-					<el-tag
-						v-if="compareResult.summary.modCount > 0"
-						type="warning"
-						size="small"
-					>
+					<el-tag v-if="compareResult.summary.modCount > 0" type="warning" size="small">
 						~ 修改 {{ compareResult.summary.modCount }} 处
 					</el-tag>
 					<el-tag type="info" size="small">
 						{{ compareResult.summary.sizeChange }}
 					</el-tag>
 				</div>
-				<div
-					v-if="compareResult.summary.items.length > 0"
-					class="df-change-summary"
-				>
+				<div v-if="compareResult.summary.items.length > 0" class="df-change-summary">
 					<div class="df-change-summary-header">
-						<el-icon><List /></el-icon>
+						<el-icon>
+							<List />
+						</el-icon>
 						变更明细
 					</div>
 					<div class="df-change-summary-list">
-						<div
-							v-for="(item, idx) in compareResult.summary.items"
-							:key="idx"
-							class="df-change-summary-item"
-						>
-							<div
-								class="df-cs-icon"
-								:class="`cs-${item.type}`"
-							>
+						<div v-for="(item, idx) in compareResult.summary.items" :key="idx" class="df-change-summary-item">
+							<div class="df-cs-icon" :class="`cs-${item.type}`">
 								{{
 									item.type === 'add'
 										? '+'
@@ -284,12 +230,8 @@
 
 		<!-- 全屏对比器 -->
 		<VersionCompareViewer
-			:visible="fullscreenCompareVisible"
-			:data="compareResult"
-			:loading="compareLoading"
-			@close="fullscreenCompareVisible = false"
-			@view-file="handleViewFile"
-		/>
+:visible="fullscreenCompareVisible" :data="compareResult" :loading="compareLoading"
+			@close="fullscreenCompareVisible = false" @view-file="handleViewFile" />
 	</section>
 </template>
 
@@ -307,9 +249,12 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { VersionInfo, CompareResult } from '~/types/version'
 import type { ApiResponse, PaginatedData } from '~/types/api'
 
+const { sanitize } = useSanitize()
+
 definePageMeta({
 	layout: 'prototype',
 })
+useHead({ title: '文件详情 - DocFlow' })
 
 const route = useRoute()
 const documentId = computed(() => Number(route.params.id))

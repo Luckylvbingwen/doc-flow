@@ -52,6 +52,7 @@
 definePageMeta({
 	layout: 'prototype'
 })
+useHead({ title: '仓库详情 - DocFlow' })
 
 const route = useRoute()
 

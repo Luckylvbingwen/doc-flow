@@ -39,6 +39,7 @@
 definePageMeta({
 	layout: 'prototype'
 })
+useHead({ title: '回收站 - DocFlow' })
 
 const deletedFiles = [
 	{ id: 1, name: '旧版产品概述.pdf', repo: '产品需求组', operator: '张晓明', time: '2026-03-11 09:30' },

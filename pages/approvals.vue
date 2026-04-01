@@ -37,6 +37,7 @@
 definePageMeta({
 	layout: 'prototype'
 })
+useHead({ title: '审批中心 - DocFlow' })
 
 const items = [
 	{ id: 1, title: '增长策略文档 v3.2', owner: '王敏', node: '产品负责人审批', time: '2026-03-23 09:50' },

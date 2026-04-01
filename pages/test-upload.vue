@@ -15,7 +15,8 @@
 		<DataTable :data="mockFiles" :columns="fileColumns" :action-width="80">
 			<template #name="{ row }">
 				<div style="display: flex; align-items: center; gap: 8px;">
-					<div class="df-upload-file-icon" :class="getFileTypeClass(row.name)"
+					<div
+class="df-upload-file-icon" :class="getFileTypeClass(row.name)"
 						style="width: 28px; height: 28px; font-size: 9px;">
 						{{ getFileTypeLabel(row.name) }}
 					</div>
@@ -39,6 +40,7 @@ import { ElMessage } from 'element-plus'
 definePageMeta({
 	layout: 'prototype'
 })
+useHead({ title: '上传测试 - DocFlow' })
 
 const uploadVisible = ref(false)
 

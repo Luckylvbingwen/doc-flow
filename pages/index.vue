@@ -23,6 +23,7 @@
 definePageMeta({
 	layout: 'prototype'
 })
+useHead({ title: '首页 - DocFlow' })
 
 const entries = [
 	{ path: '/docs', title: '共享文档', desc: '组织树 + 仓库卡片主入口。' },

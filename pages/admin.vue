@@ -53,6 +53,7 @@ onMounted(() => {
 definePageMeta({
 	layout: 'prototype'
 })
+useHead({ title: '系统管理 - DocFlow' })
 </script>
 
 <style lang="scss" scoped>

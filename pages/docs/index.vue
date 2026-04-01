@@ -11,7 +11,8 @@
 					</el-icon>
 					<span>文档导航</span>
 				</div>
-				<DocNavTree v-model="selectedGroupId" :categories="treeCategories" mode="nav" @group-select="onGroupSelect"
+				<DocNavTree
+v-model="selectedGroupId" :categories="treeCategories" mode="nav" @group-select="onGroupSelect"
 					@category-select="onCategorySelect" @group-create="onGroupCreate" @group-more="onGroupMore" />
 			</div>
 
@@ -51,6 +52,7 @@ import { FolderOpened, Collection } from '@element-plus/icons-vue'
 import type { NavTreeCategory, NavTreeGroup, NavTreeFile } from '~/types/doc-nav-tree'
 
 definePageMeta({ layout: 'prototype' })
+useHead({ title: '共享文档 - DocFlow' })
 
 // ── Tree panel resize ──
 const treePanelWidth = ref(260)

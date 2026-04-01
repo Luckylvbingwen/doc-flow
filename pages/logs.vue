@@ -38,6 +38,7 @@
 definePageMeta({
 	layout: 'prototype'
 })
+useHead({ title: '操作日志 - DocFlow' })
 
 const logs = [
 	{ id: 1, type: '文档发布', user: '王敏', desc: '发布 2026Q2 增长策略说明', scope: '增长平台组', time: '2026-03-23 10:00' },

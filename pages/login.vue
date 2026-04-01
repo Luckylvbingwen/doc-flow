@@ -45,10 +45,12 @@
 					<p>支持账号密码与飞书登录</p>
 				</header>
 
-				<el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="login-form"
+				<el-form
+ref="formRef" :model="form" :rules="rules" label-position="top" class="login-form"
 					@submit.prevent="handleSubmit">
 					<el-form-item label="账号（邮箱或飞书 Open ID）" prop="account">
-						<el-input v-model="form.account" placeholder="admin@docflow.local" autocomplete="username" clearable
+						<el-input
+v-model="form.account" placeholder="admin@docflow.local" autocomplete="username" clearable
 							@keyup.enter="handleSubmit">
 							<template #prefix>
 								<el-icon>
@@ -59,7 +61,8 @@
 					</el-form-item>
 
 					<el-form-item label="密码" prop="password">
-						<el-input v-model="form.password" type="password" show-password placeholder="请输入密码"
+						<el-input
+v-model="form.password" type="password" show-password placeholder="请输入密码"
 							autocomplete="current-password" @keyup.enter="handleSubmit">
 							<template #prefix>
 								<el-icon>
@@ -78,12 +81,12 @@
 					</el-button>
 				</el-form>
 
-                <div class="login-divider">
+				<div class="login-divider">
 					<span>或</span>
 				</div>
 
 				<el-button class="feishu-login-btn" :loading="feishuLoading" @click="handleFeishuLogin">
-					<img class="feishu-icon" :src="feishuIconSrc" alt="飞书" width="18" height="18" />
+					<img class="feishu-icon" :src="feishuIconSrc" alt="飞书" width="18" height="18" >
 					飞书登录
 				</el-button>
 
@@ -164,7 +167,7 @@ const handleCaptchaConfirm = async (captchaClicks: { x: number; y: number }[], c
 
 		authStore.setSession(response.data)
 		// 加载用户角色与权限
-		await authStore.fetchProfile().catch(() => {})
+		await authStore.fetchProfile().catch(() => { })
 		ElMessage.success('登录成功，正在进入系统')
 		await navigateTo('/docs')
 	} catch (error: unknown) {
@@ -242,7 +245,7 @@ const handleFeishuCallback = async () => {
 		}
 
 		authStore.setSession(res.data)
-		await authStore.fetchProfile().catch(() => {})
+		await authStore.fetchProfile().catch(() => { })
 		ElMessage.success('飞书登录成功，正在进入系统')
 		await navigateTo('/docs')
 	} catch {
@@ -259,6 +262,7 @@ onMounted(() => {
 definePageMeta({
 	layout: 'auth'
 })
+useHead({ title: '登录 - DocFlow' })
 </script>
 
 <style lang="scss" scoped>
@@ -325,10 +329,13 @@ definePageMeta({
 }
 
 @keyframes aurora-breathe {
-	0%, 100% {
+
+	0%,
+	100% {
 		opacity: 0.3;
 		transform: translateY(0) scale(1);
 	}
+
 	50% {
 		opacity: 0.7;
 		transform: translateY(-20px) scale(1.03);
@@ -631,7 +638,7 @@ definePageMeta({
 		font-size: 12px;
 		color: #64748b;
 
-		& + p {
+		&+p {
 			margin-top: 3px;
 		}
 	}
@@ -701,15 +708,24 @@ definePageMeta({
 	background: linear-gradient(135deg, #f97316, #ec4899);
 	animation: feishu-bounce 1.4s ease-in-out infinite both;
 
-	&:nth-child(1) { animation-delay: -0.32s; }
-	&:nth-child(2) { animation-delay: -0.16s; }
+	&:nth-child(1) {
+		animation-delay: -0.32s;
+	}
+
+	&:nth-child(2) {
+		animation-delay: -0.16s;
+	}
 }
 
 @keyframes feishu-bounce {
-	0%, 80%, 100% {
+
+	0%,
+	80%,
+	100% {
 		transform: scale(0.4);
 		opacity: 0.4;
 	}
+
 	40% {
 		transform: scale(1);
 		opacity: 1;

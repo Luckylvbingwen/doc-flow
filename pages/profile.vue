@@ -30,8 +30,9 @@
 
 		<!-- Tab: 我的文档 -->
 		<template v-if="activeTab === 'docs'">
-			<DataTable :data="pagedDocs" :columns="docColumns" :total="filteredDocs.length" v-model:page="docPage"
-				v-model:pageSize="docPageSize" :loading="docLoading" show-search search-placeholder="搜索文档标题…"
+			<DataTable
+v-model:page="docPage" v-model:page-size="docPageSize" :data="pagedDocs" :columns="docColumns"
+				:total="filteredDocs.length" :loading="docLoading" show-search search-placeholder="搜索文档标题…"
 				:action-width="160" @search="onDocSearch" @row-click="onDocRowClick">
 				<template #toolbar>
 					<el-button @click="onExportClick">
@@ -59,8 +60,9 @@
 
 		<!-- Tab: 操作日志 -->
 		<template v-if="activeTab === 'logs'">
-			<DataTable :data="pagedLogs" :columns="logColumns" :total="mockLogs.length" v-model:page="logPage"
-				v-model:pageSize="logPageSize" :show-pagination="true" show-index />
+			<DataTable
+v-model:page="logPage" v-model:page-size="logPageSize" :data="pagedLogs" :columns="logColumns"
+				:total="mockLogs.length" :show-pagination="true" show-index />
 		</template>
 
 		<!-- Tab: 安全设置 -->
@@ -146,7 +148,8 @@
 		</Modal>
 
 		<!-- ── 修改密码弹窗 ── -->
-		<Modal v-model="changePwdVisible" title="修改密码" width="440px" confirm-text="确认修改" :confirm-loading="pwdLoading"
+		<Modal
+v-model="changePwdVisible" title="修改密码" width="440px" confirm-text="确认修改" :confirm-loading="pwdLoading"
 			@confirm="onChangePwd">
 			<el-form label-width="80px" label-position="right">
 				<el-form-item label="当前密码">
@@ -170,6 +173,7 @@ import { ElMessage } from 'element-plus'
 definePageMeta({
 	layout: 'prototype'
 })
+useHead({ title: '个人中心 - DocFlow' })
 
 // ── 状态 ──
 const activeTab = ref('docs')
