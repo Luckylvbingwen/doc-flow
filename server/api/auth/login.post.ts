@@ -2,6 +2,7 @@ import { prisma } from '~/server/utils/prisma'
 import { signToken, signRefreshToken, parseExpiresIn } from '~/server/utils/jwt'
 import { verifyCaptcha } from '~/server/utils/captcha'
 import { loginBodySchema } from '~/server/schemas/auth'
+import { CAPTCHA_INVALID, AUTH_INVALID_CREDENTIALS, AUTH_INTERNAL_ERROR } from '~/server/constants/error-codes'
 
 interface LoginUserRow {
 	id: bigint | number
@@ -20,7 +21,7 @@ export default defineEventHandler(async (event) => {
 	// 验证码校验
 	const captchaResult = verifyCaptcha(body.captchaClicks, body.captchaToken)
 	if (!captchaResult.valid) {
-		return fail(event, 400, 'CAPTCHA_INVALID', captchaResult.message)
+		return fail(event, 400, CAPTCHA_INVALID, captchaResult.message)
 	}
 
 	const config = useRuntimeConfig(event)
@@ -37,7 +38,7 @@ export default defineEventHandler(async (event) => {
 
 		const user = users[0]
 		if (!user) {
-			return fail(event, 401, 'AUTH_INVALID_CREDENTIALS', '账号或密码错误')
+			return fail(event, 401, AUTH_INVALID_CREDENTIALS, '账号或密码错误')
 		}
 
 		// 密码校验：优先 bcrypt 哈希，降级到全局演示密码
@@ -49,7 +50,7 @@ export default defineEventHandler(async (event) => {
 		}
 
 		if (!passwordValid) {
-			return fail(event, 401, 'AUTH_INVALID_CREDENTIALS', '账号或密码错误')
+			return fail(event, 401, AUTH_INVALID_CREDENTIALS, '账号或密码错误')
 		}
 
 		const userId = Number(user.id)
@@ -78,6 +79,6 @@ export default defineEventHandler(async (event) => {
 	} catch (error) {
 		const logger = useLogger('auth')
 		logger.error({ err: error }, 'auth.login failed')
-		return fail(event, 500, 'AUTH_INTERNAL_ERROR', '登录服务暂不可用，请稍后重试')
+		return fail(event, 500, AUTH_INTERNAL_ERROR, '登录服务暂不可用，请稍后重试')
 	}
 })

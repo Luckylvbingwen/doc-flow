@@ -4,6 +4,7 @@
  */
 import { prisma } from '~/server/utils/prisma'
 import { userRoleRevokeSchema } from '~/server/schemas/rbac'
+import { NOT_FOUND } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:assign')
@@ -20,7 +21,7 @@ export default defineEventHandler(async (event) => {
 	`
 
 	if (affected === 0) {
-		return fail(event, 404, 'NOT_FOUND', '未找到该用户角色关联')
+		return fail(event, 404, NOT_FOUND, '未找到该用户角色关联')
 	}
 
 	return ok(null, '角色撤销成功')

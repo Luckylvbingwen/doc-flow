@@ -3,6 +3,7 @@
  * 使用 refreshToken 换取新的 accessToken
  */
 import { z } from 'zod'
+import { AUTH_REFRESH_INVALID } from '~/server/constants/error-codes'
 
 const refreshSchema = z.object({
 	refreshToken: z.string().min(1, 'refreshToken 不能为空'),
@@ -30,6 +31,6 @@ export default defineEventHandler(async (event) => {
 			expiresIn,
 		}, 'Token 刷新成功')
 	} catch {
-		return fail(event, 401, 'AUTH_REFRESH_INVALID', 'Refresh token 无效或已过期，请重新登录')
+		return fail(event, 401, AUTH_REFRESH_INVALID, 'Refresh token 无效或已过期，请重新登录')
 	}
 })

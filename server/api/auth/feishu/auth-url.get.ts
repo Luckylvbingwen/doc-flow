@@ -6,6 +6,7 @@
  */
 import { randomBytes } from 'node:crypto'
 import { feishuAuthUrlQuerySchema } from '~/server/schemas/auth'
+import { FEISHU_NOT_CONFIGURED } from '~/server/constants/error-codes'
 
 /** OAuth state 缓存（5 分钟有效） */
 const stateCache = new Map<string, number>()
@@ -25,7 +26,7 @@ export default defineEventHandler(async (event) => {
 	const appId = String(config.feishuAppId || '')
 
 	if (!appId) {
-		return fail(event, 500, 'FEISHU_NOT_CONFIGURED', '飞书登录未配置 App ID')
+		return fail(event, 500, FEISHU_NOT_CONFIGURED, '飞书登录未配置 App ID')
 	}
 
 	const query = await getValidatedQuery(event, feishuAuthUrlQuerySchema.parse)

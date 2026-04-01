@@ -4,6 +4,7 @@
  * - 验证 Authorization: Bearer <jwt>
  * - 将用户信息注入 event.context.user
  */
+import { AUTH_TOKEN_MISSING, AUTH_TOKEN_INVALID } from '~/server/constants/error-codes'
 export default defineEventHandler(async (event) => {
 	const path = getRequestURL(event).pathname
 
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
 		setResponseStatus(event, 401)
 		return {
 			success: false,
-			code: 'AUTH_TOKEN_MISSING',
+			code: AUTH_TOKEN_MISSING,
 			message: '未提供有效的认证令牌'
 		}
 	}
@@ -45,7 +46,7 @@ export default defineEventHandler(async (event) => {
 		setResponseStatus(event, 401)
 		return {
 			success: false,
-			code: 'AUTH_TOKEN_INVALID',
+			code: AUTH_TOKEN_INVALID,
 			message: '认证令牌无效或已过期'
 		}
 	}

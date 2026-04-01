@@ -5,6 +5,7 @@
 import { prisma } from '~/server/utils/prisma'
 import { roleCreateSchema } from '~/server/schemas/rbac'
 import type { ExistRow } from '~/server/types/rbac'
+import { ROLE_CODE_EXISTS } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:create')
@@ -23,7 +24,7 @@ export default defineEventHandler(async (event) => {
 		WHERE code = ${code} AND deleted_at IS NULL
 	`
 	if (Number(existing[0]?.cnt) > 0) {
-		return fail(event, 409, 'ROLE_CODE_EXISTS', '角色标识已存在')
+		return fail(event, 409, ROLE_CODE_EXISTS, '角色标识已存在')
 	}
 
 	const userId = event.context.user?.id ?? null

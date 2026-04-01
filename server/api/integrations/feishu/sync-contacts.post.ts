@@ -5,6 +5,7 @@
  * 核心逻辑已提取到 server/utils/feishu.ts → feishuSyncContacts()
  * 同时由 server/tasks/feishu/sync-contacts.ts 定时任务复用
  */
+import { FEISHU_SYNC_ERROR } from '~/server/constants/error-codes'
 export default defineEventHandler(async (event) => {
 	try {
 		const result = await feishuSyncContacts()
@@ -18,6 +19,6 @@ export default defineEventHandler(async (event) => {
 		const logger = useLogger('feishu')
 		logger.error({ err: error }, 'feishu sync-contacts failed')
 		const msg = error instanceof Error ? error.message : '飞书通讯录同步失败'
-		return fail(event, 500, 'FEISHU_SYNC_ERROR', msg)
+		return fail(event, 500, FEISHU_SYNC_ERROR, msg)
 	}
 })

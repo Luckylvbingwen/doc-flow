@@ -17,6 +17,7 @@ import { signToken, signRefreshToken, parseExpiresIn } from '~/server/utils/jwt'
 import { stateCache } from './auth-url.get'
 import { feishuCallbackBodySchema } from '~/server/schemas/auth'
 import type { DocUserRow } from '~/server/types/auth'
+import { FEISHU_STATE_EXPIRED, FEISHU_USER_EMPTY, FEISHU_LOGIN_ERROR } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
 	const body = await readValidatedBody(event, feishuCallbackBodySchema.parse)
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
 	// 校验 state
 	const stateExpiry = stateCache.get(state)
 	if (!stateExpiry || Date.now() > stateExpiry) {
-		return fail(event, 400, 'STATE_EXPIRED', '飞书授权状态已失效，请重试')
+		return fail(event, 400, FEISHU_STATE_EXPIRED, '飞书授权状态已失效，请重试')
 	}
 	stateCache.delete(state)
 
@@ -35,7 +36,7 @@ export default defineEventHandler(async (event) => {
 		const feishuUser = await feishuCodeToUser(code)
 
 		if (!feishuUser.openId) {
-			return fail(event, 400, 'FEISHU_USER_EMPTY', '飞书用户标识为空，无法完成登录')
+			return fail(event, 400, FEISHU_USER_EMPTY, '飞书用户标识为空，无法完成登录')
 		}
 
 		// ── Step 1: 查/写 doc_feishu_users ──
@@ -148,6 +149,6 @@ export default defineEventHandler(async (event) => {
 		const logger = useLogger('auth')
 		logger.error({ err: error }, 'feishu.callback failed')
 		const msg = error instanceof Error ? error.message : '飞书登录失败'
-		return fail(event, 500, 'FEISHU_LOGIN_ERROR', msg)
+		return fail(event, 500, FEISHU_LOGIN_ERROR, msg)
 	}
 })

@@ -4,6 +4,7 @@
  */
 import { prisma } from '~/server/utils/prisma'
 import { userRoleAssignSchema } from '~/server/schemas/rbac'
+import { USER_NOT_FOUND, ROLE_NOT_FOUND, ALREADY_ASSIGNED } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:assign')
@@ -20,7 +21,7 @@ export default defineEventHandler(async (event) => {
 		WHERE id = ${userId} AND deleted_at IS NULL
 	`
 	if (Number(userCheck[0]?.cnt) === 0) {
-		return fail(event, 404, 'USER_NOT_FOUND', '用户不存在')
+		return fail(event, 404, USER_NOT_FOUND, '用户不存在')
 	}
 
 	// 验证角色存在
@@ -29,7 +30,7 @@ export default defineEventHandler(async (event) => {
 		WHERE id = ${roleId} AND deleted_at IS NULL AND status = 1
 	`
 	if (Number(roleCheck[0]?.cnt) === 0) {
-		return fail(event, 404, 'ROLE_NOT_FOUND', '角色不存在或已停用')
+		return fail(event, 404, ROLE_NOT_FOUND, '角色不存在或已停用')
 	}
 
 	// 检查是否已分配
@@ -38,7 +39,7 @@ export default defineEventHandler(async (event) => {
 		WHERE user_id = ${userId} AND role_id = ${roleId}
 	`
 	if (Number(existCheck[0]?.cnt) > 0) {
-		return fail(event, 409, 'ALREADY_ASSIGNED', '该用户已拥有此角色')
+		return fail(event, 409, ALREADY_ASSIGNED, '该用户已拥有此角色')
 	}
 
 	const createdBy = event.context.user?.id ?? null

@@ -5,6 +5,7 @@
 import { prisma } from '~/server/utils/prisma'
 import { roleUpdateSchema } from '~/server/schemas/rbac'
 import type { RoleCheckRow } from '~/server/types/rbac'
+import { INVALID_PARAMS, ROLE_NOT_FOUND, SYSTEM_ROLE_PROTECTED } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:update')
@@ -12,7 +13,7 @@ export default defineEventHandler(async (event) => {
 
 	const id = Number(getRouterParam(event, 'id'))
 	if (!id || isNaN(id)) {
-		return fail(event, 400, 'INVALID_PARAMS', '无效的角色 ID')
+		return fail(event, 400, INVALID_PARAMS, '无效的角色 ID')
 	}
 
 	const body = await readValidatedBody(event, roleUpdateSchema.parse)
@@ -27,7 +28,7 @@ export default defineEventHandler(async (event) => {
 	`
 
 	if (!rows.length) {
-		return fail(event, 404, 'ROLE_NOT_FOUND', '角色不存在')
+		return fail(event, 404, ROLE_NOT_FOUND, '角色不存在')
 	}
 
 	const description = body.description?.trim() || null
@@ -35,7 +36,7 @@ export default defineEventHandler(async (event) => {
 
 	// 系统内置角色不允许停用
 	if (rows[0].is_system === 1 && status === 0) {
-		return fail(event, 400, 'SYSTEM_ROLE_PROTECTED', '系统内置角色不可停用')
+		return fail(event, 400, SYSTEM_ROLE_PROTECTED, '系统内置角色不可停用')
 	}
 
 	await prisma.$executeRaw`

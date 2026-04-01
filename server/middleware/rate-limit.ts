@@ -2,7 +2,9 @@
  * 服务端接口限流中间件
  * 基于 rate-limiter-flexible，支持 Redis（分布式）和 Memory（降级）双模式
  */
-import { RateLimiterRedis, RateLimiterMemory, RateLimiterAbstract } from 'rate-limiter-flexible'
+import type { RateLimiterAbstract } from 'rate-limiter-flexible';
+import { RateLimiterRedis, RateLimiterMemory } from 'rate-limiter-flexible'
+import { RATE_LIMITED } from '~/server/constants/error-codes'
 
 // —— 限流策略配置 ——
 const STRATEGIES = {
@@ -94,7 +96,7 @@ export default defineEventHandler(async (event) => {
 		setResponseStatus(event, 429)
 		return {
 			success: false,
-			code: 'RATE_LIMITED',
+			code: RATE_LIMITED,
 			message: '请求过于频繁，请稍后再试',
 		}
 	}

@@ -7,6 +7,7 @@
 import type { H3Event } from 'h3'
 import { prisma } from '~/server/utils/prisma'
 import type { RoleCodeRow, PermissionCodeRow } from '~/server/types/rbac'
+import { AUTH_REQUIRED, PERMISSION_DENIED } from '~/server/constants/error-codes'
 
 /** 获取用户的角色 code 列表 */
 export async function getUserRoleCodes(userId: number): Promise<string[]> {
@@ -68,7 +69,7 @@ export async function getAllPermissionCodes(): Promise<string[]> {
 export async function requirePermission(event: H3Event, code: string | string[]) {
 	const user = event.context.user
 	if (!user) {
-		return fail(event, 401, 'AUTH_REQUIRED', '请先登录')
+		return fail(event, 401, AUTH_REQUIRED, '请先登录')
 	}
 
 	// super_admin 直接放行
@@ -80,7 +81,7 @@ export async function requirePermission(event: H3Event, code: string | string[])
 	const hasAny = codes.some(c => userPerms.includes(c))
 
 	if (!hasAny) {
-		return fail(event, 403, 'PERMISSION_DENIED', '无操作权限')
+		return fail(event, 403, PERMISSION_DENIED, '无操作权限')
 	}
 
 	return null

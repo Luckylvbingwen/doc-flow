@@ -4,6 +4,7 @@
  */
 import { prisma } from '~/server/utils/prisma'
 import type { RoleDetailRow, PermRow } from '~/server/types/rbac'
+import { INVALID_PARAMS, ROLE_NOT_FOUND } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:read')
@@ -11,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
 	const id = Number(getRouterParam(event, 'id'))
 	if (!id || isNaN(id)) {
-		return fail(event, 400, 'INVALID_PARAMS', '无效的角色 ID')
+		return fail(event, 400, INVALID_PARAMS, '无效的角色 ID')
 	}
 
 	const rows = await prisma.$queryRaw<RoleDetailRow[]>`
@@ -22,7 +23,7 @@ export default defineEventHandler(async (event) => {
 	`
 
 	if (!rows.length) {
-		return fail(event, 404, 'ROLE_NOT_FOUND', '角色不存在')
+		return fail(event, 404, ROLE_NOT_FOUND, '角色不存在')
 	}
 
 	const role = rows[0]

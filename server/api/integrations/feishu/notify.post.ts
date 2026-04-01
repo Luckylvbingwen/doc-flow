@@ -9,6 +9,7 @@
  *   - card?: object         卡片结构体（msgType=card 时必填）
  */
 import { feishuNotifySchema } from '~/server/schemas/integration'
+import { FEISHU_SEND_ERROR } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
 	const body = await readValidatedBody(event, feishuNotifySchema.parse)
@@ -27,6 +28,6 @@ export default defineEventHandler(async (event) => {
 		const logger = useLogger('feishu')
 		logger.error({ err: error }, 'feishu.notify failed')
 		const msg = error instanceof Error ? error.message : '飞书消息发送失败'
-		return fail(event, 500, 'FEISHU_SEND_ERROR', msg)
+		return fail(event, 500, FEISHU_SEND_ERROR, msg)
 	}
 })

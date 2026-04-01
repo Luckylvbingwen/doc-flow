@@ -4,6 +4,7 @@
  */
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
+import { AUTH_REQUIRED, AUTH_OLD_PASSWORD_WRONG, AUTH_INTERNAL_ERROR } from '~/server/constants/error-codes'
 
 const changePasswordSchema = z.object({
 	oldPassword: z.string().min(1, '旧密码不能为空'),
@@ -13,7 +14,7 @@ const changePasswordSchema = z.object({
 export default defineEventHandler(async (event) => {
 	const user = event.context.user
 	if (!user) {
-		return fail(event, 401, 'AUTH_REQUIRED', '请先登录')
+		return fail(event, 401, AUTH_REQUIRED, '请先登录')
 	}
 
 	const body = await readValidatedBody(event, changePasswordSchema.parse)
@@ -36,7 +37,7 @@ export default defineEventHandler(async (event) => {
 		}
 
 		if (!oldPasswordValid) {
-			return fail(event, 400, 'AUTH_OLD_PASSWORD_WRONG', '旧密码错误')
+			return fail(event, 400, AUTH_OLD_PASSWORD_WRONG, '旧密码错误')
 		}
 
 		// 哈希新密码并更新
@@ -52,6 +53,6 @@ export default defineEventHandler(async (event) => {
 	} catch (error) {
 		const logger = useLogger('auth')
 		logger.error({ err: error, userId: user.id }, 'change password failed')
-		return fail(event, 500, 'AUTH_INTERNAL_ERROR', '修改密码失败，请稍后重试')
+		return fail(event, 500, AUTH_INTERNAL_ERROR, '修改密码失败，请稍后重试')
 	}
 })

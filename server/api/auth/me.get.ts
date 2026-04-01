@@ -4,11 +4,12 @@
  */
 import { prisma } from '~/server/utils/prisma'
 import type { MeRoleRow as RoleRow } from '~/server/types/auth'
+import { AUTH_REQUIRED } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
 	const user = event.context.user
 	if (!user) {
-		return fail(event, 401, 'AUTH_REQUIRED', '请先登录')
+		return fail(event, 401, AUTH_REQUIRED, '请先登录')
 	}
 
 	// 查询用户角色（RBAC 表不存在时降级为空角色/权限）

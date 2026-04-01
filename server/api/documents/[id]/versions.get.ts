@@ -1,9 +1,10 @@
 import { versionListQuerySchema } from '~/server/schemas/version'
+import { INVALID_PARAMS } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
 	const documentId = Number(getRouterParam(event, 'id'))
 	if (!documentId || isNaN(documentId)) {
-		return fail(event, 400, 'INVALID_PARAM', '无效的文档 ID')
+		return fail(event, 400, INVALID_PARAMS, '无效的文档 ID')
 	}
 
 	const query = await getValidatedQuery(event, versionListQuerySchema.parse)

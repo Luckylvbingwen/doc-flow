@@ -4,6 +4,7 @@
  */
 import { prisma } from '~/server/utils/prisma'
 import { rolePermissionsSchema } from '~/server/schemas/rbac'
+import { INVALID_PARAMS, ROLE_NOT_FOUND } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:update')
@@ -11,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
 	const id = Number(getRouterParam(event, 'id'))
 	if (!id || isNaN(id)) {
-		return fail(event, 400, 'INVALID_PARAMS', '无效的角色 ID')
+		return fail(event, 400, INVALID_PARAMS, '无效的角色 ID')
 	}
 
 	const body = await readValidatedBody(event, rolePermissionsSchema.parse)
@@ -23,7 +24,7 @@ export default defineEventHandler(async (event) => {
 		WHERE id = ${id} AND deleted_at IS NULL
 	`
 	if (Number(roleCheck[0]?.cnt) === 0) {
-		return fail(event, 404, 'ROLE_NOT_FOUND', '角色不存在')
+		return fail(event, 404, ROLE_NOT_FOUND, '角色不存在')
 	}
 
 	// 事务：先清空再批量插入
