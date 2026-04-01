@@ -11,6 +11,7 @@ export default defineEventHandler(async (event) => {
 	if (
 		path === '/api/auth/login' ||
 		path === '/api/auth/logout' ||
+		path === '/api/auth/refresh' ||
 		path === '/api/auth/captcha' ||
 		path === '/api/auth/feishu/auth-url' ||
 		path === '/api/auth/feishu/callback' ||

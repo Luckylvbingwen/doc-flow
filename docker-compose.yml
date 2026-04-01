@@ -5,12 +5,17 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=mysql://root:docflow_pwd@db:3306/docflow
+      - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET:-please-set-a-strong-random-secret-here-min-32}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-8h}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
       - AUTH_DEMO_PASSWORD=${AUTH_DEMO_PASSWORD:-Docflow@123}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
       - APP_ENV=production
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 
@@ -33,5 +38,19 @@ services:
       retries: 5
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   mysql_data:
+  redis_data:

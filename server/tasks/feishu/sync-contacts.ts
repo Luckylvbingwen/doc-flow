@@ -8,13 +8,14 @@ export default defineTask({
 		description: '同步飞书组织架构通讯录',
 	},
 	async run() {
-		console.log('[task] feishu:sync-contacts 开始执行...')
+		const logger = useLogger('task:feishu-sync')
+		logger.info('feishu:sync-contacts 开始执行')
 		try {
 			const result = await feishuSyncContacts()
-			console.log(`[task] feishu:sync-contacts 完成: ${result.total} 用户, ${result.departments} 部门, 新增 ${result.created}, 更新 ${result.updated}, 隐藏 ${result.hidden}`)
+			logger.info({ result }, 'feishu:sync-contacts 完成')
 			return { result }
 		} catch (error) {
-			console.error('[task] feishu:sync-contacts 失败:', error)
+			logger.error({ err: error }, 'feishu:sync-contacts 失败')
 			return { result: undefined }
 		}
 	},

@@ -1,20 +1,15 @@
 import { prisma } from '~/server/utils/prisma'
-import { signToken } from '~/server/utils/jwt'
+import { signToken, signRefreshToken, parseExpiresIn } from '~/server/utils/jwt'
 import { verifyCaptcha } from '~/server/utils/captcha'
 import { loginBodySchema } from '~/server/schemas/auth'
-import type { DocUserRow } from '~/server/types/auth'
 
-/** 将 '8h'/'24h'/'7d' 格式转为秒数 */
-function parseExpiresIn(value: string): number {
-	const match = value.match(/^(\d+)(h|d|m|s)$/)
-	if (!match) return 28800 // 默认 8h
-	const num = parseInt(match[1], 10)
-	const unit = match[2]
-	if (unit === 's') return num
-	if (unit === 'm') return num * 60
-	if (unit === 'h') return num * 3600
-	if (unit === 'd') return num * 86400
-	return 28800
+interface LoginUserRow {
+	id: bigint | number
+	name: string
+	email: string | null
+	feishu_open_id: string
+	avatar_url: string | null
+	password_hash: string | null
 }
 
 export default defineEventHandler(async (event) => {
@@ -29,11 +24,10 @@ export default defineEventHandler(async (event) => {
 	}
 
 	const config = useRuntimeConfig(event)
-	const expectedPassword = config.authDemoPassword
 
 	try {
-		const users = await prisma.$queryRaw<DocUserRow[]>`
-      SELECT id, name, email, feishu_open_id, avatar_url
+		const users = await prisma.$queryRaw<LoginUserRow[]>`
+      SELECT id, name, email, feishu_open_id, avatar_url, password_hash
       FROM doc_users
       WHERE deleted_at IS NULL
         AND status = 1
@@ -42,25 +36,37 @@ export default defineEventHandler(async (event) => {
     `
 
 		const user = users[0]
-		if (!user || password !== expectedPassword) {
+		if (!user) {
+			return fail(event, 401, 'AUTH_INVALID_CREDENTIALS', '账号或密码错误')
+		}
+
+		// 密码校验：优先 bcrypt 哈希，降级到全局演示密码
+		let passwordValid = false
+		if (user.password_hash) {
+			passwordValid = await verifyPassword(password, user.password_hash)
+		} else {
+			passwordValid = password === config.authDemoPassword
+		}
+
+		if (!passwordValid) {
 			return fail(event, 401, 'AUTH_INVALID_CREDENTIALS', '账号或密码错误')
 		}
 
 		const userId = Number(user.id)
-		const token = await signToken({
-			uid: userId,
-			name: user.name,
-			email: user.email
-		})
+		const tokenPayload = { uid: userId, name: user.name, email: user.email }
 
-		// 过期秒数与 JWT 配置保持一致
-		const jwtExpiresIn = config.jwtExpiresIn || '8h'
-		const expiresInSeconds = parseExpiresIn(jwtExpiresIn)
+		const accessToken = await signToken(tokenPayload)
+		const refreshToken = await signRefreshToken(tokenPayload)
+
+		const accessExpiresIn = parseExpiresIn(config.jwtExpiresIn || '15m')
+		const refreshExpiresIn = parseExpiresIn(config.jwtRefreshExpiresIn || '7d')
 
 		return ok({
-			token,
+			token: accessToken,
+			refreshToken,
 			tokenType: 'Bearer' as const,
-			expiresIn: expiresInSeconds,
+			expiresIn: accessExpiresIn,
+			refreshExpiresIn,
 			user: {
 				id: userId,
 				name: user.name,
@@ -70,7 +76,8 @@ export default defineEventHandler(async (event) => {
 			}
 		}, '登录成功')
 	} catch (error) {
-		console.error('auth.login failed:', error)
+		const logger = useLogger('auth')
+		logger.error({ err: error }, 'auth.login failed')
 		return fail(event, 500, 'AUTH_INTERNAL_ERROR', '登录服务暂不可用，请稍后重试')
 	}
 })

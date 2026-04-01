@@ -5,8 +5,10 @@ import type { LoginBody, FeishuCallbackBody } from '~/server/schemas/auth'
 /** 登录返回 data */
 export interface LoginResult {
 	token: string
+	refreshToken: string
 	tokenType: 'Bearer'
 	expiresIn: number
+	refreshExpiresIn: number
 	user: {
 		id: number
 		name: string
@@ -25,8 +27,11 @@ export function apiLogin(params: LoginBody) {
 }
 
 /** 登出 */
-export function apiLogout() {
-	return useAuthFetch<ApiResult>('/api/auth/logout', { method: 'POST' })
+export function apiLogout(refreshToken?: string) {
+	return useAuthFetch<ApiResult>('/api/auth/logout', {
+		method: 'POST',
+		body: { refreshToken },
+	})
 }
 
 /** 获取当前用户信息（含角色与权限） */

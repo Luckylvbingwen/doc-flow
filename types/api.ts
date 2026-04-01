@@ -43,16 +43,20 @@ export interface AuthUser {
 /** 登录响应 data */
 export interface LoginData {
 	token: string
+	refreshToken: string
 	tokenType: 'Bearer'
 	expiresIn: number
+	refreshExpiresIn: number
 	user: AuthUser
 }
 
 /** 前端会话结构（localStorage 持久化） */
 export interface AuthSession {
 	token: string
+	refreshToken: string
 	tokenType: 'Bearer'
 	expiresIn: number
+	refreshExpiresIn: number
 	user: AuthUser
 }
 

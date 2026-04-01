@@ -15,7 +15,8 @@ export default defineEventHandler(async (event) => {
 
 		return ok(result, '飞书通讯录同步完成')
 	} catch (error) {
-		console.error('feishu sync-contacts failed:', error)
+		const logger = useLogger('feishu')
+		logger.error({ err: error }, 'feishu sync-contacts failed')
 		const msg = error instanceof Error ? error.message : '飞书通讯录同步失败'
 		return fail(event, 500, 'FEISHU_SYNC_ERROR', msg)
 	}

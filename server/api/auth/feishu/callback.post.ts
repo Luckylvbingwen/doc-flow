@@ -13,23 +13,10 @@
  * 6. 签发 JWT，返回与密码登录相同的 session 结构
  */
 import { prisma } from '~/server/utils/prisma'
-import { signToken } from '~/server/utils/jwt'
+import { signToken, signRefreshToken, parseExpiresIn } from '~/server/utils/jwt'
 import { stateCache } from './auth-url.get'
 import { feishuCallbackBodySchema } from '~/server/schemas/auth'
 import type { DocUserRow } from '~/server/types/auth'
-
-/** 将 '8h'/'24h'/'7d' 格式转为秒数 */
-function parseExpiresIn(value: string): number {
-	const match = value.match(/^(\d+)(h|d|m|s)$/)
-	if (!match) return 28800
-	const num = parseInt(match[1], 10)
-	const unit = match[2]
-	if (unit === 's') return num
-	if (unit === 'm') return num * 60
-	if (unit === 'h') return num * 3600
-	if (unit === 'd') return num * 86400
-	return 28800
-}
 
 export default defineEventHandler(async (event) => {
 	const body = await readValidatedBody(event, feishuCallbackBodySchema.parse)
@@ -134,20 +121,21 @@ export default defineEventHandler(async (event) => {
 
 		// ── Step 4: 签发 JWT ──
 		const userId = Number(user.id)
-		const token = await signToken({
-			uid: userId,
-			name: user.name,
-			email: user.email,
-		})
+		const tokenPayload = { uid: userId, name: user.name, email: user.email }
+
+		const accessToken = await signToken(tokenPayload)
+		const refreshToken = await signRefreshToken(tokenPayload)
 
 		const config = useRuntimeConfig(event)
-		const jwtExpiresIn = config.jwtExpiresIn || '8h'
-		const expiresInSeconds = parseExpiresIn(jwtExpiresIn)
+		const accessExpiresIn = parseExpiresIn(config.jwtExpiresIn || '15m')
+		const refreshExpiresIn = parseExpiresIn(config.jwtRefreshExpiresIn || '7d')
 
 		return ok({
-			token,
+			token: accessToken,
+			refreshToken,
 			tokenType: 'Bearer' as const,
-			expiresIn: expiresInSeconds,
+			expiresIn: accessExpiresIn,
+			refreshExpiresIn,
 			user: {
 				id: userId,
 				name: user.name,
@@ -157,7 +145,8 @@ export default defineEventHandler(async (event) => {
 			},
 		}, '飞书登录成功')
 	} catch (error) {
-		console.error('feishu.callback failed:', error)
+		const logger = useLogger('auth')
+		logger.error({ err: error }, 'feishu.callback failed')
 		const msg = error instanceof Error ? error.message : '飞书登录失败'
 		return fail(event, 500, 'FEISHU_LOGIN_ERROR', msg)
 	}

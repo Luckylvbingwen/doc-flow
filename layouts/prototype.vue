@@ -62,7 +62,7 @@
 								<img v-show="avatarReady" class="pf-user-entry-avatar" :src="authStore.user.avatar"
 									@load="avatarLoaded = true" @error="avatarLoadFailed = true" />
 								<span v-show="!avatarReady" class="pf-user-entry-avatar pf-user-entry-avatar--text">{{ userInitial
-									}}</span>
+								}}</span>
 								<span class="pf-user-entry-name">{{ authStore.user.name }}</span>
 								<el-icon class="pf-user-entry-caret">
 									<ArrowDownBold />
@@ -83,7 +83,7 @@
 
 			<el-scrollbar class="pf-content-scrollbar">
 				<main class="pf-content">
-					<div v-if="pageLoading" class="df-page-skeleton">
+					<div v-show="pageLoading" class="df-page-skeleton">
 						<div class="df-skeleton-block"
 							style="width: 180px; height: 22px; border-radius: 4px; margin-bottom: 8px;" />
 						<div class="df-skeleton-block"
@@ -97,7 +97,9 @@
 						</div>
 						<div class="df-skeleton-block" style="width: 100%; height: 240px; border-radius: 12px; margin-top: 20px;" />
 					</div>
-					<slot v-else />
+					<div v-show="!pageLoading" style="height: 100%;">
+						<slot />
+					</div>
 				</main>
 			</el-scrollbar>
 		</section>
@@ -219,7 +221,7 @@ const handleLogout = async () => {
 		await $fetch('/api/auth/logout', {
 			method: 'POST',
 			body: {
-				token: authStore.token
+				refreshToken: authStore.refreshToken
 			}
 		})
 	} catch {

@@ -24,7 +24,8 @@ export default defineEventHandler(async (event) => {
 
 		return ok({ sent: true }, '飞书消息发送成功')
 	} catch (error) {
-		console.error('feishu.notify failed:', error)
+		const logger = useLogger('feishu')
+		logger.error({ err: error }, 'feishu.notify failed')
 		const msg = error instanceof Error ? error.message : '飞书消息发送失败'
 		return fail(event, 500, 'FEISHU_SEND_ERROR', msg)
 	}
