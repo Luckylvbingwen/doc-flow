@@ -1,3 +1,5 @@
+import { visualizer } from 'rollup-plugin-visualizer'
+
 export default defineNuxtConfig({
   compatibilityDate: '2026-03-23',
   devtools: { enabled: process.env.APP_ENV !== 'production' },
@@ -23,7 +25,19 @@ export default defineNuxtConfig({
           additionalData: '@use "~/assets/styles/element-overrides.scss" as *;'
         }
       }
-    }
+    },
+    plugins: [
+      // ANALYZE=true nuxt build 时生成 bundle 可视化报告
+      ...(process.env.ANALYZE ? [
+        visualizer({
+          filename: './stats.html',
+          open: true,
+          gzipSize: true,
+          brotliSize: true,
+          template: 'treemap',
+        }),
+      ] : []),
+    ],
   },
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL,

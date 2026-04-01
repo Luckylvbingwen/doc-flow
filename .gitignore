@@ -22,3 +22,6 @@ prisma/migrations
 # OS
 .DS_Store
 Thumbs.db
+
+# Bundle analyzer
+stats.html
