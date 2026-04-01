@@ -59,6 +59,9 @@ const elLocale = computed(() => appStore.locale === 'en-US' ? elEn : elZhCn)
 // 暗黑模式 FOUC 修复：在 <head> 中注入 inline script，浏览器解析 HTML 时立即执行
 // 早于 Vue hydration，避免亮 → 暗闪烁
 useHead({
+	link: [
+		{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+	],
 	script: [
 		{
 			innerHTML: `(function(){try{var d=document.documentElement,k='docflow:dark-mode',v=localStorage.getItem(k);if(v==='1'||(v===null&&matchMedia('(prefers-color-scheme:dark)').matches))d.classList.add('dark')}catch(e){}})()`,
