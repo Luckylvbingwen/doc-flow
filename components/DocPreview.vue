@@ -9,12 +9,13 @@
 		</div>
 
 		<!-- Markdown 渲染 -->
-		<div v-else-if="fileType === 'md' || fileType === 'txt'" class="doc-preview__markdown" v-html="renderedMarkdown">
-		</div>
+		<div
+v-else-if="fileType === 'md' || fileType === 'txt'" class="doc-preview__markdown"
+			v-html="sanitize(renderedMarkdown)" />
 
 		<!-- Word / PDF 渲染 HTML（后端提取后传入） -->
 		<div v-else-if="fileType === 'docx' || fileType === 'pdf'" class="doc-preview__document">
-			<div v-if="htmlContent" v-html="htmlContent"></div>
+			<div v-if="htmlContent" v-html="sanitize(htmlContent)" />
 			<div v-else class="doc-preview__placeholder">
 				<el-icon :size="48" color="var(--df-subtext)">
 					<Document />
@@ -30,12 +31,13 @@
 		<div v-else-if="fileType === 'xlsx'" class="doc-preview__excel">
 			<div v-if="excelSheets && excelSheets.length > 0">
 				<div class="doc-preview__sheet-tabs">
-					<button v-for="(sheet, idx) in excelSheets" :key="idx" class="doc-preview__sheet-tab"
+					<button
+v-for="(sheet, idx) in excelSheets" :key="idx" class="doc-preview__sheet-tab"
 						:class="{ active: activeSheet === idx }" @click="activeSheet = idx">
 						{{ sheet.name }}
 					</button>
 				</div>
-				<div class="doc-preview__sheet-body" v-html="excelSheets?.[activeSheet]?.html"></div>
+				<div class="doc-preview__sheet-body" v-html="sanitize(excelSheets?.[activeSheet]?.html)" />
 			</div>
 			<div v-else class="doc-preview__placeholder">
 				<el-icon :size="48" color="var(--df-subtext)">
@@ -64,6 +66,8 @@
 <script setup lang="ts">
 import { Loading, Document, Grid, Warning } from '@element-plus/icons-vue'
 import MarkdownIt from 'markdown-it'
+
+const { sanitize } = useSanitize()
 
 const md = new MarkdownIt({
 	html: false,

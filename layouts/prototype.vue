@@ -8,7 +8,8 @@
 					</el-icon>
 				</div>
 				<span class="pf-brand-text">DocFlow</span>
-				<button class="pf-sidebar-toggle" type="button" :aria-label="isSidebarCollapsed ? '展开侧栏' : '收起侧栏'"
+				<button
+class="pf-sidebar-toggle" type="button" :aria-label="isSidebarCollapsed ? '展开侧栏' : '收起侧栏'"
 					@click="toggleSidebar">
 					<el-icon :size="18">
 						<Expand v-if="isSidebarCollapsed" />
@@ -21,7 +22,8 @@
 				<nav class="pf-nav">
 					<template v-for="group in menuGroups" :key="group.title">
 						<p class="pf-nav-title">{{ group.title }}</p>
-						<el-tooltip v-for="item in group.items" :key="item.to" :content="item.label" placement="right"
+						<el-tooltip
+v-for="item in group.items" :key="item.to" :content="item.label" placement="right"
 							:disabled="!isSidebarCollapsed" :show-after="300">
 							<NuxtLink class="pf-nav-item" :class="{ active: isItemActive(item) }" :to="item.to">
 								<el-icon class="pf-nav-icon">
@@ -38,7 +40,8 @@
 		<section class="pf-main">
 			<header class="pf-header">
 				<div class="pf-header-actions">
-					<button class="pf-dark-toggle" type="button" :aria-label="appStore.darkMode ? '切换亮色模式' : '切换暗黑模式'"
+					<button
+class="pf-dark-toggle" type="button" :aria-label="appStore.darkMode ? '切换亮色模式' : '切换暗黑模式'"
 						@click="appStore.toggleDarkMode($event)">
 						<el-icon :size="18">
 							<Sunny v-if="appStore.darkMode" />
@@ -56,11 +59,13 @@
           </button> -->
 
 					<ClientOnly>
-						<el-dropdown v-if="authStore.isAuthenticated && authStore.user" trigger="click" placement="bottom-end"
+						<el-dropdown
+v-if="authStore.isAuthenticated && authStore.user" trigger="click" placement="bottom-end"
 							@command="handleUserMenuCommand">
 							<button class="pf-user-entry" type="button">
-								<img v-show="avatarReady" class="pf-user-entry-avatar" :src="authStore.user.avatar"
-									@load="avatarLoaded = true" @error="avatarLoadFailed = true" />
+								<img
+v-show="avatarReady" class="pf-user-entry-avatar" :src="authStore.user.avatar"
+									@load="avatarLoaded = true" @error="avatarLoadFailed = true">
 								<span v-show="!avatarReady" class="pf-user-entry-avatar pf-user-entry-avatar--text">{{ userInitial
 								}}</span>
 								<span class="pf-user-entry-name">{{ authStore.user.name }}</span>
@@ -84,13 +89,16 @@
 			<el-scrollbar class="pf-content-scrollbar">
 				<main class="pf-content">
 					<div v-show="pageLoading" class="df-page-skeleton">
-						<div class="df-skeleton-block"
+						<div
+class="df-skeleton-block"
 							style="width: 180px; height: 22px; border-radius: 4px; margin-bottom: 8px;" />
-						<div class="df-skeleton-block"
+						<div
+class="df-skeleton-block"
 							style="width: 280px; height: 14px; border-radius: 4px; margin-bottom: 24px;" />
 						<div class="df-page-skeleton-cards">
 							<div v-for="i in 4" :key="i" class="df-page-skeleton-card">
-								<div class="df-skeleton-block"
+								<div
+class="df-skeleton-block"
 									style="width: 60%; height: 12px; border-radius: 4px; margin-bottom: 12px;" />
 								<div class="df-skeleton-block" style="width: 40%; height: 28px; border-radius: 4px;" />
 							</div>
@@ -98,7 +106,19 @@
 						<div class="df-skeleton-block" style="width: 100%; height: 240px; border-radius: 12px; margin-top: 20px;" />
 					</div>
 					<div v-show="!pageLoading" style="height: 100%;">
-						<slot />
+						<NuxtErrorBoundary>
+							<slot />
+							<template #error="{ error, clearError }">
+								<div class="df-error-boundary">
+									<el-result icon="warning" title="页面加载异常" :sub-title="error?.message || '发生了未知错误'">
+										<template #extra>
+											<el-button type="primary" @click="clearError">重试</el-button>
+											<el-button @click="navigateTo('/docs')">返回首页</el-button>
+										</template>
+									</el-result>
+								</div>
+							</template>
+						</NuxtErrorBoundary>
 					</div>
 				</main>
 			</el-scrollbar>
@@ -128,7 +148,7 @@ import { useAppStore } from '~/stores/app'
 import { useAuthStore } from '~/stores/auth'
 import { useLocale } from '~/composables/useLocale'
 
-const { currentLocale, toggleLocale } = useLocale()
+const { currentLocale: _currentLocale, toggleLocale: _toggleLocale } = useLocale()
 
 const route = useRoute()
 const appStore = useAppStore()

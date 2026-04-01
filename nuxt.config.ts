@@ -79,6 +79,15 @@ export default defineNuxtConfig({
       // 每天凌晨 2:00 自动同步飞书通讯录
       '0 2 * * *': ['feishu:sync-contacts'],
     },
-    routeRules: {}
+    routeRules: {
+      // 静态资源长缓存（Nuxt 构建产物自带 hash）
+      '/_nuxt/**': {
+        headers: { 'Cache-Control': 'public, max-age=31536000, immutable' },
+      },
+      // 健康检查接口短缓存，避免被高频探针压垮
+      '/api/health': {
+        cache: { maxAge: 10 },
+      },
+    }
   }
 })

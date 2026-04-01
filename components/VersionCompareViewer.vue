@@ -34,14 +34,16 @@
 				<!-- 对比模式切换栏 -->
 				<div class="df-compare-mode-bar">
 					<span class="mode-label">对比模式：</span>
-					<button class="df-compare-mode-btn" :class="{ active: mode === 'side-by-side' }"
+					<button
+class="df-compare-mode-btn" :class="{ active: mode === 'side-by-side' }"
 						@click="mode = 'side-by-side'">
 						↔ 左右并排
 					</button>
 					<button class="df-compare-mode-btn" :class="{ active: mode === 'top-bottom' }" @click="mode = 'top-bottom'">
 						↕ 上下对比
 					</button>
-					<button v-if="data?.fileType === 'pdf'" class="df-compare-mode-btn" :class="{ active: mode === 'overlay' }"
+					<button
+v-if="data?.fileType === 'pdf'" class="df-compare-mode-btn" :class="{ active: mode === 'overlay' }"
 						@click="mode = 'overlay'">
 						▭ 叠加对比
 					</button>
@@ -59,7 +61,7 @@
 						</div>
 						<div ref="newPaneRef" class="compare-canvas" @scroll="syncScroll('new')">
 							<div class="compare-doc">
-								<div class="compare-doc-page" v-html="data.newVersion.html"></div>
+								<div class="compare-doc-page" v-html="sanitize(data.newVersion.html)" />
 							</div>
 						</div>
 					</div>
@@ -74,14 +76,15 @@
 						</div>
 						<div ref="oldPaneRef" class="compare-canvas" @scroll="syncScroll('old')">
 							<div class="compare-doc">
-								<div class="compare-doc-page" v-html="data.oldVersion.html"></div>
+								<div class="compare-doc-page" v-html="sanitize(data.oldVersion.html)" />
 							</div>
 						</div>
 					</div>
 				</div>
 
 				<!-- 加载中 -->
-				<div v-if="loading" style="
+				<div
+v-if="loading" style="
 						flex: 1;
 						display: flex;
 						flex-direction: column;
@@ -104,6 +107,8 @@
 <script setup lang="ts">
 import { Close, View, Loading, Switch } from '@element-plus/icons-vue'
 import type { CompareMode, CompareResult } from '~/types/version'
+
+const { sanitize } = useSanitize()
 
 const props = defineProps<{
 	visible: boolean

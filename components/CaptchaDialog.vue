@@ -22,34 +22,38 @@
 
 					<!-- 进度指示器 -->
 					<div class="captcha-progress">
-						<div v-for="i in targetCount" :key="i" class="captcha-progress-dot"
+						<div
+v-for="i in targetCount" :key="i" class="captcha-progress-dot"
 							:class="{ active: i <= clicks.length }" />
 					</div>
 
 					<!-- 画布 -->
-					<div class="captcha-canvas" :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
+					<div
+class="captcha-canvas" :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
 						@click="handleImageClick">
-						<div class="captcha-svg" v-html="captchaSvg" />
+						<div class="captcha-svg" v-html="sanitize(captchaSvg)" />
 						<TransitionGroup name="captcha-dot-pop">
-							<div v-for="(pt, idx) in clicks" :key="`${pt.x}-${pt.y}`" class="captcha-dot"
+							<div
+v-for="(pt, idx) in clicks" :key="`${pt.x}-${pt.y}`" class="captcha-dot"
 								:style="{ left: pt.x + 'px', top: pt.y + 'px' }">
 								{{ idx + 1 }}
 							</div>
 						</TransitionGroup>
 						<!-- loading 骨架 -->
 						<div v-if="loading" class="captcha-canvas-loading">
-							<el-icon class="is-loading" :size="28"><Loading /></el-icon>
+							<el-icon class="is-loading" :size="28">
+								<Loading />
+							</el-icon>
 						</div>
 						<!-- 自动确认倒计时遮罩 -->
 						<Transition name="captcha-fade">
 							<div v-if="autoConfirming" class="captcha-canvas-countdown">
 								<div class="captcha-countdown-ring">
 									<svg viewBox="0 0 40 40">
-										<circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.3)"
-											stroke-width="3" />
-										<circle class="captcha-countdown-circle" cx="20" cy="20" r="17" fill="none"
-											stroke="#fff" stroke-width="3" stroke-linecap="round"
-											:style="{ animationDuration: autoConfirmDelay + 'ms' }" />
+										<circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="3" />
+										<circle
+class="captcha-countdown-circle" cx="20" cy="20" r="17" fill="none" stroke="#fff"
+											stroke-width="3" stroke-linecap="round" :style="{ animationDuration: autoConfirmDelay + 'ms' }" />
 									</svg>
 								</div>
 								<span class="captcha-countdown-text">验证中…</span>
@@ -61,13 +65,18 @@
 					<!-- 底部操作栏 -->
 					<div class="captcha-footer">
 						<div class="captcha-footer-left">
-							<button class="captcha-action-btn" @click="refreshCaptcha" title="刷新验证码">
-								<el-icon><Refresh /></el-icon>
+							<button class="captcha-action-btn" title="刷新验证码" @click="refreshCaptcha">
+								<el-icon>
+									<Refresh />
+								</el-icon>
 								<span>换一张</span>
 							</button>
-							<button class="captcha-action-btn" :disabled="clicks.length === 0 || autoConfirming"
-								@click="undoClick" title="撤回上一个">
-								<el-icon><RefreshLeft /></el-icon>
+							<button
+class="captcha-action-btn" :disabled="clicks.length === 0 || autoConfirming" title="撤回上一个"
+								@click="undoClick">
+								<el-icon>
+									<RefreshLeft />
+								</el-icon>
 								<span>撤回</span>
 							</button>
 						</div>
@@ -83,8 +92,9 @@
 
 <script setup lang="ts">
 import { Refresh, RefreshLeft, Loading } from '@element-plus/icons-vue'
-import type { ApiResult } from '~/types/api'
-import type { CaptchaData } from '~/types/api'
+import type { ApiResult, CaptchaData } from '~/types/api'
+
+const { sanitize } = useSanitize()
 
 const emit = defineEmits<{
 	confirm: [clicks: { x: number; y: number }[], token: string]
@@ -218,6 +228,7 @@ watch(visible, (val) => {
 		opacity: 0;
 		transform: translateY(16px) scale(0.97);
 	}
+
 	to {
 		opacity: 1;
 		transform: translateY(0) scale(1);
@@ -453,8 +464,13 @@ watch(visible, (val) => {
 }
 
 @keyframes captcha-ring-sweep {
-	from { stroke-dashoffset: 0; }
-	to { stroke-dashoffset: 106.8; }
+	from {
+		stroke-dashoffset: 0;
+	}
+
+	to {
+		stroke-dashoffset: 106.8;
+	}
 }
 
 .captcha-countdown-text {
