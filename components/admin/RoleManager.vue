@@ -1,7 +1,8 @@
 <template>
 	<div class="role-manager">
 		<!-- ── 工具栏 ── -->
-		<DataTable :data="roleList" :columns="columns" :loading="loading" :total="total" :page="page" :page-size="pageSize"
+		<DataTable
+:data="roleList" :columns="columns" :loading="loading" :total="total" :page="page" :page-size="pageSize"
 			:action-width="150" show-search search-placeholder="搜索角色名称或标识…" @update:page="page = $event"
 			@update:page-size="pageSize = $event" @search="onSearch">
 			<template #toolbar>
@@ -41,7 +42,8 @@
 				<el-button v-auth="'role:update'" link type="primary" size="small" @click="openPermissionDialog(row)">
 					权限
 				</el-button>
-				<el-button v-if="!row.isSystem" v-auth="'role:delete'" link type="danger" size="small"
+				<el-button
+v-if="!row.isSystem" v-auth="'role:delete'" link type="danger" size="small"
 					:loading="deletingId === row.id" @click="handleDelete(row)">
 					删除
 				</el-button>
@@ -49,7 +51,8 @@
 		</DataTable>
 
 		<!-- ── 新建/编辑角色弹窗 ── -->
-		<Modal v-model="roleDialogVisible" :title="isEditing ? '编辑角色' : '新增角色'" :confirm-loading="saving"
+		<Modal
+v-model="roleDialogVisible" :title="isEditing ? '编辑角色' : '新增角色'" :confirm-loading="saving"
 			@confirm="handleSaveRole" @close="resetRoleForm">
 			<el-form ref="roleFormRef" :model="roleForm" :rules="roleRules" label-width="80px">
 				<el-form-item label="角色标识" prop="code">
@@ -62,14 +65,16 @@
 					<el-input v-model="roleForm.description" type="textarea" :rows="2" placeholder="可选" />
 				</el-form-item>
 				<el-form-item label="状态" prop="status">
-					<el-switch v-model="roleForm.status" :active-value="1" :inactive-value="0" active-text="启用"
+					<el-switch
+v-model="roleForm.status" :active-value="1" :inactive-value="0" active-text="启用"
 						inactive-text="停用" />
 				</el-form-item>
 			</el-form>
 		</Modal>
 
 		<!-- ── 权限分配弹窗 ── -->
-		<Modal v-model="permDialogVisible" title="分配权限" width="680px" :confirm-loading="savingPerms"
+		<Modal
+v-model="permDialogVisible" title="分配权限" width="680px" :confirm-loading="savingPerms"
 			@confirm="handleSavePermissions">
 			<div v-if="currentRole" class="perm-dialog-header">
 				<span>角色：<strong>{{ currentRole.name }}</strong>（{{ currentRole.code }}）</span>
@@ -78,13 +83,15 @@
 				<div v-loading="loadingPerms" class="perm-groups">
 					<div v-for="group in permissionGroups" :key="group.module" class="perm-group">
 						<div class="perm-group-header">
-							<el-checkbox :model-value="isModuleAllChecked(group)" :indeterminate="isModuleIndeterminate(group)"
+							<el-checkbox
+:model-value="isModuleAllChecked(group)" :indeterminate="isModuleIndeterminate(group)"
 								@change="toggleModule(group, $event as boolean)">
 								<strong>{{ moduleLabels[group.module] || group.module }}</strong>
 							</el-checkbox>
 						</div>
 						<div class="perm-group-body">
-							<el-checkbox v-for="perm in group.permissions" :key="perm.id"
+							<el-checkbox
+v-for="perm in group.permissions" :key="perm.id"
 								:model-value="selectedPermIds.includes(perm.id)" @change="togglePerm(perm.id, $event as boolean)">
 								{{ perm.name }}
 								<span v-if="perm.description" class="perm-desc">{{ perm.description }}</span>
@@ -99,7 +106,6 @@
 
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import type { Permission, PermissionGroup, RoleListItem } from '~/types/rbac'
 import {
@@ -138,7 +144,7 @@ const roleForm = reactive({
 	code: '',
 	name: '',
 	description: '',
-	status: 1
+	status: 1 as 0 | 1,
 })
 const roleRules: FormRules = {
 	code: [
@@ -191,7 +197,7 @@ async function loadRoles() {
 			total.value = res.data.total
 		}
 	} catch {
-		ElMessage.error('加载角色列表失败')
+		msgError('加载角色列表失败')
 	} finally {
 		loading.value = false
 	}
@@ -258,24 +264,24 @@ async function handleSaveRole() {
 				status: roleForm.status,
 			})
 			if (res.success) {
-				ElMessage.success('角色更新成功')
+				msgSuccess(res.message || '角色更新成功')
 				roleDialogVisible.value = false
 				loadRoles()
 			} else {
-				ElMessage.error(res.message || '更新失败')
+				msgError(res.message || '更新失败')
 			}
 		} else {
 			const res = await apiCreateRole(roleForm)
 			if (res.success) {
-				ElMessage.success('角色创建成功')
+				msgSuccess(res.message || '角色创建成功')
 				roleDialogVisible.value = false
 				loadRoles()
 			} else {
-				ElMessage.error(res.message || '创建失败')
+				msgError(res.message || '创建失败')
 			}
 		}
 	} catch {
-		ElMessage.error('操作失败')
+		msgError('操作失败')
 	} finally {
 		saving.value = false
 	}
@@ -283,27 +289,24 @@ async function handleSaveRole() {
 
 // ── 删除角色 ──
 async function handleDelete(row: RoleListItem) {
-	try {
-		await ElMessageBox.confirm(
-			`确定删除角色「${row.name}」？关联的用户将失去该角色的权限。`,
-			'删除确认',
-			{ type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' }
-		)
-	} catch {
-		return // 用户取消
-	}
+	const confirmed = await msgConfirm(
+		`确定删除角色「${row.name}」？关联的用户将失去该角色的权限。`,
+		'删除确认',
+		{ confirmText: '删除', danger: true },
+	)
+	if (!confirmed) return
 
 	deletingId.value = row.id
 	try {
 		const res = await apiDeleteRole(row.id)
 		if (res.success) {
-			ElMessage.success('角色已删除')
+			msgSuccess(res.message || '角色已删除')
 			loadRoles()
 		} else {
-			ElMessage.error(res.message || '删除失败')
+			msgError(res.message || '删除失败')
 		}
 	} catch {
-		ElMessage.error('删除失败')
+		msgError('删除失败')
 	} finally {
 		deletingId.value = null
 	}
@@ -329,7 +332,7 @@ async function openPermissionDialog(row: RoleListItem) {
 			selectedPermIds.value = roleRes.data.permissions?.map(p => p.id) || []
 		}
 	} catch {
-		ElMessage.error('加载权限数据失败')
+		msgError('加载权限数据失败')
 	} finally {
 		loadingPerms.value = false
 	}
@@ -370,14 +373,14 @@ async function handleSavePermissions() {
 	try {
 		const res = await apiSetRolePermissions(currentRole.value.id, selectedPermIds.value)
 		if (res.success) {
-			ElMessage.success('权限分配成功')
+			msgSuccess(res.message || '权限分配成功')
 			permDialogVisible.value = false
 			loadRoles()
 		} else {
-			ElMessage.error(res.message || '分配失败')
+			msgError(res.message || '分配失败')
 		}
 	} catch {
-		ElMessage.error('权限保存失败')
+		msgError('权限保存失败')
 	} finally {
 		savingPerms.value = false
 	}

@@ -26,7 +26,7 @@ export interface Role {
 	name: string
 	description: string | null
 	isSystem: boolean
-	status: number
+	status: 0 | 1
 	createdAt: string
 	permissions?: Permission[]
 }
@@ -38,7 +38,7 @@ export interface RoleListItem {
 	name: string
 	description: string | null
 	isSystem: boolean
-	status: number
+	status: 0 | 1
 	permissionCount: number
 	userCount: number
 	createdAt: string
@@ -49,7 +49,7 @@ export interface RoleForm {
 	code: string
 	name: string
 	description: string
-	status: number
+	status: 0 | 1
 }
 
 /** 用户-角色关联 */

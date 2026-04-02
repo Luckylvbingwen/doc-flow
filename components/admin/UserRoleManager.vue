@@ -1,6 +1,7 @@
 <template>
 	<div class="user-role-manager">
-		<DataTable :data="list" :columns="columns" :loading="loading" :total="total" :page="page" :page-size="pageSize"
+		<DataTable
+:data="list" :columns="columns" :loading="loading" :total="total" :page="page" :page-size="pageSize"
 			show-search search-placeholder="搜索用户名或邮箱…" @update:page="page = $event" @update:page-size="pageSize = $event"
 			@search="onSearch">
 			<template #toolbar>
@@ -22,7 +23,8 @@
 
 			<!-- 操作 -->
 			<template #action="{ row }">
-				<el-button v-auth="'role:assign'" link type="danger" size="small" :loading="revokingId === row.id"
+				<el-button
+v-auth="'role:assign'" link type="danger" size="small" :loading="revokingId === row.id"
 					@click="handleRevoke(row)">
 					撤销
 				</el-button>
@@ -33,9 +35,11 @@
 		<Modal v-model="assignDialogVisible" title="分配角色" :confirm-loading="assigning" @confirm="handleAssign">
 			<el-form label-width="80px">
 				<el-form-item label="用户">
-					<el-select v-model="assignForm.userId" filterable remote :remote-method="searchUsers"
+					<el-select
+v-model="assignForm.userId" filterable remote :remote-method="searchUsers"
 						:loading="searchingUsers" placeholder="输入用户名或邮箱搜索" style="width: 100%">
-						<el-option v-for="u in userOptions" :key="u.id" :label="`${u.name}${u.email ? ' (' + u.email + ')' : ''}`"
+						<el-option
+v-for="u in userOptions" :key="u.id" :label="`${u.name}${u.email ? ' (' + u.email + ')' : ''}`"
 							:value="u.id" />
 					</el-select>
 				</el-form-item>
@@ -50,7 +54,6 @@
 </template>
 
 <script setup lang="ts">
-import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import type { UserRoleItem } from '~/types/rbac'
 import {
@@ -102,7 +105,7 @@ async function loadList() {
 			total.value = res.data.total
 		}
 	} catch {
-		ElMessage.error('加载用户角色列表失败')
+		msgError('加载用户角色列表失败')
 	} finally {
 		loading.value = false
 	}
@@ -181,7 +184,7 @@ function openAssignDialog() {
 // ── 执行分配 ──
 async function handleAssign() {
 	if (!assignForm.userId || !assignForm.roleId) {
-		ElMessage.warning('请选择用户和角色')
+		msgWarning('请选择用户和角色')
 		return
 	}
 
@@ -189,14 +192,14 @@ async function handleAssign() {
 	try {
 		const res = await apiAssignUserRole(assignForm.userId, assignForm.roleId)
 		if (res.success) {
-			ElMessage.success('角色分配成功')
+			msgSuccess(res.message || '角色分配成功')
 			assignDialogVisible.value = false
 			loadList()
 		} else {
-			ElMessage.error(res.message || '分配失败')
+			msgError(res.message || '分配失败')
 		}
 	} catch {
-		ElMessage.error('操作失败')
+		msgError('操作失败')
 	} finally {
 		assigning.value = false
 	}
@@ -204,27 +207,24 @@ async function handleAssign() {
 
 // ── 撤销角色 ──
 async function handleRevoke(row: UserRoleItem) {
-	try {
-		await ElMessageBox.confirm(
-			`确定撤销用户「${row.userName}」的「${row.roleName}」角色？`,
-			'撤销确认',
-			{ type: 'warning', confirmButtonText: '撤销', cancelButtonText: '取消' }
-		)
-	} catch {
-		return // 用户取消
-	}
+	const confirmed = await msgConfirm(
+		`确定撤销用户「${row.userName}」的「${row.roleName}」角色？`,
+		'撤销确认',
+		{ confirmText: '撤销', danger: true },
+	)
+	if (!confirmed) return
 
 	revokingId.value = row.id
 	try {
 		const res = await apiRevokeUserRole(row.userId, row.roleId)
 		if (res.success) {
-			ElMessage.success('角色已撤销')
+			msgSuccess(res.message || '角色已撤销')
 			loadList()
 		} else {
-			ElMessage.error(res.message || '撤销失败')
+			msgError(res.message || '撤销失败')
 		}
 	} catch {
-		ElMessage.error('撤销失败')
+		msgError('撤销失败')
 	} finally {
 		revokingId.value = null
 	}

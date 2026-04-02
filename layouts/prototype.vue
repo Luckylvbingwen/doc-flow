@@ -141,7 +141,6 @@ import {
 	Sunny,
 	User
 } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
 import { storeToRefs } from 'pinia'
 
 import { useAppStore } from '~/stores/app'
@@ -249,7 +248,7 @@ const handleLogout = async () => {
 	}
 
 	authStore.clearSession()
-	ElMessage.success('已退出登录')
+	msgSuccess('已退出登录')
 	await navigateTo('/login')
 }
 
