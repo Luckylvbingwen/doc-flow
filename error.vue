@@ -59,7 +59,7 @@ const handleError = () => clearError({ redirect: props.error?.statusCode === 401
 	font-size: 96px;
 	font-weight: 800;
 	line-height: 1;
-	background: linear-gradient(135deg, var(--df-primary, #6366f1), #a78bfa);
+	background: linear-gradient(135deg, var(--df-primary, #2563eb), #3b82f6);
 	-webkit-background-clip: text;
 	-webkit-text-fill-color: transparent;
 	background-clip: text;

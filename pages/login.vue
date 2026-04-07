@@ -12,32 +12,23 @@
 	</div>
 
 	<section v-else class="login-page">
-		<!-- 极光背景 -->
-		<div class="aurora-bg">
-			<div class="aurora-ribbon aurora-ribbon--1" />
-			<div class="aurora-ribbon aurora-ribbon--2" />
-			<div class="aurora-ribbon aurora-ribbon--3" />
-			<div class="aurora-glow aurora-glow--tl" />
-			<div class="aurora-glow aurora-glow--br" />
+		<!-- 左侧深色面板 -->
+		<div class="login-hero">
+			<div class="login-hero-pattern" />
+			<div class="login-hero-content">
+				<div class="brand-placeholder">
+					<div class="brand-icon">DF</div>
+					<div class="brand-text">DocFlow</div>
+				</div>
+				<h1 class="hero-title">
+					<span class="hero-title-line">高效协作</span>
+					<span class="hero-title-line hero-title-line--accent">从文档开始</span>
+				</h1>
+				<p class="hero-desc">统一管理 · 版本追溯 · 流程审批 · 安全可控</p>
+			</div>
 		</div>
 
-		<!-- 点阵纹理 -->
-		<div class="dot-grid" />
-
-		<!-- 左侧标语区 -->
-		<div class="hero-area">
-			<h1 class="hero-title">
-				<span class="hero-title-line">高效协作</span>
-				<span class="hero-title-line hero-title-line--accent">从文档开始</span>
-			</h1>
-			<p class="hero-desc">统一管理 · 版本追溯 · 流程审批 · 安全可控</p>
-		</div>
-
-		<div class="brand-placeholder">
-			<div class="brand-icon">DF</div>
-			<div class="brand-text">DocFlow 协作平台</div>
-		</div>
-
+		<!-- 右侧登录表单 -->
 		<div class="login-content">
 			<article class="login-card">
 				<header class="login-header">
@@ -266,127 +257,75 @@ useHead({ title: '登录 - DocFlow' })
 
 <style lang="scss" scoped>
 /* ============================================
-   页面
+   登录页 — Graphite Dual-tone
    ============================================ */
 .login-page {
 	position: relative;
 	min-height: 100vh;
 	display: flex;
+	overflow: hidden;
+	background: #f1f5f9;
+}
+
+/* ============================================
+   左侧深色面板
+   ============================================ */
+.login-hero {
+	position: relative;
+	width: 44%;
+	min-width: 400px;
+	background: #1e293b;
+	display: flex;
 	align-items: center;
-	justify-content: flex-end;
-	padding-right: clamp(42px, 7vw, 128px);
-	overflow: hidden;
-	background: #fafbff;
-}
-
-/* ============================================
-   极光背景
-   ============================================ */
-.aurora-bg {
-	position: absolute;
-	inset: 0;
-	z-index: 0;
+	justify-content: center;
 	overflow: hidden;
 }
 
-/* 三条极光色带 —— 不同色相、不同运动轨迹 */
-.aurora-ribbon {
-	position: absolute;
-	width: 140%;
-	height: 45%;
-	border-radius: 50%;
-	filter: blur(70px);
-	opacity: 0;
-	animation: aurora-breathe 8s ease-in-out infinite;
-
-	&--1 {
-		/* 暖橘 → 珊瑚粉 */
-		top: -18%;
-		left: -20%;
-		background: linear-gradient(135deg, rgba(251, 191, 146, 0.38) 0%, rgba(252, 165, 165, 0.28) 50%, rgba(253, 230, 210, 0.15) 100%);
-		animation-delay: 0s;
-		animation-duration: 10s;
-	}
-
-	&--2 {
-		/* 薄荷 → 天青 */
-		top: 30%;
-		left: -10%;
-		background: linear-gradient(160deg, rgba(167, 243, 208, 0.25) 0%, rgba(147, 220, 252, 0.3) 55%, rgba(196, 231, 253, 0.12) 100%);
-		animation-delay: 2.5s;
-		animation-duration: 12s;
-	}
-
-	&--3 {
-		/* 薰衣草 → 丁香 */
-		bottom: -15%;
-		right: -15%;
-		background: linear-gradient(120deg, rgba(196, 181, 253, 0.22) 0%, rgba(233, 213, 255, 0.3) 50%, rgba(219, 234, 254, 0.12) 100%);
-		animation-delay: 5s;
-		animation-duration: 14s;
-	}
-}
-
-@keyframes aurora-breathe {
-
-	0%,
-	100% {
-		opacity: 0.3;
-		transform: translateY(0) scale(1);
-	}
-
-	50% {
-		opacity: 0.7;
-		transform: translateY(-20px) scale(1.03);
-	}
-}
-
-/* 角落弥散光 */
-.aurora-glow {
-	position: absolute;
-	border-radius: 50%;
-	filter: blur(100px);
-	pointer-events: none;
-
-	&--tl {
-		width: 500px;
-		height: 500px;
-		top: -120px;
-		left: -100px;
-		background: radial-gradient(circle, rgba(251, 207, 177, 0.3), transparent 70%);
-	}
-
-	&--br {
-		width: 420px;
-		height: 420px;
-		bottom: -80px;
-		right: -60px;
-		background: radial-gradient(circle, rgba(196, 181, 253, 0.2), transparent 70%);
-	}
-}
-
-/* ============================================
-   点阵纹理
-   ============================================ */
-.dot-grid {
+/* 几何网格纹理 */
+.login-hero-pattern {
 	position: absolute;
 	inset: 0;
-	z-index: 0;
-	background-image: radial-gradient(circle, rgba(148, 163, 184, 0.18) 1px, transparent 1px);
-	background-size: 28px 28px;
-	mask-image: radial-gradient(ellipse 70% 70% at 35% 50%, black 20%, transparent 72%);
-	-webkit-mask-image: radial-gradient(ellipse 70% 70% at 35% 50%, black 20%, transparent 72%);
+	background-image:
+		linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+	background-size: 48px 48px;
+	mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 70%);
+	-webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 70%);
 }
 
-/* ============================================
-   左侧标语
-   ============================================ */
-.hero-area {
-	position: absolute;
-	left: clamp(48px, 8vw, 140px);
-	top: 50%;
-	transform: translateY(-50%);
+.login-hero-content {
+	position: relative;
 	z-index: 1;
+	padding: 0 48px;
+}
+
+.brand-placeholder {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 48px;
+}
+
+.brand-icon {
+	width: 38px;
+	height: 38px;
+	border-radius: 8px;
+	background: #2563eb;
+	color: #ffffff;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 13px;
+	font-weight: 800;
+	letter-spacing: -0.5px;
+}
+
+.brand-text {
+	color: #ffffff;
+	font-family: var(--df-font-heading);
+	font-size: 20px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
 }
 
 .hero-title {
@@ -398,122 +337,76 @@ useHead({ title: '登录 - DocFlow' })
 
 .hero-title-line {
 	display: block;
-	font-size: clamp(32px, 3.8vw, 52px);
+	font-family: var(--df-font-heading);
+	font-size: clamp(28px, 3vw, 44px);
 	font-weight: 800;
-	letter-spacing: 2px;
-	color: #334155;
+	letter-spacing: 1px;
+	color: #e2e8f0;
 	line-height: 1.3;
 
 	&--accent {
-		background: linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
+		color: #3b82f6;
 	}
 }
 
 .hero-desc {
 	margin: 18px 0 0;
-	font-size: 15px;
-	color: #94a3b8;
-	letter-spacing: 3px;
+	font-size: 14px;
+	color: #64748b;
+	letter-spacing: 2px;
 	font-weight: 400;
 }
 
 /* ============================================
-   品牌
-   ============================================ */
-.brand-placeholder {
-	position: fixed;
-	top: 24px;
-	left: 30px;
-	z-index: 10;
-	display: inline-flex;
-	align-items: center;
-	gap: 10px;
-}
-
-.brand-icon {
-	width: 34px;
-	height: 34px;
-	border-radius: 10px;
-	background: linear-gradient(135deg, #f97316, #ec4899, #8b5cf6);
-	color: #ffffff;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 12px;
-	font-weight: 800;
-	letter-spacing: -0.5px;
-	box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25);
-}
-
-.brand-text {
-	color: #1e293b;
-	font-size: 20px;
-	font-weight: 700;
-	letter-spacing: 0.5px;
-}
-
-/* ============================================
-   登录卡片
+   右侧登录表单
    ============================================ */
 .login-content {
-	position: relative;
-	z-index: 1;
-	width: 420px;
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 32px;
 }
 
 .login-card {
-	border-radius: 20px;
-	background: rgba(255, 255, 255, 0.72);
-	backdrop-filter: blur(24px) saturate(1.6);
-	min-height: 450px;
-	padding: 28px 32px 30px;
+	width: 400px;
+	max-width: 100%;
+	background: #ffffff;
+	border-radius: var(--df-radius-lg, 12px);
+	padding: 32px;
 	box-shadow:
-		0 0 0 1px rgba(255, 255, 255, 0.6),
-		0 1px 2px rgba(0, 0, 0, 0.03),
-		0 8px 32px rgba(0, 0, 0, 0.06);
-	transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s;
+		0 1px 3px rgba(0, 0, 0, 0.04),
+		0 4px 24px rgba(0, 0, 0, 0.06);
+	transition: box-shadow 0.3s;
 
 	&:hover {
-		transform: translateY(-2px);
 		box-shadow:
-			0 0 0 1px rgba(255, 255, 255, 0.7),
-			0 1px 2px rgba(0, 0, 0, 0.03),
-			0 16px 48px rgba(0, 0, 0, 0.09);
-	}
-
-	&-header {
-		width: 100%;
-		height: 92px;
-		object-fit: cover;
-		border-radius: 8px;
-		display: block;
-		margin-bottom: 16px;
+			0 1px 3px rgba(0, 0, 0, 0.04),
+			0 8px 32px rgba(0, 0, 0, 0.08);
 	}
 }
 
 .login-header {
+	margin-bottom: 24px;
+
 	h2 {
 		margin: 0;
 		text-align: center;
-		font-size: 24px;
+		font-family: var(--df-font-heading);
+		font-size: 22px;
 		font-weight: 700;
 		color: #1e293b;
 	}
 
 	p {
 		margin: 6px 0 0;
-		color: #94a3b8;
+		color: #64748b;
 		font-size: 13px;
 		text-align: center;
 	}
 }
 
 .login-form {
-	margin-top: 22px;
-
 	:deep(.el-form-item) {
 		margin-bottom: 18px;
 	}
@@ -524,10 +417,10 @@ useHead({ title: '登录 - DocFlow' })
 	}
 
 	:deep(.el-input__wrapper) {
-		min-height: 44px;
-		border-radius: 10px;
+		min-height: 42px;
+		border-radius: var(--df-radius-sm, 6px);
 		box-shadow: 0 0 0 1px #e2e8f0 inset;
-		background: rgba(255, 255, 255, 0.65);
+		background: #ffffff;
 		transition: all 0.2s;
 
 		&:hover {
@@ -535,7 +428,7 @@ useHead({ title: '登录 - DocFlow' })
 		}
 
 		&.is-focus {
-			box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.3) inset;
+			box-shadow: 0 0 0 1px #2563eb inset, 0 0 0 3px rgba(37, 99, 235, 0.12);
 		}
 	}
 }
@@ -547,36 +440,27 @@ useHead({ title: '登录 - DocFlow' })
 	margin: 2px 0 16px;
 }
 
-.preview-link {
-	font-size: 12px;
-	color: #6b7280;
-
-	&:hover {
-		color: var(--df-primary);
-	}
-}
-
 .login-submit {
 	width: 100%;
-	height: 46px;
+	height: 42px;
 	margin-top: 2px;
-	border-radius: 12px;
-	font-size: 16px;
+	border-radius: var(--df-radius-sm, 6px);
+	font-size: 15px;
 	font-weight: 600;
-	letter-spacing: 2px;
+	letter-spacing: 1px;
 	border: none;
-	background: linear-gradient(135deg, #f97316 0%, #ec4899 60%, #8b5cf6 100%);
+	background: #2563eb;
 	color: #fff;
-	box-shadow: 0 4px 16px rgba(249, 115, 22, 0.22);
-	transition: all 0.25s;
+	box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+	transition: all 0.2s;
 
 	&:hover {
-		box-shadow: 0 6px 24px rgba(249, 115, 22, 0.32);
-		transform: translateY(-1px);
+		background: #1d4ed8;
+		box-shadow: 0 4px 16px rgba(37, 99, 235, 0.28);
 	}
 
 	&:active {
-		transform: translateY(0);
+		background: #1e40af;
 	}
 }
 
@@ -584,7 +468,7 @@ useHead({ title: '登录 - DocFlow' })
 	display: flex;
 	align-items: center;
 	margin: 18px 0 14px;
-	color: #9ca3af;
+	color: #94a3b8;
 	font-size: 12px;
 
 	&::before,
@@ -592,7 +476,7 @@ useHead({ title: '登录 - DocFlow' })
 		content: '';
 		flex: 1;
 		height: 1px;
-		background: #e5e7eb;
+		background: #e2e8f0;
 	}
 
 	span {
@@ -602,19 +486,19 @@ useHead({ title: '登录 - DocFlow' })
 
 .feishu-login-btn {
 	width: 100%;
-	height: 44px;
-	border-radius: 12px;
+	height: 42px;
+	border-radius: var(--df-radius-sm, 6px);
 	font-size: 14px;
 	font-weight: 500;
 	letter-spacing: 0.5px;
-	background: rgba(255, 255, 255, 0.5);
+	background: #f8fafc;
 	color: #475569;
 	border: 1px solid #e2e8f0;
 	transition: all 0.2s;
 
 	&:hover,
 	&:focus {
-		background: rgba(255, 255, 255, 0.8);
+		background: #f1f5f9;
 		color: #1e293b;
 		border-color: #cbd5e1;
 	}
@@ -628,9 +512,9 @@ useHead({ title: '登录 - DocFlow' })
 .login-tips {
 	margin-top: 16px;
 	padding: 10px 14px;
-	border-radius: 10px;
+	border-radius: var(--df-radius-sm, 6px);
 	border: 1px dashed #e2e8f0;
-	background: rgba(255, 255, 255, 0.4);
+	background: #f8fafc;
 
 	p {
 		margin: 0;
@@ -647,33 +531,18 @@ useHead({ title: '登录 - DocFlow' })
    响应式
    ============================================ */
 @media (max-width: 1024px) {
-	.hero-area {
+	.login-hero {
 		display: none;
 	}
 }
 
 @media (max-width: 900px) {
-	.brand-placeholder {
-		top: 12px;
-		left: 14px;
-	}
-
-	.brand-text {
-		font-size: 18px;
-	}
-
-	.login-page {
-		justify-content: center;
+	.login-content {
 		padding: 16px;
 	}
 
-	.login-content {
-		width: min(100%, 420px);
-	}
-
 	.login-card {
-		min-height: 420px;
-		padding: 22px 18px 22px;
+		padding: 24px 20px;
 	}
 }
 
@@ -685,7 +554,7 @@ useHead({ title: '登录 - DocFlow' })
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: linear-gradient(135deg, #fafbff 0%, #f5f3ff 100%);
+	background: #f1f5f9;
 }
 
 .feishu-loading-card {
@@ -704,7 +573,7 @@ useHead({ title: '登录 - DocFlow' })
 	width: 12px;
 	height: 12px;
 	border-radius: 50%;
-	background: linear-gradient(135deg, #f97316, #ec4899);
+	background: #2563eb;
 	animation: feishu-bounce 1.4s ease-in-out infinite both;
 
 	&:nth-child(1) {
@@ -734,7 +603,7 @@ useHead({ title: '登录 - DocFlow' })
 .feishu-loading-text {
 	margin: 0;
 	font-size: 16px;
-	color: #6b7280;
+	color: #64748b;
 	letter-spacing: 1px;
 }
 </style>

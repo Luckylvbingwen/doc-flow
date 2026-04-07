@@ -1,29 +1,38 @@
 :root {
-  --df-bg: #f5f5f5;
+  --df-bg: #f1f5f9;
   --df-panel: #ffffff;
-  --df-text: #1f2937;
-  --df-subtext: #71717a;
-  --df-primary: #6366f1;
-  --df-primary-soft: #eef2ff;
-  --df-primary-hover: #4f46e5;
-  --df-border: #e4e4e7;
-  --df-surface: #fafafa;
-  --df-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 4px rgba(0, 0, 0, 0.04);
-  --df-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --df-text: #1e293b;
+  --df-subtext: #64748b;
+  --df-primary: #2563eb;
+  --df-primary-soft: #eff6ff;
+  --df-primary-hover: #1d4ed8;
+  --df-border: #e2e8f0;
+  --df-surface: #f8fafc;
+  --df-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --df-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
 
-  --el-color-primary: #6366f1;
-  --el-color-primary-light-1: #7577f3;
-  --el-color-primary-light-2: #8789f5;
-  --el-color-primary-light-3: #999bf7;
-  --el-color-primary-light-4: #abadf9;
-  --el-color-primary-light-5: #b1b3f8;
-  --el-color-primary-light-6: #c3c4fa;
-  --el-color-primary-light-7: #d5d6fb;
-  --el-color-primary-light-8: #e7e7fd;
-  --el-color-primary-light-9: #f3f3fe;
-  --el-color-primary-dark-2: #4f46e5;
-  --el-border-radius-base: 10px;
-  --el-border-radius-small: 6px;
+  /* Sidebar (permanent dark) */
+  --df-sidebar-bg: #1e293b;
+  --df-sidebar-text: #94a3b8;
+  --df-sidebar-text-active: #ffffff;
+  --df-sidebar-active-bg: rgba(37, 99, 235, 0.15);
+  --df-sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+  --df-sidebar-border: rgba(255, 255, 255, 0.08);
+
+  /* Element Plus overrides */
+  --el-color-primary: #2563eb;
+  --el-color-primary-light-1: #3b82f6;
+  --el-color-primary-light-2: #60a5fa;
+  --el-color-primary-light-3: #93bbfd;
+  --el-color-primary-light-4: #a5c4fd;
+  --el-color-primary-light-5: #b8d4fe;
+  --el-color-primary-light-6: #c9dffe;
+  --el-color-primary-light-7: #dbeafe;
+  --el-color-primary-light-8: #e8f0fe;
+  --el-color-primary-light-9: #eff6ff;
+  --el-color-primary-dark-2: #1d4ed8;
+  --el-border-radius-base: 6px;
+  --el-border-radius-small: 4px;
 }
 
 * {
@@ -72,9 +81,9 @@ html:not(.dark)::view-transition-new(root) {
 
 body {
   margin: 0;
-  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--df-font-sans);
   color: var(--df-text);
-  background: radial-gradient(circle at top right, #eef2ff 0%, #f5f5f5 28%, #f5f5f5 100%);
+  background: #f1f5f9;
   overflow-x: auto;
 }
 
@@ -83,21 +92,10 @@ a {
   text-decoration: none;
 }
 
-/* ── 登录页关键布局（全局 fallback，防止 scoped CSS 延迟加载导致 FOUC） ── */
 .login-page {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
   min-height: 100vh;
-  padding-right: clamp(42px, 7vw, 128px);
-  background-position: center center;
-  background-size: cover;
-  background-repeat: no-repeat;
-
-  @media (max-width: 900px) {
-    justify-content: center;
-    padding: 16px;
-  }
+  background: #f1f5f9;
 }
 
 .pf-app {
@@ -109,11 +107,11 @@ a {
 .pf-sidebar {
   width: 240px;
   flex-shrink: 0;
-  background: var(--df-panel);
-  color: #303133;
+  background: var(--df-sidebar-bg);
+  color: var(--df-sidebar-text);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--df-border);
+  border-right: 1px solid var(--df-sidebar-border);
   transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
@@ -128,7 +126,7 @@ a {
   align-items: center;
   gap: 10px;
   padding: 0 14px;
-  border-bottom: 1px solid var(--df-border);
+  border-bottom: 1px solid var(--df-sidebar-border);
   overflow: hidden;
 }
 
@@ -136,7 +134,7 @@ a {
   margin-left: auto;
   border: none;
   background: transparent;
-  color: var(--df-primary);
+  color: var(--df-sidebar-text);
   border-radius: 6px;
   width: 28px;
   height: 28px;
@@ -150,8 +148,8 @@ a {
 }
 
 .pf-sidebar-toggle:hover {
-  color: var(--df-primary-hover);
-  background: var(--df-primary-soft);
+  color: #ffffff;
+  background: var(--df-sidebar-hover-bg);
 }
 
 .pf-sidebar.collapsed .pf-brand {
@@ -165,11 +163,15 @@ a {
   width: 0;
   min-width: 0;
   overflow: hidden;
-  transition: opacity 0.15s ease, width 0.2s ease;
+  transition:
+    opacity 0.15s ease,
+    width 0.2s ease;
 }
 
 .pf-brand-logo {
-  transition: opacity 0.2s ease 0.1s, width 0.2s ease;
+  transition:
+    opacity 0.2s ease 0.1s,
+    width 0.2s ease;
 }
 
 .pf-sidebar.collapsed .pf-sidebar-toggle {
@@ -189,7 +191,7 @@ a {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #6366f1, #a5b4fc);
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: #fff;
   display: flex;
   align-items: center;
@@ -199,12 +201,15 @@ a {
 }
 
 .pf-brand-text {
-  color: var(--df-text);
+  color: #ffffff;
+  font-family: var(--df-font-heading);
   font-size: 16px;
   font-weight: 600;
   white-space: nowrap;
   opacity: 1;
-  transition: opacity 0.2s ease, width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 0.2s ease,
+    width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
@@ -227,18 +232,20 @@ a {
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 14px 10px 6px;
-  color: #a1a1aa;
+  color: rgba(148, 163, 184, 0.6);
 }
 
 .pf-nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #52525b;
+  color: var(--df-sidebar-text);
   padding: 9px 12px;
-  border-radius: 8px;
+  border-radius: 6px;
   margin-bottom: 3px;
-  transition: 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
   font-size: 13px;
 }
 
@@ -270,7 +277,9 @@ a {
   text-align: center;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 
 .pf-sidebar.collapsed .pf-nav-badge {
@@ -296,11 +305,17 @@ a {
   height: 0;
   margin: 0;
   overflow: hidden;
-  transition: opacity 0.15s ease, height 0.2s ease, margin 0.2s ease;
+  transition:
+    opacity 0.15s ease,
+    height 0.2s ease,
+    margin 0.2s ease;
 }
 
 .pf-nav-title {
-  transition: opacity 0.15s ease 0.08s, height 0.2s ease, margin 0.2s ease;
+  transition:
+    opacity 0.15s ease 0.08s,
+    height 0.2s ease,
+    margin 0.2s ease;
 }
 
 .pf-sidebar.collapsed .pf-nav-item {
@@ -328,7 +343,9 @@ a {
   overflow: hidden;
   white-space: nowrap;
   opacity: 1;
-  transition: opacity 0.2s ease, width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 0.2s ease,
+    width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .pf-sidebar.collapsed .pf-user {
@@ -343,19 +360,19 @@ a {
 }
 
 .pf-nav-item:hover {
-  background: var(--df-primary-soft);
-  color: var(--df-primary);
+  background: var(--df-sidebar-hover-bg);
+  color: var(--df-sidebar-text-active);
 }
 
 .pf-nav-item.active {
-  background: var(--df-primary-soft);
-  color: var(--df-primary);
+  background: var(--df-sidebar-active-bg);
+  color: var(--df-sidebar-text-active);
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--df-primary) 20%, #fff 80%);
+  box-shadow: none;
 }
 
 .pf-user {
-  border-top: 1px solid var(--df-border);
+  border-top: 1px solid var(--df-sidebar-border);
   padding: 14px 16px;
   display: flex;
   align-items: center;
@@ -367,7 +384,7 @@ a {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f97316, #f59e0b);
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: #fff;
   display: flex;
   align-items: center;
@@ -403,7 +420,7 @@ a {
 .pf-header {
   height: 60px;
   border-bottom: 1px solid var(--df-border);
-  background: #ffffffe0;
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -460,7 +477,7 @@ a {
     font-size: 13px;
     font-weight: 600;
     color: #fff;
-    background: linear-gradient(135deg, #4f46e5, #3b82f6);
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
   }
 }
 
@@ -473,7 +490,7 @@ a {
 }
 
 .pf-user-entry-caret {
-  color: #9ca3af;
+  color: var(--df-subtext);
   font-size: 12px;
 }
 
@@ -494,7 +511,7 @@ a {
 
 .pf-card {
   background: var(--df-panel);
-  border-radius: 12px;
+  border-radius: var(--df-radius-md);
   padding: 16px;
   box-shadow: var(--df-shadow);
 }
@@ -525,9 +542,9 @@ a {
 
 .pf-btn {
   border: 1px solid var(--df-border);
-  border-radius: 8px;
+  border-radius: var(--df-radius-xs);
   background: var(--df-panel);
-  color: #374151;
+  color: var(--df-text);
   padding: 6px 12px;
   font-size: 13px;
 }
@@ -635,7 +652,7 @@ a {
 }
 
 .repo-card {
-  border-radius: 10px;
+  border-radius: var(--df-radius-sm);
   padding: 14px;
   background: var(--df-panel);
 }
@@ -666,7 +683,7 @@ a {
 .pf-table th {
   font-size: 12px;
   color: var(--df-subtext);
-  background: #fafafa;
+  background: var(--df-surface);
 }
 
 .file-header {
@@ -697,7 +714,7 @@ a {
 
 .preview-doc p {
   margin-top: 8px;
-  color: #374151;
+  color: var(--df-text);
 }
 
 .version-pane h5 {
@@ -726,7 +743,7 @@ a {
 }
 
 .notice-item {
-  border-radius: 10px;
+  border-radius: var(--df-radius-sm);
   padding: 12px;
 }
 
@@ -740,7 +757,7 @@ a {
 
 .notice-item p {
   margin-bottom: 6px;
-  color: #4b5563;
+  color: var(--df-subtext);
 }
 
 .notice-item span {
@@ -773,49 +790,7 @@ a {
   margin-bottom: 3px;
 }
 
-.login-page {
-  min-height: calc(100vh - 120px);
-  display: grid;
-  place-items: center;
-}
-
-.login-card {
-  width: min(420px, 100%);
-  background: var(--df-panel);
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  box-shadow: var(--df-shadow-md);
-}
-
-.login-card h2 {
-  margin: 0;
-}
-
-.login-card p {
-  margin: 0 0 6px;
-  color: var(--df-subtext);
-  font-size: 13px;
-}
-
-.login-card label {
-  font-size: 12px;
-  color: var(--df-subtext);
-}
-
-.login-card input {
-  border: 1px solid var(--df-border);
-  border-radius: 8px;
-  height: 36px;
-  padding: 0 10px;
-}
-
-.login-card input:focus {
-  border-color: var(--df-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--df-primary) 16%, #fff 84%);
-}
+/* .login-page 和 .login-card 样式已迁移至 pages/login.vue scoped 中 */
 
 #nprogress {
   pointer-events: none;
@@ -829,7 +804,9 @@ a {
 }
 
 #nprogress .peg {
-  box-shadow: 0 0 10px var(--df-primary), 0 0 5px var(--df-primary);
+  box-shadow:
+    0 0 10px var(--df-primary),
+    0 0 5px var(--df-primary);
 }
 
 #nprogress .spinner {
@@ -859,27 +836,19 @@ a {
 }
 
 /* =========================
-   Design System V2 Overrides
+   Design System V3 — Graphite Dual-tone
    ========================= */
 
 :root {
-  --df-font-sans: "Avenir Next", "Source Han Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", sans-serif;
+  --df-font-heading:
+    'Plus Jakarta Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --df-font-sans: 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+  --df-font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
 
-  --df-bg: #f4f5f7;
-  --df-panel: #ffffff;
-  --df-surface: #f8f9fa;
-  --df-text: #1a1d23;
-  --df-subtext: #6b7280;
-  --df-border: #e5e7eb;
-
-  --df-primary: #6366f1;
-  --df-primary-soft: #eef2ff;
-  --df-primary-hover: #4f46e5;
-
-  --df-radius-xs: 8px;
-  --df-radius-sm: 10px;
-  --df-radius-md: 14px;
-  --df-radius-lg: 18px;
+  --df-radius-xs: 4px;
+  --df-radius-sm: 6px;
+  --df-radius-md: 8px;
+  --df-radius-lg: 12px;
 
   --df-space-1: 4px;
   --df-space-2: 8px;
@@ -894,23 +863,6 @@ a {
   --df-fs-md: 14px;
   --df-fs-lg: 16px;
   --df-fs-xl: 20px;
-
-  --df-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --df-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
-
-  --el-color-primary: #6366f1;
-  --el-color-primary-light-1: #7577f3;
-  --el-color-primary-light-2: #8789f5;
-  --el-color-primary-light-3: #999bf7;
-  --el-color-primary-light-4: #abadf9;
-  --el-color-primary-light-5: #b1b3f8;
-  --el-color-primary-light-6: #c3c4fa;
-  --el-color-primary-light-7: #d5d6fb;
-  --el-color-primary-light-8: #e7e7fd;
-  --el-color-primary-light-9: #f3f3fe;
-  --el-color-primary-dark-2: #4f46e5;
-  --el-border-radius-base: 10px;
-  --el-border-radius-small: 8px;
 }
 
 html,
@@ -934,8 +886,8 @@ body {
 
 .pf-sidebar {
   width: 252px;
-  background: #ffffff;
-  border-right: 1px solid #e5e7eb;
+  background: var(--df-sidebar-bg);
+  border-right: 1px solid var(--df-sidebar-border);
 }
 
 .pf-sidebar.collapsed {
@@ -945,15 +897,15 @@ body {
 .pf-brand {
   height: 52px;
   padding: 0 14px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--df-sidebar-border);
 }
 
 .pf-brand-logo {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #6366f1, #a5b4fc);
-  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
   font-size: var(--df-fs-sm);
 }
 
@@ -971,29 +923,25 @@ body {
   margin: 12px 12px 7px;
   font-size: 11px;
   font-weight: 700;
-  color: #9ca3af;
+  color: rgba(148, 163, 184, 0.6);
 }
 
 .pf-nav-item {
   min-height: 40px;
-  border-radius: var(--df-radius-sm);
+  border-radius: 6px;
   padding: 9px 12px;
   font-size: var(--df-fs-sm);
 }
 
-.pf-nav-item:hover {
-  transform: translateX(1px);
-}
-
 .pf-nav-item.active {
-  background: #eef2ff;
-  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.2);
+  background: var(--df-sidebar-active-bg);
+  box-shadow: none;
 }
 
 .pf-header {
   height: 52px;
   border-bottom: 1px solid #e5e7eb;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.92);
   box-shadow: none;
   padding: 0 24px;
   justify-content: flex-end;
@@ -1022,16 +970,12 @@ body {
   transition: all 0.18s ease;
 }
 
-.pf-btn:hover {
-  transform: translateY(-1px);
-}
-
 .pf-btn.primary {
-  box-shadow: 0 10px 16px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
 }
 
 .pf-btn.primary:hover {
-  box-shadow: 0 12px 18px rgba(99, 102, 241, 0.24);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.24);
 }
 
 .pf-user-entry {
@@ -1048,7 +992,7 @@ body {
 .pf-user-entry-avatar {
   width: 30px;
   height: 30px;
-  background: linear-gradient(135deg, #6366f1, #818cf8);
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
 }
 
 .pf-table th,
@@ -1075,7 +1019,7 @@ body {
 }
 
 .notice-item.unread {
-  background: #eef2ff;
+  background: var(--df-primary-soft);
 }
 
 .login-form :deep(.el-input__wrapper),
@@ -1090,7 +1034,9 @@ body {
 .el-input__wrapper.is-focus,
 .el-select__wrapper.is-focused,
 .el-textarea__inner:focus {
-  box-shadow: 0 0 0 1px #6366f1 inset, 0 0 0 4px rgba(99, 102, 241, 0.12);
+  box-shadow:
+    0 0 0 1px #2563eb inset,
+    0 0 0 4px rgba(37, 99, 235, 0.12);
 }
 
 .el-button {

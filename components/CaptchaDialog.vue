@@ -357,7 +357,7 @@ watch(visible, (val) => {
 	width: 24px;
 	height: 24px;
 	border-radius: 50%;
-	background: linear-gradient(135deg, #3b82f6, #6366f1);
+	background: linear-gradient(135deg, #2563eb, #3b82f6);
 	color: #fff;
 	font-size: 12px;
 	font-weight: 700;

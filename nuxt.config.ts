@@ -2,6 +2,18 @@ import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-03-23',
+  app: {
+    head: {
+      link: [
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap',
+        },
+      ],
+    },
+  },
   devtools: { enabled: process.env.APP_ENV !== 'production' },
   modules: ['@pinia/nuxt', '@element-plus/nuxt', '@nuxt/eslint', '@nuxtjs/i18n', 'nuxt-security'],
   i18n: {
@@ -61,9 +73,9 @@ export default defineNuxtConfig({
       contentSecurityPolicy: {
         'default-src': ["'self'"],
         'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-        'style-src': ["'self'", "'unsafe-inline'"],
+        'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         'img-src': ["'self'", 'data:', 'https:'],
-        'font-src': ["'self'", 'data:'],
+        'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],
         'connect-src': ["'self'", 'wss:', 'ws:'],
       },
       xFrameOptions: 'DENY',
