@@ -23,24 +23,44 @@ v-model="visible" :title="title" :width="width" :top="top" :fullscreen="fullscre
 	</el-dialog>
 </template>
 
-<script setup>
-const props = defineProps({
-	modelValue: { type: Boolean, default: false },
-	title: { type: String, default: '' },
-	width: { type: [String, Number], default: '520px' },
-	top: { type: String, default: '15vh' },
-	fullscreen: { type: Boolean, default: false },
-	closeOnClickModal: { type: Boolean, default: false },
-	closeOnPressEscape: { type: Boolean, default: true },
-	destroyOnClose: { type: Boolean, default: false },
-	appendToBody: { type: Boolean, default: true },
-	draggable: { type: Boolean, default: false },
-	confirmText: { type: String, default: '确定' },
-	cancelText: { type: String, default: '取消' },
-	confirmLoading: { type: Boolean, default: false }
+<script setup lang="ts">
+interface ModalProps {
+	modelValue?: boolean
+	title?: string
+	width?: string | number
+	top?: string
+	fullscreen?: boolean
+	closeOnClickModal?: boolean
+	closeOnPressEscape?: boolean
+	destroyOnClose?: boolean
+	appendToBody?: boolean
+	draggable?: boolean
+	confirmText?: string
+	cancelText?: string
+	confirmLoading?: boolean
+}
+
+const props = withDefaults(defineProps<ModalProps>(), {
+	modelValue: false,
+	title: '',
+	width: '520px',
+	top: '15vh',
+	fullscreen: false,
+	closeOnClickModal: false,
+	closeOnPressEscape: true,
+	destroyOnClose: false,
+	appendToBody: true,
+	draggable: false,
+	confirmText: '确定',
+	cancelText: '取消',
+	confirmLoading: false,
 })
 
-const emit = defineEmits(['update:modelValue', 'close', 'confirm'])
+const emit = defineEmits<{
+	'update:modelValue': [value: boolean]
+	'close': []
+	'confirm': []
+}>()
 
 const visible = computed({
 	get: () => props.modelValue,

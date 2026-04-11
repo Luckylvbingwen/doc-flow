@@ -10,23 +10,38 @@
 			</el-select>
 			<span class="df-pagination-size-unit">条</span>
 		</div>
-		<el-pagination v-model:current-page="currentPage" :page-size="pageSize" :total="total" :pager-count="pagerCount"
+		<el-pagination
+v-model:current-page="currentPage" :page-size="pageSize" :total="total" :pager-count="pagerCount"
 			:disabled="disabled" :small="small" layout="prev, pager, next" @current-change="onPageChange" />
 	</div>
 </template>
 
-<script setup>
-const props = defineProps({
-	page: { type: Number, default: 1 },
-	pageSize: { type: Number, default: 10 },
-	total: { type: Number, default: 0 },
-	pageSizes: { type: Array, default: () => [10, 20, 50, 100] },
-	pagerCount: { type: Number, default: 5 },
-	disabled: { type: Boolean, default: false },
-	small: { type: Boolean, default: false }
+<script setup lang="ts">
+interface PaginationProps {
+	page?: number
+	pageSize?: number
+	total?: number
+	pageSizes?: number[]
+	pagerCount?: number
+	disabled?: boolean
+	small?: boolean
+}
+
+const props = withDefaults(defineProps<PaginationProps>(), {
+	page: 1,
+	pageSize: 10,
+	total: 0,
+	pageSizes: () => [10, 20, 50, 100],
+	pagerCount: 5,
+	disabled: false,
+	small: false,
 })
 
-const emit = defineEmits(['update:page', 'update:pageSize', 'change'])
+const emit = defineEmits<{
+	'update:page': [value: number]
+	'update:pageSize': [value: number]
+	'change': [payload: { page: number; pageSize: number }]
+}>()
 
 const currentPage = computed({
 	get: () => props.page,

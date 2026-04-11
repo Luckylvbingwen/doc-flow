@@ -3,7 +3,8 @@
 		<div class="page-title-text">
 			<div class="page-title-main">
 				<h2>{{ title }}</h2>
-				<el-button v-if="showRefresh" class="title-refresh-btn" link circle :icon="RefreshRight"
+				<el-button
+v-if="showRefresh" class="title-refresh-btn" link circle :icon="RefreshRight"
 					:loading="refreshing" @click="onRefresh" />
 				<slot name="after-title" />
 			</div>
@@ -15,17 +16,25 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { RefreshRight } from '@element-plus/icons-vue'
 
-const props = defineProps({
-	title: { type: String, required: true },
-	subtitle: { type: String, default: '' },
-	showRefresh: { type: Boolean, default: true },
-	refreshing: { type: Boolean, default: false }
+interface PageTitleProps {
+	title: string
+	subtitle?: string
+	showRefresh?: boolean
+	refreshing?: boolean
+}
+
+const props = withDefaults(defineProps<PageTitleProps>(), {
+	subtitle: '',
+	showRefresh: true,
+	refreshing: false,
 })
 
-const emit = defineEmits(['refresh'])
+const emit = defineEmits<{
+	'refresh': []
+}>()
 
 const onRefresh = () => {
 	if (props.refreshing) return
