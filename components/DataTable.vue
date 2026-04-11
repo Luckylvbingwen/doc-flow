@@ -62,6 +62,11 @@ v-else-if="col.enum" :type="getEnumType(getCellValue(scope.row, col.prop), col.e
 						<slot name="action" v-bind="scope" />
 					</template>
 				</el-table-column>
+
+				<!-- 空状态 -->
+				<template v-if="emptyPreset" #empty>
+					<EmptyState :preset="emptyPreset" compact />
+				</template>
 			</el-table>
 		</div>
 
@@ -105,6 +110,7 @@ interface DataTableProps {
 	loading?: boolean
 	rowKey?: string | ((row: Record<string, unknown>) => string)
 	emptyText?: string
+	emptyPreset?: string
 	stripe?: boolean
 	border?: boolean
 	height?: string | number
@@ -131,6 +137,7 @@ const props = withDefaults(defineProps<DataTableProps>(), {
 	loading: false,
 	rowKey: 'id',
 	emptyText: '暂无数据',
+	emptyPreset: undefined,
 	stripe: false,
 	border: false,
 	height: undefined,

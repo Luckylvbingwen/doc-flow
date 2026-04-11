@@ -1,6 +1,11 @@
 <template>
 	<div class="page-title">
 		<div class="page-title-text">
+			<el-breadcrumb v-if="breadcrumbs.length > 1" separator="/" class="page-title-breadcrumb">
+				<el-breadcrumb-item v-for="item in breadcrumbs" :key="item.label" :to="item.to ? { path: item.to } : undefined">
+					{{ item.label }}
+				</el-breadcrumb-item>
+			</el-breadcrumb>
 			<div class="page-title-main">
 				<h2>{{ title }}</h2>
 				<el-button
@@ -18,6 +23,8 @@ v-if="showRefresh" class="title-refresh-btn" link circle :icon="RefreshRight" :l
 
 <script setup lang="ts">
 import { RefreshRight } from '@element-plus/icons-vue'
+
+const { breadcrumbs } = useBreadcrumb()
 
 interface PageTitleProps {
 	title: string
@@ -63,6 +70,11 @@ const onRefresh = () => {
 				color: var(--el-color-primary);
 			}
 		}
+	}
+
+	&-breadcrumb {
+		margin-bottom: 4px;
+		font-size: 13px;
 	}
 
 	&-text {
