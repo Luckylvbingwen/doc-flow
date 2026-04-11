@@ -1,5 +1,6 @@
 <template>
 	<div class="df-pagination">
+		<SyncHorizontalScrollbar v-if="tableRef" :table-ref="tableRef" class="df-pagination-scrollbar" />
 		<div class="df-pagination-left">
 			<span class="df-pagination-summary">
 				<slot name="left">{{ defaultSummary }}</slot>
@@ -12,11 +13,14 @@
 		</div>
 		<el-pagination
 v-model:current-page="currentPage" :page-size="pageSize" :total="total" :pager-count="pagerCount"
-			:disabled="disabled" :small="small" layout="prev, pager, next" @current-change="onPageChange" />
+			:disabled="disabled" :small="small" layout="prev, pager, next" prev-text="«" next-text="»"
+			@current-change="onPageChange" />
 	</div>
 </template>
 
 <script setup lang="ts">
+import type { TableInstance } from 'element-plus'
+
 interface PaginationProps {
 	page?: number
 	pageSize?: number
@@ -25,6 +29,7 @@ interface PaginationProps {
 	pagerCount?: number
 	disabled?: boolean
 	small?: boolean
+	tableRef?: TableInstance | null
 }
 
 const props = withDefaults(defineProps<PaginationProps>(), {
@@ -35,6 +40,7 @@ const props = withDefaults(defineProps<PaginationProps>(), {
 	pagerCount: 5,
 	disabled: false,
 	small: false,
+	tableRef: null,
 })
 
 const emit = defineEmits<{
@@ -71,14 +77,21 @@ const onPageChange = (page: number) => {
 
 <style lang="scss" scoped>
 .df-pagination {
+	position: sticky;
+	bottom: 12px;
+	z-index: 10;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 16px;
 	padding: 12px 16px;
 	background: var(--df-panel);
+	border: 1px solid var(--df-border);
 	border-radius: 12px;
-	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	box-shadow:
+		0 -4px 12px rgba(15, 23, 42, 0.06),
+		0 1px 2px rgba(15, 23, 42, 0.04),
+		0 16px 0 8px var(--df-bg);
 
 	&-left {
 		display: flex;
@@ -130,5 +143,12 @@ const onPageChange = (page: number) => {
 	:deep(.btn-next:disabled) {
 		opacity: 0.45;
 	}
+}
+
+.df-pagination-scrollbar {
+	position: absolute;
+	bottom: 100%;
+	left: 0;
+	width: 100%;
 }
 </style>

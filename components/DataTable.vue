@@ -68,7 +68,7 @@ v-else-if="col.enum" :type="getEnumType(getCellValue(scope.row, col.prop), col.e
 		<!-- ── 分页（独立块） ── -->
 		<Pagination
 v-if="showPagination && total > 0" v-model:page="currentPage" v-model:page-size="currentPageSize"
-			:total="total" :page-sizes="pageSizes" :disabled="loading" @change="onPageChange" />
+			:total="total" :page-sizes="pageSizes" :disabled="loading" :table-ref="tableRef" @change="onPageChange" />
 	</div>
 </template>
 

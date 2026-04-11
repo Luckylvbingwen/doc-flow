@@ -3,6 +3,9 @@ logs
 *.log
 npm-debug.log*
 
+# Playwright MCP
+.playwright-mcp/
+
 # Dependencies
 node_modules
 

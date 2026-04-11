@@ -10,7 +10,16 @@
       "Bash(npx vitest:*)",
       "Bash(npx nuxi:*)",
       "Bash(npx nuxt:*)",
-      "Bash(npx sass:*)"
+      "Bash(npx sass:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm run:*)",
+      "Bash(curl:*)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_close",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "mcp__plugin_playwright_playwright__browser_hover"
     ]
   }
 }
