@@ -64,7 +64,7 @@ const defaultSummary = computed(() => {
 	return `共 ${props.total} 条，第 ${start}-${end} 条`
 })
 
-const onPageChange = (page) => {
+const onPageChange = (page: number) => {
 	emit('change', { page, pageSize: props.pageSize })
 }
 </script>

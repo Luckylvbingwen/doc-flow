@@ -43,16 +43,16 @@ v-for="col in columns" :key="col.prop || col.slot" :prop="col.prop" :label="col.
 						<slot v-if="col.slot" :name="col.slot" v-bind="scope" />
 						<!-- 枚举标签渲染 -->
 						<el-tag
-v-else-if="col.enum" :type="getEnumType(scope.row[col.prop], col.enum)" size="small"
+v-else-if="col.enum" :type="getEnumType(getCellValue(scope.row, col.prop), col.enum)" size="small"
 							disable-transitions>
-							{{ getEnumLabel(scope.row[col.prop], col.enum) }}
+							{{ getEnumLabel(getCellValue(scope.row, col.prop), col.enum) }}
 						</el-tag>
 						<!-- 时间格式化 -->
 						<span v-else-if="col.dateFormat">
-							{{ formatDate(scope.row[col.prop], col.dateFormat) }}
+							{{ formatDate(getCellValue(scope.row, col.prop), col.dateFormat) }}
 						</span>
 						<!-- 默认文本 -->
-						<span v-else>{{ scope.row[col.prop] ?? '-' }}</span>
+						<span v-else>{{ getCellValue(scope.row, col.prop) ?? '-' }}</span>
 					</template>
 				</el-table-column>
 
@@ -92,8 +92,8 @@ export interface TableColumn {
 	width?: string | number
 	minWidth?: string | number
 	sortable?: boolean | 'custom'
-	align?: 'left' | 'center' | 'right'
-	fixed?: 'left' | 'right' | boolean
+	align?: string
+	fixed?: string | boolean
 	showOverflowTooltip?: boolean
 	enum?: EnumItem[]
 	dateFormat?: 'date' | 'datetime' | string
@@ -103,7 +103,7 @@ interface DataTableProps {
 	data?: Record<string, unknown>[]
 	columns: TableColumn[]
 	loading?: boolean
-	rowKey?: string | ((row: Record<string, unknown>) => string | number)
+	rowKey?: string | ((row: Record<string, unknown>) => string)
 	emptyText?: string
 	stripe?: boolean
 	border?: boolean
@@ -201,6 +201,11 @@ const onRowClick = (row: Record<string, unknown>, column: unknown, event: Event)
 
 const onPageChange = ({ page, pageSize }: { page: number; pageSize: number }) => {
 	emit('page-change', { page, pageSize })
+}
+
+// ── 单元格取值 ──
+const getCellValue = (row: Record<string, unknown>, prop?: string): unknown => {
+	return prop ? row[prop] : undefined
 }
 
 // ── 枚举辅助 ──

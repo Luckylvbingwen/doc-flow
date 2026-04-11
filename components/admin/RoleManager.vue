@@ -121,7 +121,7 @@ const columns = [
 	{ prop: 'status', label: '状态', width: 80, slot: 'status', align: 'center' },
 	{ prop: 'permissionCount', label: '权限数', width: 90, slot: 'permissionCount', align: 'center' },
 	{ prop: 'userCount', label: '用户数', width: 80, align: 'center' },
-	{ prop: 'createdAt', label: '创建时间', width: 170, dateFormat: 'datetime' }
+	{ prop: 'createdAt', label: '创建时间', width: 170, dateFormat: 'datetime' },
 ]
 
 // ── 数据状态 ──
