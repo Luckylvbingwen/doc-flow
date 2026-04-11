@@ -1,10 +1,10 @@
 /**
  * 无状态「点选文字」验证码
  * - 在 SVG 画布上绘制背景 + 干扰 + 目标文字
- * - 使用 HMAC-SHA256 把答案坐标签入 token，不需要数据库
- * - 前端点击后提交坐标，后端重算签名校验
+ * - 使用 AES-256-GCM 加密答案坐标到 token，不需要数据库
+ * - 前端点击后提交坐标，后端解密校验
  */
-import { createHmac, randomInt } from 'node:crypto'
+import { createHmac, randomInt, createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
 
 /** 验证码有效期（秒） */
 const CAPTCHA_TTL = 300
@@ -22,15 +22,51 @@ const NOISE_COUNT = 4
 const CHAR_POOL = '天地人和风云山水日月星辰花雪雨虹春夏秋冬龙虎鹤鹿梅兰竹菊江河湖海金木石玉飞舞光影'
 
 function getSecret(): string {
-	const config = useRuntimeConfig()
-	return config.jwtSecret || 'docflow-captcha-fallback-key'
+	// 优先使用 Nitro runtimeConfig，测试环境回退到 process.env
+	try {
+		const config = useRuntimeConfig()
+		if (config.jwtSecret) return config.jwtSecret
+	} catch {
+		// 测试环境中 useRuntimeConfig 不可用
+	}
+	return process.env.JWT_SECRET || 'docflow-captcha-fallback-key'
 }
 
-function hmacSign(data: string, timestamp: number): string {
+/** 从 JWT_SECRET 派生 32 字节 AES 密钥 */
+function deriveKey(): Buffer {
 	const secret = getSecret()
-	return createHmac('sha256', secret)
-		.update(`${data}:${timestamp}`)
-		.digest('hex')
+	return Buffer.from(
+		createHmac('sha256', 'docflow-captcha-aes').update(secret).digest()
+	)
+}
+
+/** AES-256-GCM 加密 */
+function encrypt(plaintext: string): string {
+	const key = deriveKey()
+	const iv = randomBytes(12)
+	const cipher = createCipheriv('aes-256-gcm', key, iv)
+	const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()])
+	const authTag = cipher.getAuthTag()
+	const combined = Buffer.concat([iv, authTag, encrypted])
+	return combined.toString('base64url')
+}
+
+/** AES-256-GCM 解密 */
+function decrypt(encoded: string): string | null {
+	try {
+		const key = deriveKey()
+		const combined = Buffer.from(encoded, 'base64url')
+		if (combined.length < 28) return null
+		const iv = combined.subarray(0, 12)
+		const authTag = combined.subarray(12, 28)
+		const ciphertext = combined.subarray(28)
+		const decipher = createDecipheriv('aes-256-gcm', key, iv)
+		decipher.setAuthTag(authTag)
+		const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()])
+		return decrypted.toString('utf8')
+	} catch {
+		return null
+	}
 }
 
 /** 从字符池随机取 n 个不重复字符 */
@@ -145,11 +181,10 @@ export function generateCaptcha(): CaptchaResult {
 	const shuffled = [...allPositions].sort(() => Math.random() - 0.5)
 	const svg = buildSvg(shuffled)
 
-	// 签名：将目标坐标编码后 HMAC 签名
+	// 加密：将时间戳和目标坐标一起加密为不透明 token
 	const timestamp = Math.floor(Date.now() / 1000)
 	const answerData = targetPositions.map(p => `${p.x},${p.y}`).join('|')
-	const signature = hmacSign(answerData, timestamp)
-	const token = `${timestamp}.${answerData}.${signature}`
+	const token = encrypt(`${timestamp}:${answerData}`)
 
 	const prompt = `请依次点击：${targets.join('、')}`
 
@@ -167,14 +202,20 @@ export function verifyCaptcha(clicks: ClickPoint[], token: string): { valid: boo
 		return { valid: false, message: '请完成验证码' }
 	}
 
-	const parts = token.split('.')
-	if (parts.length !== 3) {
+	// 解密 token
+	const payload = decrypt(token)
+	if (!payload) {
+		return { valid: false, message: '验证码令牌无效' }
+	}
+
+	// 解析 "timestamp:x1,y1|x2,y2|x3,y3"
+	const sepIdx = payload.indexOf(':')
+	if (sepIdx === -1) {
 		return { valid: false, message: '验证码令牌格式错误' }
 	}
 
-	const timestamp = parseInt(parts[0], 10)
-	const answerData = parts[1]
-	const signature = parts[2]
+	const timestamp = parseInt(payload.substring(0, sepIdx), 10)
+	const answerData = payload.substring(sepIdx + 1)
 
 	if (isNaN(timestamp)) {
 		return { valid: false, message: '验证码令牌格式错误' }
@@ -184,12 +225,6 @@ export function verifyCaptcha(clicks: ClickPoint[], token: string): { valid: boo
 	const now = Math.floor(Date.now() / 1000)
 	if (now - timestamp > CAPTCHA_TTL) {
 		return { valid: false, message: '验证码已过期，请刷新重试' }
-	}
-
-	// 验签
-	const expected = hmacSign(answerData, timestamp)
-	if (expected !== signature) {
-		return { valid: false, message: '验证码令牌被篡改' }
 	}
 
 	// 解析目标坐标
