@@ -219,12 +219,12 @@ watch(() => props.tableRef, () => {
 	left: 0;
 	height: 6px;
 	border-radius: 3px;
-	background-color: rgba(144, 147, 153, 0.3);
+	background-color: var(--df-scrollbar-thumb, rgba(144, 147, 153, 0.3));
 	transition: background-color 0.2s;
 	cursor: pointer;
 
 	&:hover {
-		background-color: rgba(144, 147, 153, 0.5);
+		background-color: var(--df-scrollbar-thumb-hover, rgba(144, 147, 153, 0.5));
 	}
 }
 </style>

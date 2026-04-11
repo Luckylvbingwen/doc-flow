@@ -352,22 +352,20 @@ html.dark {
   }
 
   /* ---- Scrollbar ---- */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
+  --df-scrollbar-thumb: rgba(148, 163, 184, 0.35);
+  --df-scrollbar-thumb-hover: rgba(148, 163, 184, 0.55);
 
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
+  *::-webkit-scrollbar-thumb {
     background: #475569;
-    border-radius: 4px;
+    border-radius: 3px;
   }
 
-  ::-webkit-scrollbar-thumb:hover {
+  *::-webkit-scrollbar-thumb:hover {
     background: #64748b;
+  }
+
+  * {
+    scrollbar-color: #475569 transparent;
   }
 
   /* ---- Responsive overrides ---- */
@@ -382,7 +380,7 @@ html.dark {
     --el-table-bg-color: var(--df-panel);
     --el-table-tr-bg-color: var(--df-panel);
     --el-table-header-bg-color: var(--df-surface);
-    --el-table-row-hover-bg-color: rgba(59, 130, 246, 0.08);
+    --el-table-row-hover-bg-color: #1a2744;
     --el-table-border-color: var(--df-border);
     --el-table-text-color: var(--df-text);
     --el-table-header-text-color: var(--df-subtext);
@@ -403,14 +401,28 @@ html.dark {
   }
 
   .el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell {
-    background: rgba(59, 130, 246, 0.08);
+    background: #1a2744 !important;
   }
 
   .el-table--striped
     .el-table__body
     tr.el-table__row--striped.hover-row
     td.el-table__cell {
-    background: rgba(59, 130, 246, 0.08);
+    background: #1a2744 !important;
+  }
+
+  /* 固定列需要不透明背景，防止滚动内容透出 */
+  .el-table__fixed-right-patch,
+  .el-table td.el-table-fixed-column--right,
+  .el-table th.el-table-fixed-column--right,
+  .el-table td.el-table-fixed-column--left,
+  .el-table th.el-table-fixed-column--left {
+    background: var(--df-panel) !important;
+  }
+
+  .el-table__body tr:hover > td.el-table-fixed-column--right,
+  .el-table__body tr:hover > td.el-table-fixed-column--left {
+    background: #1a2744 !important;
   }
 
   .el-table__empty-text {
