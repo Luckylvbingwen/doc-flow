@@ -8,7 +8,7 @@ export const useAuthStore = defineStore('auth', {
 	state: () => ({
 		token: '',
 		refreshToken: '',
-		tokenType: 'Bearer' as 'Bearer',
+		tokenType: 'Bearer' as const,
 		expiresAt: 0,
 		refreshExpiresAt: 0,
 		user: null as AuthUser | null,
@@ -55,7 +55,7 @@ export const useAuthStore = defineStore('auth', {
 				return
 			}
 
-			wsDisconnect()
+			// wsDisconnect 由 plugins/02-ws.client.ts watch token 变化自动触发，此处不再直接调用
 			window.localStorage.removeItem(AUTH_STORAGE_KEY)
 			// 清除 cookie 标记
 			document.cookie = 'docflow_auth_flag=; path=/; max-age=0; SameSite=Lax'
