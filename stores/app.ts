@@ -6,16 +6,11 @@ const LOCALE_KEY = 'docflow:locale'
 
 export const useAppStore = defineStore('app', {
 	state: () => ({
-		workspaceReady: true,
-		latestPingAt: '',
 		sidebarCollapsed: false,
 		darkMode: false,
 		locale: 'zh-CN' as 'zh-CN' | 'en-US',
 	}),
 	actions: {
-		markPinged() {
-			this.latestPingAt = new Date().toISOString()
-		},
 		hydrateSidebarCollapsed() {
 			if (!import.meta.client) {
 				return
