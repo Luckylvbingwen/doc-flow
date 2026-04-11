@@ -67,8 +67,6 @@ v-for="(sheet, idx) in excelSheets" :key="idx" class="doc-preview__sheet-tab"
 import { Loading, Document, Grid, Warning } from '@element-plus/icons-vue'
 import MarkdownIt from 'markdown-it'
 
-const { sanitize } = useSanitize()
-
 const md = new MarkdownIt({
 	html: false,
 	linkify: true,

@@ -75,9 +75,9 @@ style="
 								width: 1px;
 								height: 14px;
 								background: var(--df-border);
-							"/>
+							" />
 						<span>{{ fileTypeText }} 文档</span>
-						<span style="margin-left: auto"/>
+						<span style="margin-left: auto" />
 						<el-button size="small" text :disabled="!compareTarget" @click="openFullscreenCompare">
 							<el-icon>
 								<FullScreen />
@@ -127,7 +127,7 @@ style="
 								}}</span>
 							</div>
 							<el-scrollbar>
-								<div class="cp-body" v-html="sanitize(compareResult.oldVersion.html)"/>
+								<div class="cp-body" v-html="sanitize(compareResult.oldVersion.html)" />
 							</el-scrollbar>
 						</div>
 						<div class="df-compare-pane">
@@ -145,7 +145,7 @@ style="
 								}}</span>
 							</div>
 							<el-scrollbar>
-								<div class="cp-body" v-html="sanitize(compareResult.newVersion.html)"/>
+								<div class="cp-body" v-html="sanitize(compareResult.newVersion.html)" />
 							</el-scrollbar>
 						</div>
 					</div>
@@ -248,8 +248,6 @@ import {
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { VersionInfo, CompareResult } from '~/types/version'
 import type { ApiResponse, PaginatedData } from '~/types/api'
-
-const { sanitize } = useSanitize()
 
 definePageMeta({
 	layout: 'prototype',

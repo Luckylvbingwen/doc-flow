@@ -94,8 +94,6 @@ class="captcha-action-btn" :disabled="clicks.length === 0 || autoConfirming" tit
 import { Refresh, RefreshLeft, Loading } from '@element-plus/icons-vue'
 import type { ApiResult, CaptchaData } from '~/types/api'
 
-const { sanitize } = useSanitize()
-
 const emit = defineEmits<{
 	confirm: [clicks: { x: number; y: number }[], token: string]
 	cancel: []

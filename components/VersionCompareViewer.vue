@@ -108,8 +108,6 @@ v-if="loading" style="
 import { Close, View, Loading, Switch } from '@element-plus/icons-vue'
 import type { CompareMode, CompareResult } from '~/types/version'
 
-const { sanitize } = useSanitize()
-
 const props = defineProps<{
 	visible: boolean
 	data: CompareResult | null
