@@ -224,7 +224,18 @@ const mockDocs = ref([
 	{ id: 9, title: '审批流程配置说明', repo: '产品需求库', status: 'review', tags: ['审批', '流程'], createdAt: '2026-02-20T10:00:00', updatedAt: '2026-03-21T14:00:00', summary: '多级审批流的配置方式，支持串行、并行审批和条件分支。' },
 	{ id: 10, title: '历史归档策略', repo: '运维知识库', status: 'archived', tags: ['归档', '策略'], createdAt: '2025-06-01T08:00:00', updatedAt: '2025-12-31T18:00:00', summary: '文档超过保留期限后的自动归档策略和恢复机制。' },
 	{ id: 11, title: '安全审计报告 2025', repo: '合规审计库', status: 'published', tags: ['安全', '审计'], createdAt: '2026-01-15T09:00:00', updatedAt: '2026-02-20T10:30:00', summary: '2025年度信息安全审计报告，涵盖漏洞扫描、渗透测试、权限审计和数据合规四个维度。' },
-	{ id: 12, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' }
+	{ id: 12, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
+	{ id: 13, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
+	{ id: 14, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
+	{ id: 15, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
+	{ id: 16, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
+	{ id: 17, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
+	{ id: 18, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
+	{ id: 19, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
+	{ id: 20, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
+	{ id: 21, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
+	{ id: 22, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
+	{ id: 23, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
 ])
 
 const filteredDocs = computed(() => {

@@ -3,6 +3,7 @@ import { visualizer } from 'rollup-plugin-visualizer'
 export default defineNuxtConfig({
   compatibilityDate: '2026-03-23',
   app: {
+    pageTransition: { name: 'page-fade' },
     head: {
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },

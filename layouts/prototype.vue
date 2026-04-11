@@ -122,6 +122,8 @@ class="df-skeleton-block"
 					</div>
 				</main>
 			</el-scrollbar>
+
+			<el-backtop target=".pf-content-scrollbar .el-scrollbar__wrap" :right="28" :bottom="28" />
 		</section>
 	</div>
 </template>
