@@ -6,7 +6,11 @@
       "Bash(grep -l \"ok\\\\|fail\\\\|requirePermission\" /d/workspace/project/docflow/server/api/*.ts)",
       "Bash(xargs -I {} bash -c 'echo \"=== {} ===\" && head -10 {}')",
       "Bash(grep:*)",
-      "Bash(xargs head:*)"
+      "Bash(xargs head:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx nuxi:*)",
+      "Bash(npx nuxt:*)",
+      "Bash(npx sass:*)"
     ]
   }
 }
