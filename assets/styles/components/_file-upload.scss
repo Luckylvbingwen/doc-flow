@@ -1,0 +1,339 @@
+/* ── 文件上传组件 ── */
+.df-file-uploader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 拖拽区域 */
+.df-upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 20px;
+  border: 2px dashed var(--df-border);
+  border-radius: var(--df-radius-md);
+  background: var(--df-surface);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+  text-align: center;
+
+  &:hover,
+  &.is-dragover {
+    border-color: var(--df-primary);
+    background: var(--df-primary-soft);
+  }
+
+  &.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.df-upload-icon {
+  color: var(--df-subtext);
+  opacity: 0.5;
+}
+
+.df-upload-text {
+  margin: 0;
+}
+
+.df-upload-main-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--df-text);
+  margin: 0 0 2px;
+}
+
+.df-upload-sub-text {
+  font-size: 12px;
+  color: var(--df-subtext);
+  margin: 0;
+}
+
+.df-upload-input {
+  display: none;
+}
+
+/* 格式提示 */
+.df-upload-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--df-subtext);
+  padding: 0 2px;
+}
+
+.df-upload-tip-sep {
+  opacity: 0.4;
+}
+
+/* 文件列表 */
+.df-upload-file-list {
+  margin-top: 4px;
+}
+
+.df-upload-file-list-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--df-text);
+  margin-bottom: 8px;
+}
+
+.df-upload-file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--df-surface);
+  border-radius: var(--df-radius-xs);
+  margin-bottom: 6px;
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--df-primary-soft);
+  }
+
+  &.is-error {
+    background: #fef2f2;
+  }
+}
+
+/* 文件类型图标 */
+.df-upload-file-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+
+  &.is-pdf {
+    background: #ef4444;
+  }
+
+  &.is-word {
+    background: #3b82f6;
+  }
+
+  &.is-excel {
+    background: #22c55e;
+  }
+
+  &.is-md {
+    background: #64748b;
+  }
+
+  &.is-other {
+    background: #a1a1aa;
+  }
+}
+
+html.dark .df-upload-file-item.is-error {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* 文件信息 */
+.df-upload-file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.df-upload-file-name {
+  display: flex;
+  align-items: baseline;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--df-text);
+  min-width: 0;
+}
+
+.df-upload-file-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.df-upload-version-tag {
+  color: #fff;
+  background: var(--df-primary);
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 1;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.df-upload-file-meta {
+  font-size: 11px;
+  color: var(--df-subtext);
+  margin-top: 1px;
+}
+
+.df-upload-progress {
+  margin-top: 4px;
+}
+
+/* 状态 & 移除 */
+.df-upload-file-status {
+  flex-shrink: 0;
+}
+
+.df-upload-file-remove {
+  flex-shrink: 0;
+  padding: 4px !important;
+}
+
+/* ── 上传弹窗 ── */
+.upload-modal-target {
+  font-size: 13px;
+  color: var(--df-subtext);
+  margin-bottom: 16px;
+
+  strong {
+    color: var(--df-text);
+  }
+}
+
+.upload-modal-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--df-text);
+  margin-bottom: 8px;
+}
+
+.upload-mode-cards {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.upload-mode-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 2px solid var(--df-border);
+  border-radius: var(--df-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: var(--df-primary);
+    background: var(--df-primary-soft);
+  }
+
+  &.active {
+    border-color: var(--df-primary);
+    background: var(--df-primary-soft);
+  }
+}
+
+.upload-mode-icon {
+  color: var(--df-subtext);
+  flex-shrink: 0;
+
+  .upload-mode-card.active & {
+    color: var(--df-primary);
+  }
+}
+
+.upload-mode-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--df-text);
+}
+
+.upload-mode-desc {
+  font-size: 11px;
+  color: var(--df-subtext);
+  margin-top: 1px;
+}
+
+.upload-step-content {
+  margin-top: 20px;
+}
+
+.upload-tip {
+  margin-bottom: 12px;
+}
+
+/* 更新上传 - 目标文件列表 */
+.upload-target-list {
+  margin-bottom: 16px;
+}
+
+.upload-target-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--df-border);
+  border-radius: var(--df-radius-xs);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: var(--df-primary);
+    background: var(--df-primary-soft);
+  }
+
+  &.active {
+    border-color: var(--df-primary);
+    background: var(--df-primary-soft);
+  }
+}
+
+.upload-target-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.upload-target-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--df-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upload-target-meta {
+  font-size: 11px;
+  color: var(--df-subtext);
+  margin-top: 1px;
+}
+
+.upload-target-check {
+  color: var(--df-primary);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.upload-target-empty {
+  text-align: center;
+  padding: 20px;
+  color: var(--df-subtext);
+  font-size: 13px;
+}
+
+.upload-update-step2 {
+  margin-top: 16px;
+}
