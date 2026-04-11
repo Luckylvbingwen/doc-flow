@@ -2,12 +2,8 @@
  * POST /api/auth/refresh
  * 使用 refreshToken 换取新的 accessToken
  */
-import { z } from 'zod'
+import { refreshSchema } from '~/server/schemas/auth'
 import { AUTH_REFRESH_INVALID } from '~/server/constants/error-codes'
-
-const refreshSchema = z.object({
-	refreshToken: z.string().min(1, 'refreshToken 不能为空'),
-})
 
 export default defineEventHandler(async (event) => {
 	const body = await readValidatedBody(event, refreshSchema.parse)

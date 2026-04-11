@@ -2,14 +2,9 @@
  * PUT /api/auth/password
  * 修改当前用户密码
  */
-import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
+import { changePasswordSchema } from '~/server/schemas/auth'
 import { AUTH_REQUIRED, AUTH_OLD_PASSWORD_WRONG, AUTH_INTERNAL_ERROR } from '~/server/constants/error-codes'
-
-const changePasswordSchema = z.object({
-	oldPassword: z.string().min(1, '旧密码不能为空'),
-	newPassword: z.string().min(8, '新密码至少 8 位').max(72, '新密码不能超过 72 位'),
-})
 
 export default defineEventHandler(async (event) => {
 	const user = event.context.user
