@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /d/workspace/project/docflow/pages/*.vue)",
+      "Bash(wc -l /d/workspace/project/docflow/assets/styles/*.scss)",
+      "Bash(grep -l \"ok\\\\|fail\\\\|requirePermission\" /d/workspace/project/docflow/server/api/*.ts)",
+      "Bash(xargs -I {} bash -c 'echo \"=== {} ===\" && head -10 {}')",
+      "Bash(grep:*)",
+      "Bash(xargs head:*)"
+    ]
+  }
+}
