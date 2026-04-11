@@ -33,6 +33,22 @@
   --el-color-primary-dark-2: #1d4ed8;
   --el-border-radius-base: 6px;
   --el-border-radius-small: 4px;
+
+  /* Transition */
+  --df-transition-fast: 0.15s ease;
+  --df-transition-base: 0.2s ease;
+  --df-transition-slow: 0.35s ease;
+
+  /* Z-index scale */
+  --df-z-dropdown: 1000;
+  --df-z-sticky: 1020;
+  --df-z-modal: 2000;
+  --df-z-popover: 2010;
+  --df-z-tooltip: 2020;
+  --df-z-overlay: 3000;
+
+  /* Border */
+  --df-border-width: 1px;
 }
 
 * {
