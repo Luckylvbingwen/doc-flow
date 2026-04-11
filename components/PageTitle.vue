@@ -4,8 +4,8 @@
 			<div class="page-title-main">
 				<h2>{{ title }}</h2>
 				<el-button
-v-if="showRefresh" class="title-refresh-btn" link circle :icon="RefreshRight"
-					:loading="refreshing" @click="onRefresh" />
+v-if="showRefresh" class="title-refresh-btn" link circle :icon="RefreshRight" :loading="refreshing"
+					@click="onRefresh" />
 				<slot name="after-title" />
 			</div>
 			<p v-if="subtitle">{{ subtitle }}</p>
