@@ -38,6 +38,14 @@ v-for="item in group.items" :key="item.to" :content="item.label" placement="righ
 		</aside>
 
 		<section class="pf-main">
+			<Transition name="offline-bar">
+				<div v-if="!isOnline" class="df-offline-bar">
+					<el-icon :size="16">
+						<WarningFilled />
+					</el-icon>
+					网络已断开，请检查网络连接
+				</div>
+			</Transition>
 			<header class="pf-header">
 				<div class="pf-header-actions">
 					<button
@@ -141,7 +149,8 @@ import {
 	ArrowDownBold,
 	Moon,
 	Sunny,
-	User
+	User,
+	WarningFilled
 } from '@element-plus/icons-vue'
 import { storeToRefs } from 'pinia'
 
@@ -151,6 +160,7 @@ import { useLocale } from '~/composables/useLocale'
 
 const { currentLocale: _currentLocale, toggleLocale: _toggleLocale } = useLocale()
 
+const { isOnline } = useOnline()
 const route = useRoute()
 const appStore = useAppStore()
 const authStore = useAuthStore()

@@ -1085,6 +1085,16 @@ body {
 .el-button {
   font-family: var(--df-font-sans);
   font-weight: 600;
+  transition:
+    transform 0.15s cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 0.15s ease,
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+
+  &:active:not(:disabled) {
+    transform: scale(0.96);
+  }
 }
 
 .el-dropdown-menu {
@@ -1150,6 +1160,37 @@ body {
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.02em;
+}
+
+/* ── 离线提示条 ── */
+.df-offline-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 500;
+  border-bottom: 1px solid #fecaca;
+  flex-shrink: 0;
+}
+
+.offline-bar-enter-active {
+  transition: all 0.3s ease;
+}
+
+.offline-bar-leave-active {
+  transition: all 0.2s ease;
+}
+
+.offline-bar-enter-from,
+.offline-bar-leave-to {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 /* ── 页面切换过渡 ── */
