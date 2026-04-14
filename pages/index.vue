@@ -5,7 +5,7 @@
 		<article class="pf-card">
 			<h4>原型页面导航</h4>
 			<p class="pf-muted">
-				已根据 docs/prototype-v4.html 搭建展示页面雏形，后续可逐页替换为真实接口与交互。
+				已根据 docs/prototype-v21.0.html 搭建展示页面雏形，后续可逐页替换为真实接口与交互。
 			</p>
 		</article>
 

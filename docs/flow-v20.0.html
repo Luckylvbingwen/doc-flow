@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>DocFlow v20.0 — 业务流程图</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'PingFang SC', sans-serif; background: #f5f7fa; color: #1f2937; }
+
+.toolbar {
+  background: #fff; border-bottom: 1px solid #e5e7eb; padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10;
+}
+.toolbar h2 { font-size: 18px; font-weight: 600; }
+.toolbar .controls { display: flex; gap: 8px; }
+.toolbar .controls button {
+  padding: 6px 14px; border-radius: 6px; border: 1px solid #e5e7eb; background: #fff;
+  cursor: pointer; font-size: 13px; transition: all 0.2s;
+}
+.toolbar .controls button:hover { background: #f3f4f6; }
+
+.flow-section { padding: 24px; }
+.flow-title {
+  font-size: 16px; font-weight: 600; margin-bottom: 16px; padding: 10px 16px;
+  background: #fff; border-radius: 8px; border-left: 4px solid #4f6ef7;
+}
+
+.swimlane-diagram {
+  background: #fff; border-radius: 12px; border: 1px solid #e5e7eb;
+  overflow-x: auto; margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* Phase headers */
+.phase-row { display: flex; border-bottom: 2px solid #e5e7eb; }
+.phase-label-corner { width: 140px; min-width: 140px; background: #f9fafb; border-right: 1px solid #e5e7eb; }
+.phase-label {
+  flex: 1; min-width: 200px; text-align: center; padding: 10px 8px;
+  font-size: 12px; font-weight: 600; color: #6b7280; background: #f9fafb;
+  border-right: 1px solid #e5e7eb; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.phase-label:last-child { border-right: none; }
+
+/* Swimlane rows */
+.swimlane-row { display: flex; border-bottom: 1px solid #e5e7eb; min-height: 120px; }
+.swimlane-row:last-child { border-bottom: none; }
+.swimlane-label {
+  width: 140px; min-width: 140px; display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 14px; color: #fff; writing-mode: horizontal-tb;
+  border-right: 1px solid #e5e7eb; padding: 12px;
+}
+.swimlane-content {
+  flex: 1; display: flex; min-width: 0;
+}
+.lane-phase {
+  flex: 1; min-width: 200px; padding: 16px 12px; border-right: 1px solid #f3f4f6;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+}
+.lane-phase:last-child { border-right: none; }
+
+/* Nodes */
+.node {
+  padding: 10px 16px; border-radius: 8px; font-size: 13px; text-align: center;
+  border: 1.5px solid; max-width: 180px; width: 100%; line-height: 1.4;
+  position: relative;
+}
+.node-action { background: #fff; border-color: #d1d5db; }
+.node-decision { background: #fef3c7; border-color: #f59e0b; font-size: 12px; transform: none; }
+.node-start { background: #dbeafe; border-color: #3b82f6; font-weight: 500; }
+.node-end { background: #dcfce7; border-color: #22c55e; font-weight: 500; }
+.node-system { background: #ede9fe; border-color: #8b5cf6; font-style: italic; font-size: 12px; }
+
+/* Arrows */
+.arrow-down { display: flex; justify-content: center; }
+.arrow-down::after {
+  content: '↓'; font-size: 18px; color: #3b82f6; font-weight: bold;
+}
+.arrow-right::after {
+  content: '→'; font-size: 18px; color: #3b82f6; font-weight: bold;
+}
+.arrow-cross::after {
+  content: '⟶'; font-size: 16px; color: #f97316; font-weight: bold;
+}
+.arrow-label { font-size: 11px; color: #6b7280; text-align: center; margin: 2px 0; }
+
+/* Role colors */
+.role-user { background: #FF7F27; }
+.role-admin { background: #4f6ef7; }
+.role-system { background: #6b7280; }
+.role-approver { background: #8b5cf6; }
+.role-editor { background: #059669; }
+
+/* Zoom */
+.diagram-container { transition: transform 0.3s ease; transform-origin: top left; }
+
+/* Nav */
+.flow-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; padding: 0 24px; }
+.flow-nav a {
+  padding: 6px 14px; border-radius: 20px; font-size: 13px; background: #fff;
+  border: 1px solid #e5e7eb; color: #4f6ef7; cursor: pointer; text-decoration: none;
+  transition: all 0.2s;
+}
+.flow-nav a:hover { background: #eef2ff; border-color: #4f6ef7; }
+
+.note { font-size: 11px; color: #9ca3af; margin-top: 4px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h2>DocFlow v20.0 — 业务流程图（泳道图）</h2>
+  <div class="controls">
+    <button onclick="zoomIn()">放大</button>
+    <button onclick="zoomOut()">缩小</button>
+    <button onclick="resetZoom()">重置</button>
+  </div>
+</div>
+
+<div class="flow-nav" style="padding-top:16px;">
+  <a href="#flow1">文件上传审批</a>
+  <a href="#flow2">在线编辑（编辑副本）</a>
+  <a href="#flow3">个人中心归档</a>
+  <a href="#flow4">多人协同编辑</a>
+  <a href="#flow5">链接分享与权限申请</a>
+  <a href="#flow6">跨组移动</a>
+  <a href="#flow7">回收站操作</a>
+</div>
+
+<div class="diagram-container" id="diagramContainer">
+
+<!-- ==================== 流程1: 文件上传审批 ==================== -->
+<div class="flow-section" id="flow1">
+<div class="flow-title">流程1：文件上传与审批</div>
+<div class="swimlane-diagram">
+  <div class="phase-row">
+    <div class="phase-label-corner"></div>
+    <div class="phase-label">发起阶段</div>
+    <div class="phase-label">审批阶段</div>
+    <div class="phase-label">完成阶段</div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-user">上传者</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-start">选择文件上传</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">填写变更摘要</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">提交审批</div>
+      </div>
+      <div class="lane-phase">
+        <div class="note">等待审批结果</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-decision">收到审批结果</div>
+        <div class="arrow-down"></div>
+        <div class="note">驳回→修改后重新提交</div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-approver">审批人</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="note">—</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-action">收到审批通知</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">查看文件+批注+对比</div>
+        <div class="arrow-down"></div>
+        <div class="node node-decision">通过 / 驳回(填原因)</div>
+        <div class="arrow-label">多级→流转下一级</div>
+      </div>
+      <div class="lane-phase">
+        <div class="note">—</div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-system">系统</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-system">检测重复文件</div>
+        <div class="arrow-down"></div>
+        <div class="node node-system">自动转MD格式</div>
+        <div class="arrow-down"></div>
+        <div class="node node-system">版本号 v1.0/递增</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-system">超时自动催办</div>
+        <div class="arrow-down"></div>
+        <div class="node node-system">发送通知</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-end">发布到共享文档</div>
+        <div class="arrow-down"></div>
+        <div class="node node-system">记录操作日志</div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-admin">负责人/管理员</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-start" style="background:#dcfce7;border-color:#22c55e;">上传文件（免审批）</div>
+        <div class="arrow-down"></div>
+        <div class="node node-end">直接发布</div>
+      </div>
+      <div class="lane-phase"><div class="note">—</div></div>
+      <div class="lane-phase"><div class="note">—</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== 流程2: 在线编辑（编辑副本） ==================== -->
+<div class="flow-section" id="flow2">
+<div class="flow-title">流程2：在线编辑（编辑副本模式）</div>
+<div class="swimlane-diagram">
+  <div class="phase-row">
+    <div class="phase-label-corner"></div>
+    <div class="phase-label">发起编辑</div>
+    <div class="phase-label">编辑阶段</div>
+    <div class="phase-label">提交与发布</div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-editor">可编辑成员</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-start">点击"编辑"</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">确认弹窗<br><span style="font-size:11px;color:#6b7280;">(创建编辑副本)</span></div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-action">在线编辑 Markdown</div>
+        <div class="arrow-down"></div>
+        <div class="node node-system">自动保存(10min)/Ctrl+S</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">创建快照(可命名)</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-action">提交审批</div>
+        <div class="arrow-down"></div>
+        <div class="note">→ 进入审批流程(同流程1)</div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-admin">管理员</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-start">点击"编辑"</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">确认弹窗</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-action">在线编辑 Markdown</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-end" style="background:#dcfce7;">提交 → 免审批直接发布</div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-system">系统</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-system">检查活跃草稿<br><span style="font-size:11px;">(一文档一活跃草稿)</span></div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-system">显示"编辑中"标识<br><span style="font-size:11px;">(仅可编辑+可见)</span></div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-system">版本号递增</div>
+        <div class="arrow-down"></div>
+        <div class="node node-end">更新已发布版本</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== 流程3: 个人中心归档 ==================== -->
+<div class="flow-section" id="flow3">
+<div class="flow-title">流程3：个人中心 → 归档到共享文档</div>
+<div class="swimlane-diagram">
+  <div class="phase-row">
+    <div class="phase-label-corner"></div>
+    <div class="phase-label">创建与编辑</div>
+    <div class="phase-label">归档提交</div>
+    <div class="phase-label">审批与发布</div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-user">创建者</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-start">个人中心新建文档</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">编辑 Markdown</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">可邀请协同编辑</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-action">点击"提交归档"</div>
+        <div class="arrow-down"></div>
+        <div class="node node-decision">首次归档: 选目标组<br>版本迭代: 选组→选文件</div>
+      </div>
+      <div class="lane-phase">
+        <div class="note">等待审批</div>
+        <div class="arrow-down"></div>
+        <div class="node node-end">归档完成</div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-system">系统</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-system">状态: 草稿</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-system">版本号 v1.0 / 递增</div>
+        <div class="arrow-down"></div>
+        <div class="node node-system">进入审批流程</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-system">组内协作者→可编辑权限</div>
+        <div class="arrow-down"></div>
+        <div class="node node-system">组外协作者→个人中心保留</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== 流程4: 多人协同编辑 ==================== -->
+<div class="flow-section" id="flow4">
+<div class="flow-title">流程4：多人协同编辑</div>
+<div class="swimlane-diagram">
+  <div class="phase-row">
+    <div class="phase-label-corner"></div>
+    <div class="phase-label">加入协同</div>
+    <div class="phase-label">实时编辑</div>
+    <div class="phase-label">提交</div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-user">发起者</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-start">进入编辑器</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">分享链接邀请协作</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-action">实时编辑</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">查看 Presence</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-action">提交审批/直接发布</div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-editor">协作者</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-action">收到邀请链接</div>
+        <div class="arrow-down"></div>
+        <div class="node node-start">加入编辑房间</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-action">实时编辑<br><span style="font-size:11px;">OT/CRDT 同步</span></div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">添加批注/评论</div>
+      </div>
+      <div class="lane-phase">
+        <div class="note">编辑权限随房间</div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-system">系统</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-system">创建/加入编辑房间<br><span style="font-size:11px;">(一文档一房间)</span></div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-system">WebSocket 实时同步</div>
+        <div class="arrow-down"></div>
+        <div class="node node-system">Presence 广播<br><span style="font-size:11px;">(头像+光标+颜色)</span></div>
+        <div class="arrow-down"></div>
+        <div class="node node-system">共享正文/评论/快照</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-system">自动保存(10min)</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== 流程5: 链接分享 ==================== -->
+<div class="flow-section" id="flow5">
+<div class="flow-title">流程5：链接分享与权限申请</div>
+<div class="swimlane-diagram">
+  <div class="phase-row">
+    <div class="phase-label-corner"></div>
+    <div class="phase-label">分享</div>
+    <div class="phase-label">访问</div>
+    <div class="phase-label">授权</div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-user">分享者</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-start">点击"分享"</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">选择权限<br><span style="font-size:11px;">(可阅读/可编辑)</span></div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">生成链接/发送</div>
+      </div>
+      <div class="lane-phase"><div class="note">—</div></div>
+      <div class="lane-phase"><div class="note">—</div></div>
+    </div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-editor">接收者</div>
+    <div class="swimlane-content">
+      <div class="lane-phase"><div class="note">—</div></div>
+      <div class="lane-phase">
+        <div class="node node-action">点击链接</div>
+        <div class="arrow-down"></div>
+        <div class="node node-decision">有权限?</div>
+        <div class="arrow-label">是→直接打开</div>
+        <div class="arrow-label">否→申请权限</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-action">填写申请理由</div>
+        <div class="arrow-down"></div>
+        <div class="note">等待归属人审批</div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-admin">归属人</div>
+    <div class="swimlane-content">
+      <div class="lane-phase"><div class="note">—</div></div>
+      <div class="lane-phase"><div class="note">—</div></div>
+      <div class="lane-phase">
+        <div class="node node-action">收到申请通知</div>
+        <div class="arrow-down"></div>
+        <div class="node node-decision">同意 / 拒绝</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== 流程6: 跨组移动 ==================== -->
+<div class="flow-section" id="flow6">
+<div class="flow-title">流程6：文件跨组移动</div>
+<div class="swimlane-diagram">
+  <div class="phase-row">
+    <div class="phase-label-corner"></div>
+    <div class="phase-label">发起移动</div>
+    <div class="phase-label">确认与执行</div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-admin">组负责人</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-start">选择文件</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">选择目标组</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">查看权限对比面板</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-action">确认移动</div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-system">系统</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-system">计算权限差异</div>
+        <div class="arrow-down"></div>
+        <div class="node node-system">展示权限对比面板<br><span style="font-size:11px;">(非目标组成员权限失效提示)</span></div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-system">执行移动</div>
+        <div class="arrow-down"></div>
+        <div class="node node-end">记录操作日志+通知</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== 流程7: 回收站 ==================== -->
+<div class="flow-section" id="flow7">
+<div class="flow-title">流程7：回收站操作</div>
+<div class="swimlane-diagram">
+  <div class="phase-row">
+    <div class="phase-label-corner"></div>
+    <div class="phase-label">删除</div>
+    <div class="phase-label">回收站操作</div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-admin">组负责人</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-start">删除文件</div>
+        <div class="arrow-down"></div>
+        <div class="node node-action">确认弹窗</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-decision">恢复 / 永久删除</div>
+        <div class="arrow-label">恢复→回到原组</div>
+        <div class="arrow-label">永久删除→不可恢复</div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane-row">
+    <div class="swimlane-label role-system">系统</div>
+    <div class="swimlane-content">
+      <div class="lane-phase">
+        <div class="node node-system">软删除 (deleted_at)</div>
+        <div class="arrow-down"></div>
+        <div class="node node-system">移入回收站</div>
+      </div>
+      <div class="lane-phase">
+        <div class="node node-system">按角色数据范围展示</div>
+        <div class="arrow-down"></div>
+        <div class="node node-system">记录操作日志</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div><!-- end diagram-container -->
+
+<script>
+let scale = 1;
+const container = document.getElementById('diagramContainer');
+
+function zoomIn() {
+  scale = Math.min(scale + 0.1, 2);
+  container.style.transform = `scale(${scale})`;
+}
+function zoomOut() {
+  scale = Math.max(scale - 0.1, 0.5);
+  container.style.transform = `scale(${scale})`;
+}
+function resetZoom() {
+  scale = 1;
+  container.style.transform = `scale(1)`;
+}
+</script>
+
+</body>
+</html>

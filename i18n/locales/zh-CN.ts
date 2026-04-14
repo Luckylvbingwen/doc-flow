@@ -97,7 +97,7 @@ export default {
 		title: '原型落地导航',
 		subtitle: '从这里进入各展示页面雏形',
 		navTitle: '原型页面导航',
-		navDescription: '已根据 docs/prototype-v4.html 搭建展示页面雏形，后续可逐页替换为真实接口与交互。',
+		navDescription: '已根据 docs/prototype-v21.0.html 搭建展示页面雏形，后续可逐页替换为真实接口与交互。',
 		enter: '进入页面',
 		sharedDocs: '共享文档',
 		sharedDocsDesc: '组织树 + 仓库卡片主入口。',

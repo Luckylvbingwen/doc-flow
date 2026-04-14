@@ -6,7 +6,7 @@
 用 prototype-html-driven-delivery 开发【功能名】。
 
 范围：
-- 原型文件：docs/prototype-v4.html
+- 原型文件：docs/prototype-v21.0.html
 - 模块：...
 - 交互：...
 

@@ -97,7 +97,7 @@ export default {
 		title: 'Prototype Navigation',
 		subtitle: 'Enter each prototype page from here',
 		navTitle: 'Prototype Page Navigation',
-		navDescription: 'Prototype pages built based on docs/prototype-v4.html. Real APIs and interactions will be integrated page by page.',
+		navDescription: 'Prototype pages built based on docs/prototype-v21.0.html. Real APIs and interactions will be integrated page by page.',
 		enter: 'Enter',
 		sharedDocs: 'Shared Documents',
 		sharedDocsDesc: 'Organization tree + repository card main entry.',

@@ -1,6 +1,6 @@
 # 原型驱动开发基线（第一轮）
 
-原型来源：`docs/prototype-v4.html`
+原型来源：`docs/prototype-v21.0.html`
 
 ## 一、原型块 -> 代码落点映射
 

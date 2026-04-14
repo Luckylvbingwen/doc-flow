@@ -1,18 +1,20 @@
 ---
 name: prototype-html-driven-delivery
-description: 基于 docs/prototype-v4.html 原型单一事实源，驱动 Nuxt3 + Element Plus 页面、交互与后端接口协同开发。
+description: 基于 docs/prototype-v21.0.html 原型 + docs/flow-v20.0.html 流程图 + PRD 驱动 Nuxt3 + Element Plus 页面、交互与后端接口协同开发。
 ---
 
 # 原型驱动开发 Skill（DocFlow）
 
 ## 目标
 
-将 `docs/prototype-v4.html` 作为原型真相源（Source of Truth），在后续开发中直接按原型结构进行实现、拆解、联调与验收。
+将 `docs/prototype-v21.0.html` 作为原型真相源（Source of Truth），在后续开发中直接按原型结构进行实现、拆解、联调与验收。
 
 ## 原型真相源
 
-- 主源文件：`docs/prototype-v4.html`
-- 当前基线：v4 原型（标题显示 v7.0）
+- 原型文件：`docs/prototype-v21.0.html`
+- 流程图文件：`docs/flow-v20.0.html`
+- PRD 文档：`docs/企业文档管理系统-产品需求说明文档.md`
+- 当前基线：v21.0 原型
 - 关键模块（已识别）：
   - 左侧导航与顶部 Header
   - 组织树与仓库浏览（`org-explorer`）
@@ -63,7 +65,7 @@ description: 基于 docs/prototype-v4.html 原型单一事实源，驱动 Nuxt3 
 
 ## 原型变更后的更新机制
 
-当 `docs/prototype-v4.html` 改动时，必须同步更新本 Skill：
+当 `docs/prototype-v21.0.html` 改动时，必须同步更新本 Skill：
 
 1. 比对变更：模块新增/删除、class/id 改名、交互流程变化。
 2. 更新本文件中的“关键模块”和“执行步骤”。
@@ -76,7 +78,9 @@ description: 基于 docs/prototype-v4.html 原型单一事实源，驱动 Nuxt3 
 用 prototype-html-driven-delivery 按原型开发“文件详情 + 版本对比 + 飞书批注”。
 
 范围：
-- 原型来源：docs/prototype-v4.html
+- 原型来源：docs/prototype-v21.0.html
+- 流程图：docs/flow-v20.0.html
+- PRD：docs/企业文档管理系统-产品需求说明文档.md
 - 页面：文件详情页
 - 接口：版本列表、版本对比、批注列表
 
@@ -97,3 +101,4 @@ description: 基于 docs/prototype-v4.html 原型单一事实源，驱动 Nuxt3 
 ## 更新记录
 
 - 2026-03-23：初始化 Skill，绑定 `docs/prototype-v4.html` 作为原型真相源。
+- 2026-04-14：原型升级至 v21.0，流程图升级至 v20.0，PRD 替换为 `企业文档管理系统-产品需求说明文档.md`。旧文件（prototype-v4.html、企业文档管理系统PRD.md/docx）已废弃。
