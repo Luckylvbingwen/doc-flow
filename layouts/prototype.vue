@@ -20,8 +20,8 @@ class="pf-sidebar-toggle" type="button" :aria-label="isSidebarCollapsed ? '展�
 
 			<el-scrollbar class="pf-nav-scrollbar">
 				<nav class="pf-nav">
-					<template v-for="group in menuGroups" :key="group.title">
-						<p class="pf-nav-title">{{ group.title }}</p>
+					<template v-for="group in menuGroups" :key="group.title ?? 'default'">
+						<p v-if="group.title" class="pf-nav-title">{{ group.title }}</p>
 						<el-tooltip
 v-for="item in group.items" :key="item.to" :content="item.label" placement="right"
 							:disabled="!isSidebarCollapsed" :show-after="300">
@@ -138,16 +138,15 @@ class="df-skeleton-block"
 
 <script setup>
 import {
-	Bell,
-	Collection,
 	Delete,
 	Document,
+	DocumentChecked,
 	Expand,
 	Fold,
-	Histogram,
-	Management,
+	Folder,
 	ArrowDownBold,
 	Moon,
+	Setting,
 	Sunny,
 	User,
 	WarningFilled
@@ -188,18 +187,17 @@ const menuGroups = [
 	{
 		title: '文档协同',
 		items: [
-			{ to: '/docs', label: '共享文档', icon: Collection, activeMode: 'prefix' },
-			{ to: '/approvals', label: '审批中心', icon: Management, activeMode: 'exact' },
-			{ to: '/logs', label: '操作日志', icon: Histogram, activeMode: 'exact' },
+			{ to: '/docs', label: '共享文档', icon: Folder, activeMode: 'prefix' },
+			{ to: '/profile', label: '个人中心', icon: User, activeMode: 'exact' },
+			{ to: '/approvals', label: '审批中心', icon: DocumentChecked, activeMode: 'exact' },
 			{ to: '/recycle-bin', label: '回收站', icon: Delete, activeMode: 'exact' }
 		]
 	},
 	{
 		title: '系统',
 		items: [
-			{ to: '/notifications', label: '通知中心', icon: Bell, activeMode: 'exact' },
-			{ to: '/admin', label: '系统管理', icon: Management, activeMode: 'exact' },
-			{ to: '/profile', label: '个人中心', icon: User, activeMode: 'exact' }
+			{ to: '/logs', label: '操作日志', icon: Document, activeMode: 'exact' },
+			{ to: '/admin', label: '系统管理', icon: Setting, activeMode: 'exact' }
 		]
 	}
 ]
