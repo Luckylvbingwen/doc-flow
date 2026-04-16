@@ -61,3 +61,23 @@ export const FEISHU_LOGIN_ERROR = 'FEISHU_LOGIN_ERROR'
 export const FEISHU_SEND_ERROR = 'FEISHU_SEND_ERROR'
 /** 飞书通讯录同步失败 (500) */
 export const FEISHU_SYNC_ERROR = 'FEISHU_SYNC_ERROR'
+
+// ─── 文档组 ───
+/** 组不存在 (404) */
+export const GROUP_NOT_FOUND = 'GROUP_NOT_FOUND'
+/** 同级组名称已存在 (409) */
+export const GROUP_NAME_EXISTS = 'GROUP_NAME_EXISTS'
+/** 父组不存在 (400) */
+export const PARENT_GROUP_NOT_FOUND = 'PARENT_GROUP_NOT_FOUND'
+/** 组内含文档，无法删除 (400) */
+export const GROUP_HAS_DOCUMENTS = 'GROUP_HAS_DOCUMENTS'
+/** 组内含子组，无法删除 (400) */
+export const GROUP_HAS_CHILDREN = 'GROUP_HAS_CHILDREN'
+
+// ─── 产品线 ───
+/** 产品线不存在 (404) */
+export const PRODUCT_LINE_NOT_FOUND = 'PRODUCT_LINE_NOT_FOUND'
+/** 产品线名称已存在 (409) */
+export const PRODUCT_LINE_NAME_EXISTS = 'PRODUCT_LINE_NAME_EXISTS'
+/** 产品线下含组，无法删除 (400) */
+export const PRODUCT_LINE_HAS_GROUPS = 'PRODUCT_LINE_HAS_GROUPS'

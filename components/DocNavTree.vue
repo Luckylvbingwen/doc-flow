@@ -2,7 +2,8 @@
 	<div class="dn-tree" :class="`dn-tree--${mode}`">
 		<!-- Search -->
 		<div class="dn-search">
-			<el-input v-model="keyword" :placeholder="mode === 'nav' ? '搜索组名称 / 文档名称...' : '搜索组名称...'" clearable
+			<el-input
+v-model="keyword" :placeholder="mode === 'nav' ? '搜索组名称 / 文档名称...' : '搜索组名称...'" clearable
 				:prefix-icon="Search" class="dn-search-input" />
 		</div>
 
@@ -10,7 +11,9 @@
 		<el-scrollbar class="dn-body">
 			<template v-for="cat in filteredCategories" :key="cat.id">
 				<!-- Category header -->
-				<div class="dn-node dn-category" @click="handleCategoryClick(cat)">
+				<div
+class="dn-node dn-category" :class="{ 'is-active': activeNodeId === cat.id }"
+					@click="handleCategoryClick(cat)">
 					<span class="dn-arrow" :class="{ 'is-collapsed': !expandedMap[cat.id] }" @click.stop="toggleExpand(cat.id)">
 						<el-icon :size="12">
 							<ArrowDown />
@@ -26,13 +29,16 @@
 					<span class="dn-right-zone">
 						<span class="dn-badge">{{ cat.badge }}</span>
 						<span v-if="mode === 'nav'" class="dn-hover-actions">
-							<button class="dn-hover-btn" :title="getCategoryCreateLabel(cat.scope)"
+							<button
+class="dn-hover-btn" :title="getCategoryCreateLabel(cat.scope)"
 								@click.stop="$emit('category-create', cat)">
 								<el-icon :size="13">
 									<Plus />
 								</el-icon>
 							</button>
-							<button v-if="cat.scope !== 'department' || true" class="dn-hover-btn" title="更多"
+							<!-- 仅公司层显示更多菜单（按部门/按产品线不显示） -->
+							<button
+v-if="cat.scope === 'company'" class="dn-hover-btn" title="更多"
 								@click.stop="$emit('category-more', $event, cat)">
 								<el-icon :size="13">
 									<MoreFilled />
@@ -46,7 +52,8 @@
 				<div v-show="expandedMap[cat.id]" class="dn-children">
 					<!-- Direct groups (company scope) -->
 					<template v-if="cat.groups?.length">
-						<DocNavTreeNode :groups="cat.groups" :depth="1" :mode="mode" :active-id="activeGroupId"
+						<DocNavTreeNode
+:groups="cat.groups" :depth="1" :mode="mode" :active-id="activeGroupId"
 							:expanded-map="expandedMap" :search-keyword="keyword" :exclude-id="excludeId" @select="handleGroupSelect"
 							@create="(g) => $emit('group-create', g)" @more="(ev, g) => $emit('group-more', ev, g)"
 							@context-menu="(ev, g) => $emit('group-context-menu', ev, g)" @toggle="toggleExpand" />
@@ -56,8 +63,11 @@
 					<template v-if="cat.orgUnits?.length">
 						<template v-for="org in cat.orgUnits" :key="org.id">
 							<!-- Org unit node (部门名 / 产品线名) -->
-							<div class="dn-node dn-org-unit" :style="{ paddingLeft: '32px' }" @click="handleOrgUnitClick(cat, org)">
-								<span class="dn-arrow" :class="{ 'is-collapsed': !expandedMap[org.id] }"
+							<div
+class="dn-node dn-org-unit" :class="{ 'is-active': activeNodeId === org.id }"
+								:style="{ paddingLeft: '32px' }" @click="handleOrgUnitClick(cat, org)">
+								<span
+class="dn-arrow" :class="{ 'is-collapsed': !expandedMap[org.id] }"
 									@click.stop="toggleExpand(org.id)">
 									<el-icon :size="12">
 										<ArrowDown />
@@ -88,7 +98,8 @@
 
 							<!-- Org unit groups -->
 							<div v-show="expandedMap[org.id]" class="dn-children">
-								<DocNavTreeNode :groups="org.groups" :depth="2" :mode="mode" :active-id="activeGroupId"
+								<DocNavTreeNode
+:groups="org.groups" :depth="2" :mode="mode" :active-id="activeGroupId"
 									:expanded-map="expandedMap" :search-keyword="keyword" :exclude-id="excludeId"
 									@select="handleGroupSelect" @create="(g) => $emit('group-create', g)"
 									@more="(ev, g) => $emit('group-more', ev, g)"
@@ -152,6 +163,8 @@ const emit = defineEmits<{
 	'group-select': [group: NavTreeGroup, file?: NavTreeFile]
 	/** 分类被点击 */
 	'category-select': [category: NavTreeCategory]
+	/** 组织单元被点击 */
+	'org-select': [category: NavTreeCategory, org: NavTreeOrgUnit]
 	/** 分类 + 按钮 */
 	'category-create': [category: NavTreeCategory]
 	'category-more': [event: MouseEvent, category: NavTreeCategory]
@@ -169,6 +182,8 @@ const keyword = ref('')
 
 // ── Active state ──
 const activeGroupId = computed(() => props.modelValue)
+/** 当前高亮的节点 ID（分类/orgUnit/组共用，点击任何节点都会更新） */
+const activeNodeId = ref<string | number | null>(null)
 
 // ── Expand state ──
 const expandedMap = reactive<Record<string | number, boolean>>({})
@@ -257,14 +272,20 @@ function toggleExpand(id: string | number) {
 
 function handleCategoryClick(cat: NavTreeCategory) {
 	toggleExpand(cat.id)
+	activeNodeId.value = cat.id
+	emit('update:modelValue', null)
 	emit('category-select', cat)
 }
 
 function handleOrgUnitClick(cat: NavTreeCategory, org: NavTreeOrgUnit) {
 	toggleExpand(org.id)
+	activeNodeId.value = org.id
+	emit('update:modelValue', null)
+	emit('org-select', cat, org)
 }
 
 function handleGroupSelect(group: NavTreeGroup, file?: NavTreeFile) {
+	activeNodeId.value = group.id
 	emit('update:modelValue', group.id)
 	emit('group-select', group, file)
 }

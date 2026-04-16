@@ -22,6 +22,9 @@ export interface NavTreeGroup {
 	owner?: string
 	/** 描述 */
 	desc?: string
+	scopeType?: number
+	scopeRefId?: number | null
+	parentId?: number | null
 }
 
 /** 树分类节点（顶层分类：公司层 / 按部门 / 按产品线） */
