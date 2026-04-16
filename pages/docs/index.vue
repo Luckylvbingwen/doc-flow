@@ -1,6 +1,6 @@
 <template>
 	<section v-loading.fullscreen.lock="pageLoading" class="pf-page-stack">
-		<PageTitle title="共享文档" subtitle="组织树、仓库卡片、快速入口" />
+		<PageTitle title="共享文档" />
 
 		<section class="doc-explorer">
 			<!-- Left tree panel -->
@@ -14,8 +14,8 @@
 				<DocNavTree
 v-model="selectedGroupId" :categories="treeCategories" mode="nav" @group-select="onGroupSelect"
 					@category-select="onCategorySelect" @org-select="onOrgSelect" @category-create="onCategoryCreate"
-					@category-more="onCategoryMore" @org-create="onOrgCreate" @org-more="onOrgMore"
-					@group-create="onGroupCreate" @group-more="onGroupMore" />
+					@category-more="onCategoryMore" @org-create="onOrgCreate" @org-more="onOrgMore" @group-create="onGroupCreate"
+					@group-more="onGroupMore" />
 			</div>
 
 			<!-- Resizer -->
@@ -26,9 +26,8 @@ v-model="selectedGroupId" :categories="treeCategories" mode="nav" @group-select=
 				<DocExplorerPanel
 :type="selectedType" :data="selectedData" :groups="selectedGroups"
 					:breadcrumb="selectedBreadcrumb" @group-click="onPanelGroupClick" @create-group="onPanelCreateGroup"
-					@create-product-line="onCreateProductLine" @admin-settings="onAdminSettings"
-					@manage-entity="onManageEntity" @group-settings="onGroupSettings"
-					@breadcrumb-click="onBreadcrumbClick" />
+					@create-product-line="onCreateProductLine" @admin-settings="onAdminSettings" @manage-entity="onManageEntity"
+					@group-settings="onGroupSettings" @breadcrumb-click="onBreadcrumbClick" />
 			</div>
 		</section>
 

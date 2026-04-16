@@ -60,13 +60,26 @@
 - 更新 `feature-gap-checklist.md`：标记开发中项、补充已完成记录
 - 更新 `new-api-guide.md`：新增 Zod schema 校验章节
 
+### feat: 侧边栏菜单结构对齐原型图 v21
+- 调整菜单分组：第一组去掉标题"文档协同"，「个人中心」上移至第一组第2位，「操作日志」移入「系统」组，「通知中心」从侧边栏移除
+- 更新图标：共享文档 `Folder`、审批中心 `DocumentChecked`、操作日志 `Document`、系统管理 `Setting`
+
+### design: 组成员管理 — 设计与计划
+- 完成组成员管理设计文档 `docs/superpowers/specs/2026-04-16-group-member-management-design.md`
+  - A 阶段范围：成员 CRUD + 飞书风格成员选择器（面包屑钻入导航）
+  - 5 个后端 API：成员列表/批量添加/修改权限/移除成员/部门用户树
+  - 3 个前端组件：MemberSelectorModal、GroupMemberPanel、GroupSettingsModal
+  - 用户-部门关联通过 `doc_feishu_users.feishu_department_ids` JSON 字段
+- 完成实现计划 `docs/superpowers/plans/2026-04-16-group-member-management.md`
+  - 13 个 Task，含完整代码、测试、提交步骤
+
 ---
 
 ## 待开发（按优先级排序）
 
 | 优先级 | 模块 | 状态 |
 |--------|------|------|
-| P0 | 文档组管理 — 成员管理 | ⏳ 待排期 |
+| P0 | 文档组管理 — 成员管理 | 🔵 设计完成，待开发 |
 | P0 | 文档组管理 — 组设置（审批/文件限制） | ⏳ 待排期 |
 | P0 | 文档管理核心 — 上传/元数据/版本/状态流转 | ⏳ 待排期 |
 | P1 | 审批流 — 模板配置 + 审批操作 | ⏳ 待排期 |
