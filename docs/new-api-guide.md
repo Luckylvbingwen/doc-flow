@@ -39,8 +39,9 @@ export default defineEventHandler(async (event) => {
 	//    POST → await readBody(event)
 	const query = getQuery(event)
 
-	// 3) 参数校验
-	// if (!xxx) return fail(event, 400, 'INVALID_PARAMS', '参数不能为空')
+	// 3) 参数校验（使用 Zod schema）
+	const body = await readValidatedBody(event, someSchema.parse)
+	// 或 GET 请求: const query = await getValidatedQuery(event, someSchema.parse)
 
 	// 4) 数据库操作
 	const rows = await prisma.$queryRaw`SELECT ...`
@@ -85,7 +86,33 @@ if (
 
 > ⚠️ 禁止用 `startsWith` 通配，必须逐个添加。
 
-## 4. 类型定义
+## 4. Zod Schema 校验
+
+请求体/查询参数校验统一使用 Zod schema，放在 `server/schemas/` 目录：
+
+```ts
+// server/schemas/group.ts
+import { z } from 'zod'
+
+export const groupCreateSchema = z.object({
+  name: z.string().min(1).max(150),
+  description: z.string().max(500).optional(),
+})
+
+export type GroupCreateBody = z.infer<typeof groupCreateSchema>
+```
+
+在 Handler 中使用：
+
+```ts
+import { groupCreateSchema } from '~/server/schemas/group'
+
+const body = await readValidatedBody(event, groupCreateSchema.parse)
+```
+
+> 前端类型从 Zod schema 推导：`import type { GroupCreateBody } from '~/server/schemas/group'`，禁止在 `api/*.ts` 中重复定义请求参数类型。
+
+## 5. 类型定义
 
 类型**必须独立成文件**，不要内联在页面或 Handler 中。
 
@@ -102,7 +129,7 @@ if (
 - `PaginatedData<T>` — 分页数据
 - `PaginatedResponse<T>` — 分页响应快捷类型
 
-## 5. 前端调用
+## 6. 前端调用
 
 使用 `useAuthFetch()` 发起请求（自动带 token，401 自动跳登录页）：
 
@@ -126,7 +153,7 @@ const res = await useAuthFetch<ApiResponse<null>>('/api/xxx', {
 - 后端所有时间字段统一返回**毫秒时间戳**
 - 前端使用 `utils/format.ts` 的 `formatTime(value)` 格式化显示
 
-## 6. 更新接口文档
+## 7. 更新接口文档
 
 所有新增接口**必须同步更新** `docs/api-auth-design.md`，包括：
 

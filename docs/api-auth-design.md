@@ -35,8 +35,9 @@
 ### 1.3 鉴权机制
 
 - 全局中间件 `server/middleware/auth.ts` 对 `/api/**` 路由统一拦截。
-- 白名单路由（不需要 token）：`/api/auth/login`、`/api/auth/logout`、`/api/auth/captcha`、`/api/auth/feishu/**`、`/api/health`。
+- 白名单路由（不需要 token）：`/api/auth/login`、`/api/auth/logout`、`/api/auth/refresh`、`/api/auth/captcha`、`/api/auth/feishu/auth-url`、`/api/auth/feishu/callback`、`/api/health`。
 - RBAC 权限校验通过 `requirePermission()` 在具体 handler 中执行。
+- 组操作权限通过 `requireGroupPermission()` 校验（组负责人或对应 scope 的管理角色）。
 
 ### 1.4 通用错误码
 
@@ -62,6 +63,8 @@
 | --- | --- | --- | --- |
 | POST | /api/auth/login | 否 | 账密登录 |
 | POST | /api/auth/logout | 否 | 退出登录 |
+| POST | /api/auth/refresh | 否 | 刷新访问令牌 |
+| PUT | /api/auth/password | 是 | 修改密码 |
 | GET | /api/auth/me | 是 | 获取当前用户信息 |
 | GET | /api/auth/captcha | 否 | 获取点选验证码 |
 | GET | /api/auth/feishu/auth-url | 否 | 获取飞书 OAuth 授权地址 |
@@ -90,6 +93,25 @@
 | GET | /api/integrations/feishu/users | 是 | 飞书用户列表（本地表） |
 | POST | /api/integrations/feishu/notify | 是 | 发送飞书消息 |
 | POST | /api/integrations/feishu/sync-contacts | 是 | 同步飞书通讯录 |
+
+### 文档组管理 (groups)
+
+| 方法 | 路径 | 鉴权 | 权限/条件 | 说明 |
+| --- | --- | --- | --- | --- |
+| GET | /api/groups/tree | 是 | 登录即可 | 获取完整文档组树（三分类） |
+| GET | /api/groups/:id | 是 | 登录即可 | 组详情 |
+| POST | /api/groups | 是 | 按 scope 校验 | 创建组 |
+| PUT | /api/groups/:id | 是 | 组负责人或 scope 管理角色 | 编辑组 |
+| DELETE | /api/groups/:id | 是 | 组负责人或 scope 管理角色 | 删除组（含文件/子组时拒绝） |
+
+### 产品线管理 (product-lines)
+
+| 方法 | 路径 | 鉴权 | 权限码 | 说明 |
+| --- | --- | --- | --- | --- |
+| GET | /api/product-lines | 是 | 登录即可 | 产品线列表 |
+| POST | /api/product-lines | 是 | super_admin | 创建产品线 |
+| PUT | /api/product-lines/:id | 是 | super_admin | 编辑产品线 |
+| DELETE | /api/product-lines/:id | 是 | super_admin | 删除产品线（含组时拒绝） |
 
 ### 版本比较
 
@@ -134,9 +156,11 @@
 **成功响应 data：**
 ```json
 {
-  "token": "jwt-string",
+  "token": "access-jwt-string",
+  "refreshToken": "refresh-jwt-string",
   "tokenType": "Bearer",
-  "expiresIn": 28800,
+  "expiresIn": 900,
+  "refreshExpiresIn": 604800,
   "user": { "id": 1, "name": "管理员", "email": "admin@docflow.local", "feishuOpenId": "", "avatar": "" }
 }
 ```
@@ -464,7 +488,43 @@
 
 ---
 
-### 3.22 POST /api/version/compare
+### 3.22 POST /api/auth/refresh
+
+刷新访问令牌。客户端在 accessToken 过期前用 refreshToken 换取新的 accessToken。
+
+**Body：**
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| refreshToken | string | 是 | 刷新令牌 |
+
+**成功响应 data：**
+```json
+{ "token": "new-access-jwt", "tokenType": "Bearer", "expiresIn": 900 }
+```
+
+**错误码：** AUTH_TOKEN_INVALID（refreshToken 无效或已被吊销）
+
+---
+
+### 3.23 PUT /api/auth/password
+
+修改当前用户密码。成功后吊销该用户所有 refreshToken。
+
+**Body：**
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| oldPassword | string | 是 | 原密码 |
+| newPassword | string | 是 | 新密码（≥8位） |
+
+**成功响应 data：** null
+
+**错误码：** INVALID_PARAMS, AUTH_INVALID_CREDENTIALS（原密码错误）
+
+---
+
+### 3.24 POST /api/version/compare
 
 文档版本内容比较。
 
@@ -482,17 +542,143 @@
 
 ---
 
+### 3.25 GET /api/groups/tree
+
+获取完整文档组树结构（公司层 / 按部门 / 按产品线三个分类）。
+
+**成功响应 data：** `NavTreeCategory[]`，详见设计文档 `docs/superpowers/specs/2026-04-16-group-crud-tree-design.md` §2.1。
+
+---
+
+### 3.26 GET /api/groups/:id
+
+获取组详情。
+
+**成功响应 data：**
+```json
+{
+  "id": 40001, "name": "公司文档中心", "description": "企业级公共文档目录",
+  "scopeType": 1, "scopeRefId": null, "parentId": null,
+  "ownerUserId": 10002, "ownerName": "文档负责人",
+  "approvalEnabled": 1, "fileSizeLimitMb": 100,
+  "allowedFileTypes": null, "fileNameRegex": null,
+  "status": 1, "fileCount": 5,
+  "createdBy": 10001, "createdAt": 1713254400000, "updatedAt": 1713254400000
+}
+```
+
+**错误码：** INVALID_PARAMS, GROUP_NOT_FOUND
+
+---
+
+### 3.27 POST /api/groups
+
+创建组。创建者自动成为组负责人并加入成员表（管理员角色）。
+
+**Body：**
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| name | string | 是 | 组名称（1-150 字符） |
+| description | string | 否 | 描述（≤500 字符） |
+| scopeType | number | 是 | 1=公司层 2=部门 3=产品线 |
+| scopeRefId | number | 条件 | scopeType=2/3 时必填 |
+| parentId | number | 否 | 父组 ID（创建子组时传入） |
+
+**权限：** 公司层需 super_admin/company_admin；部门需 dept_head；产品线需 pl_head/super_admin；子组需组负责人。
+
+**错误码：** INVALID_PARAMS, PERMISSION_DENIED, GROUP_NAME_EXISTS, PARENT_GROUP_NOT_FOUND
+
+---
+
+### 3.28 PUT /api/groups/:id
+
+编辑组信息。
+
+**Body：**
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| name | string | 否 | 新名称 |
+| description | string | 否 | 新描述 |
+
+**权限：** 组负责人或对应 scope 管理角色。
+
+**错误码：** INVALID_PARAMS, GROUP_NOT_FOUND, PERMISSION_DENIED, GROUP_NAME_EXISTS
+
+---
+
+### 3.29 DELETE /api/groups/:id
+
+删除组（软删除）。含文件或子组时拒绝。
+
+**权限：** 组负责人或对应 scope 管理角色。
+
+**错误码：** GROUP_NOT_FOUND, PERMISSION_DENIED, GROUP_HAS_DOCUMENTS, GROUP_HAS_CHILDREN
+
+---
+
+### 3.30 GET /api/product-lines
+
+产品线列表（含负责人名称）。
+
+**成功响应 data：**
+```json
+[{
+  "id": 30001, "name": "DocFlow产品线", "description": "企业文档管理系统产品线",
+  "ownerUserId": 10002, "ownerName": "文档负责人", "status": 1,
+  "groupCount": 1, "createdAt": 1713254400000
+}]
+```
+
+---
+
+### 3.31 POST /api/product-lines
+
+创建产品线。创建者自动成为负责人。**权限：** super_admin。
+
+**Body：**
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| name | string | 是 | 产品线名称 |
+| description | string | 否 | 描述 |
+
+**错误码：** INVALID_PARAMS, PERMISSION_DENIED, PRODUCT_LINE_NAME_EXISTS
+
+---
+
+### 3.32 PUT /api/product-lines/:id
+
+编辑产品线。**权限：** super_admin。
+
+**Body：**
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| name | string | 否 | 新名称 |
+| description | string | 否 | 新描述 |
+
+**错误码：** INVALID_PARAMS, PRODUCT_LINE_NOT_FOUND, PERMISSION_DENIED, PRODUCT_LINE_NAME_EXISTS
+
+---
+
+### 3.33 DELETE /api/product-lines/:id
+
+删除产品线（软删除）。含组时拒绝。**权限：** super_admin。
+
+**错误码：** PRODUCT_LINE_NOT_FOUND, PERMISSION_DENIED, PRODUCT_LINE_HAS_GROUPS
+
+---
+
 ## 4. 数据与安全说明
 
 1. 登录用户来源：doc_users（status=1 且 deleted_at IS NULL）。
-2. 当前密码策略：演示环境统一密码（AUTH_DEMO_PASSWORD）。
-3. Token 策略：JWT 签名，默认 8h 过期。
+2. 密码策略：用户维度 bcrypt 密码哈希（`password_hash` 字段）。
+3. Token 策略：双令牌 JWT — accessToken（15m）+ refreshToken（7d），refreshToken 存 Redis 支持吊销。
 4. logout 为无状态接口，幂等可重复调用。
 
 ## 5. 后续演进建议
 
-1. 将统一密码替换为用户维度密码哈希（bcrypt/argon2）。
-2. 引入 JWT 刷新机制（refresh token）。
-3. logout 增加服务端 token 拉黑。
-4. 补充登录审计写入 doc_operation_logs。
-5. 统一认证失败限流策略（IP + 账号维度）。
+1. 补充登录审计写入 doc_operation_logs。
+2. 统一认证失败限流策略（IP + 账号维度）。

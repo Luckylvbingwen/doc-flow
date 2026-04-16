@@ -23,7 +23,9 @@
       "Bash(ls:*)",
       "Bash(npx prisma *)",
       "Bash(tasklist)",
-      "Bash(findstr /i \"node nuxt\")"
+      "Bash(findstr /i \"node nuxt\")",
+      "Bash(find *)",
+      "Bash(npx vue-tsc *)"
     ]
   }
 }
