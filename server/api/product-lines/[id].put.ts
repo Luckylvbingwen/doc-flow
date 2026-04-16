@@ -10,7 +10,6 @@ import {
 	PRODUCT_LINE_NAME_EXISTS,
 	INVALID_PARAMS,
 } from '~/server/constants/error-codes'
-import type { ProductLineCheckRow } from '~/server/types/group'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'super_admin')
@@ -24,29 +23,23 @@ export default defineEventHandler(async (event) => {
 		return fail(event, 400, INVALID_PARAMS, '至少提供一个修改字段')
 	}
 
-	const rows = await prisma.$queryRaw<ProductLineCheckRow[]>`
-		SELECT id, owner_user_id FROM doc_product_lines
-		WHERE id = ${id} AND deleted_at IS NULL
-	`
-	if (!rows.length) return fail(event, 404, PRODUCT_LINE_NOT_FOUND, '产品线不存在')
+	// 校验存在
+	const existing = await prisma.doc_product_lines.findFirst({
+		where: { id: BigInt(id), deleted_at: null },
+		select: { id: true },
+	})
+	if (!existing) return fail(event, 404, PRODUCT_LINE_NOT_FOUND, '产品线不存在')
 
-	const sets: string[] = []
-	const params: unknown[] = []
-	if (body.name) {
-		sets.push('name = ?')
-		params.push(body.name.trim())
-	}
-	if (body.description !== undefined) {
-		sets.push('description = ?')
-		params.push(body.description?.trim() || null)
-	}
+	// 构建更新数据
+	const data: Record<string, unknown> = {}
+	if (body.name) data.name = body.name.trim()
+	if (body.description !== undefined) data.description = body.description?.trim() || null
 
 	try {
-		await prisma.$executeRawUnsafe(
-			`UPDATE doc_product_lines SET ${sets.join(', ')} WHERE id = ?`,
-			...params,
-			id,
-		)
+		await prisma.doc_product_lines.update({
+			where: { id: BigInt(id) },
+			data,
+		})
 	} catch (error) {
 		if (isDuplicateKeyError(error)) {
 			return fail(event, 409, PRODUCT_LINE_NAME_EXISTS, '产品线名称已存在')

@@ -75,6 +75,13 @@ SQL 补丁 → server/api/ Handler → 鉴权白名单(可选) → types/ 类型
 - `event.context.user` 由鉴权中间件自动注入（含 `id`、`name`、`email`）
 - 所有新增接口**必须同步更新** `docs/api-auth-design.md`（接口总览表 + 详细说明）
 
+### Prisma 使用约定（混合模式）
+
+- **简单 CRUD 用模型方法**：`prisma.doc_groups.create()` / `findFirst()` / `update()` / `count()` 等，享受类型安全和自动补全
+- **复杂查询用原生 SQL**：多表 JOIN、子查询、聚合统计等场景用 `prisma.$queryRaw` / `prisma.$executeRaw`，SQL 更直观
+- **开发环境已开启 SQL 日志**：模型方法执行的 SQL 会打印在终端，方便调试
+- ID 字段在模型方法中需要用 `BigInt()` 包裹（如 `BigInt(id)`），因为 doc_* 表主键是 `BIGINT UNSIGNED`
+
 ### API 约定
 
 - 统一响应格式: `{ success, code, message, data }`

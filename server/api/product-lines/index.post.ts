@@ -19,10 +19,15 @@ export default defineEventHandler(async (event) => {
 	const id = generateId()
 
 	try {
-		await prisma.$executeRaw`
-			INSERT INTO doc_product_lines (id, name, description, owner_user_id, created_by)
-			VALUES (${id}, ${name}, ${description}, ${userId}, ${userId})
-		`
+		await prisma.doc_product_lines.create({
+			data: {
+				id,
+				name,
+				description,
+				owner_user_id: BigInt(userId),
+				created_by: BigInt(userId),
+			},
+		})
 	} catch (error) {
 		if (isDuplicateKeyError(error)) {
 			return fail(event, 409, PRODUCT_LINE_NAME_EXISTS, '产品线名称已存在')

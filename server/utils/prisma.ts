@@ -1,11 +1,14 @@
 import { PrismaClient } from '@prisma/client'
 
 const prismaClientSingleton = () => {
-	return new PrismaClient()
+	return new PrismaClient({
+		// 开发环境打印每条 SQL，方便调试
+		log: process.env.NODE_ENV !== 'production' ? ['query'] : [],
+	})
 }
 
 declare global {
-	// eslint-disable-next-line no-var
+	 
 	var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>
 }
 

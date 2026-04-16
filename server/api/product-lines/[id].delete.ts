@@ -8,7 +8,6 @@ import {
 	PRODUCT_LINE_HAS_GROUPS,
 	INVALID_PARAMS,
 } from '~/server/constants/error-codes'
-import type { ProductLineCheckRow, CountRow } from '~/server/types/group'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'super_admin')
@@ -17,23 +16,26 @@ export default defineEventHandler(async (event) => {
 	const id = Number(getRouterParam(event, 'id'))
 	if (!id || isNaN(id)) return fail(event, 400, INVALID_PARAMS, '无效的产品线ID')
 
-	const rows = await prisma.$queryRaw<ProductLineCheckRow[]>`
-		SELECT id, owner_user_id FROM doc_product_lines
-		WHERE id = ${id} AND deleted_at IS NULL
-	`
-	if (!rows.length) return fail(event, 404, PRODUCT_LINE_NOT_FOUND, '产品线不存在')
+	// 校验存在
+	const existing = await prisma.doc_product_lines.findFirst({
+		where: { id: BigInt(id), deleted_at: null },
+		select: { id: true },
+	})
+	if (!existing) return fail(event, 404, PRODUCT_LINE_NOT_FOUND, '产品线不存在')
 
-	const groupCount = await prisma.$queryRaw<CountRow[]>`
-		SELECT COUNT(*) AS cnt FROM doc_groups
-		WHERE scope_type = 3 AND scope_ref_id = ${id} AND deleted_at IS NULL
-	`
-	if (Number(groupCount[0]?.cnt) > 0) {
+	// 检查是否含组
+	const groupCount = await prisma.doc_groups.count({
+		where: { scope_type: 3, scope_ref_id: BigInt(id), deleted_at: null },
+	})
+	if (groupCount > 0) {
 		return fail(event, 400, PRODUCT_LINE_HAS_GROUPS, '产品线下含文档组，请先删除')
 	}
 
-	await prisma.$executeRaw`
-		UPDATE doc_product_lines SET deleted_at = NOW(3) WHERE id = ${id}
-	`
+	// 软删除
+	await prisma.doc_product_lines.update({
+		where: { id: BigInt(id) },
+		data: { deleted_at: new Date() },
+	})
 
 	return ok(null, '产品线已删除')
 })
