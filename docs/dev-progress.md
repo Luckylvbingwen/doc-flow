@@ -73,15 +73,45 @@
 - 完成实现计划 `docs/superpowers/plans/2026-04-16-group-member-management.md`
   - 13 个 Task，含完整代码、测试、提交步骤
 
+## 2026-04-17
+
+### feat: 组成员管理 A 阶段落地
+- **后端（5 个接口）**
+  - `GET /api/groups/:id/members` — 成员列表（按「组负责人 → 管理员 → 加入时间」排序）
+  - `POST /api/groups/:id/members` — 批量添加（1-50 人，已存在的 userId 跳过不报错）
+  - `PUT /api/groups/:id/members/:memberId` — 修改权限（`immutable_flag=1` 拒绝）
+  - `DELETE /api/groups/:id/members/:memberId` — 移除成员（软删除，禁止移除自己 / 不可变成员）
+  - `GET /api/users/tree` — 部门 + 部门下用户树（供选择器使用，可选 `groupId` 参数标记已加入）
+- **权限**
+  - 扩展 `requireMemberPermission`：组内管理员（role=1）也可管理成员
+  - 修复 fail() 预设状态码后无法反转的问题：先查组内管理员身份，再回落 scope 校验
+- **前端**
+  - 新增 `MemberSelectorModal` — 飞书风格选择器（搜索 / 部门钻入面包屑 / 已加入灰显 / 已选面板）
+  - 新增 `GroupMemberPanel` — 成员列表（行级权限下拉、移除、组负责人锁定）
+  - 新增 `GroupSettingsModal` — 组设置弹窗（审批流配置占位 / 成员管理 / 基本设置三 Tab）
+  - `pages/docs/index.vue` 的 `onGroupSettings` 从 stub 改为打开 GroupSettingsModal，保存/删除后自动刷新树与详情
+- **规格实现要点**
+  - PRD §254 添加成员三元素（飞书成员选择器 + 权限下拉 + 添加按钮）集成在选择器 footer，默认权限「上传下载」
+  - 原型 HTML 的 `openMemberSelector` 简化没体现权限下拉，以 PRD 为准
+- **样式**
+  - `assets/styles/components/_modals.scss` 新增选择器 / 成员面板 / 组设置样式
+  - `assets/styles/dark.scss` 增强 primary disabled 按钮对比度（暗色下不再看不清）
+  - `DocExplorerPanel` 两个按钮对齐高度（`创建子组` 去 `size="small"`、`进入仓库` 改用固定 `height: 32px`）
+- **文档**
+  - `docs/api-auth-design.md` 新增 5 个接口说明（§3.34-3.38），后续产品线接口序号递增
+  - 设计文档 §4.4 补 PRD §254 溯源注脚
+- **测试**
+  - 11 条 Zod schema 单元测试（批量 / 边界 / 非法值）
+
 ---
 
 ## 待开发（按优先级排序）
 
 | 优先级 | 模块 | 状态 |
 |--------|------|------|
-| P0 | 文档组管理 — 成员管理 | 🔵 设计完成，待开发 |
-| P0 | 文档组管理 — 组设置（审批/文件限制） | ⏳ 待排期 |
+| P0 | 文档组管理 — 组设置审批流配置 Tab | ⏳ 占位，待开发 |
 | P0 | 文档管理核心 — 上传/元数据/版本/状态流转 | ⏳ 待排期 |
+| P1 | 组成员管理 B 阶段 — 继承机制 / 负责人移交 | 🕓 待产品讨论 |
 | P1 | 审批流 — 模板配置 + 审批操作 | ⏳ 待排期 |
 | P1 | 站内通知 — 三类通知 + 已读未读 | ⏳ 待排期 |
 | P2 | 操作日志 | ⏳ 待排期 |

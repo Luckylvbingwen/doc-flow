@@ -7,6 +7,7 @@
  *   groupId (可选) — 传入时标记已是该组成员的用户
  */
 import { prisma } from '~/server/utils/prisma'
+import { buildDeptTree } from '~/server/utils/user-tree'
 import type { UserTreeDeptRow, UserTreeUserRow, JoinedUserRow } from '~/server/types/group-member'
 
 export default defineEventHandler(async (event) => {
@@ -41,67 +42,5 @@ export default defineEventHandler(async (event) => {
 		}
 	}
 
-	const deptFeishuIdMap = new Map<string, { id: number; name: string }>()
-	for (const dept of departments) {
-		if (dept.feishu_department_id) {
-			deptFeishuIdMap.set(dept.feishu_department_id, {
-				id: Number(dept.id),
-				name: dept.name,
-			})
-		}
-	}
-
-	const deptMembersMap = new Map<number, Array<{
-		id: number
-		name: string
-		email: string | null
-		avatar: string | null
-		joined: boolean
-	}>>()
-
-	for (const dept of departments) {
-		deptMembersMap.set(Number(dept.id), [])
-	}
-
-	for (const u of users) {
-		let deptIds: string[] = []
-		const raw = u.feishu_department_ids
-		if (Array.isArray(raw)) {
-			deptIds = raw as string[]
-		} else if (typeof raw === 'string' && raw) {
-			try {
-				deptIds = JSON.parse(raw)
-			} catch {
-				deptIds = []
-			}
-		}
-
-		const userObj = {
-			id: Number(u.user_id),
-			name: u.name,
-			email: u.email,
-			avatar: u.avatar_url,
-			joined: joinedUserIds.has(Number(u.user_id)),
-		}
-
-		for (const feishuDeptId of deptIds) {
-			const dept = deptFeishuIdMap.get(feishuDeptId)
-			if (dept) {
-				deptMembersMap.get(dept.id)?.push(userObj)
-			}
-		}
-	}
-
-	const result = departments.map(dept => {
-		const deptId = Number(dept.id)
-		const members = deptMembersMap.get(deptId) || []
-		return {
-			id: deptId,
-			name: dept.name,
-			memberCount: members.length,
-			members,
-		}
-	})
-
-	return ok({ departments: result })
+	return ok({ departments: buildDeptTree(departments, users, joinedUserIds) })
 })

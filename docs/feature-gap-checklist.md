@@ -2,7 +2,7 @@
 
 > 基于 `prototype-v21.0.html` 原型与 `企业文档管理系统-产品需求说明文档.md` 综合分析，记录当前待补充的功能项。  
 > 已完成的功能会从对应分类中移除。  
-> 最后更新：2026-04-16
+> 最后更新：2026-04-17
 
 ---
 
@@ -17,7 +17,7 @@
 | ApprovalChain | ~~审批流程节点可视化（发起→审批人→…→完成）~~ ✅ 已完成 | ~~approvals、file/[id]~~ |
 | CommentThread | ~~评论线程（头像+内容+时间+回复）~~ ✅ 已完成 | ~~file/[id]~~ |
 | ActivityFilterBar | 日志筛选条（搜索+时间范围+操作类型 chips） | logs |
-| MemberPicker | 成员选择器（搜索+列表+已选标签） | repo 设置、admin |
+| MemberPicker | ~~成员选择器（飞书风格 / 部门钻入 / 已选面板）~~ ✅ 已完成 `MemberSelectorModal` | ~~组设置、admin~~ |
 | PermissionEditor | 权限编辑弹窗（继承/自定义+角色矩阵） | repo 设置、file/[id] |
 | MoveTargetPicker | 跨组移动目标选择器（复用 DocNavTree） | file/[id]、docs |
 | StatsCard | 统计数字卡片（数字+标签+趋势图标） | admin、docs 首页 |
@@ -60,9 +60,9 @@
 
 - [ ] 文件列表工具栏（排序+视图切换+搜索）
 - [ ] 批量操作（勾选+批量删除/移动/下载）
-- [ ] 组设置 — 基础设置 tab
-- [ ] 组设置 — 成员管理 tab
-- [ ] 组设置 — 审批流配置 tab
+- [x] ~~组设置 — 基础设置 tab~~ ✅ 2026-04-17（`GroupSettingsModal` 基本设置 Tab）
+- [x] ~~组设置 — 成员管理 tab~~ ✅ 2026-04-17（`GroupSettingsModal` 成员管理 Tab）
+- [ ] 组设置 — 审批流配置 tab（当前为占位）
 - [ ] 飞书导入入口
 
 ### 2.6 文档主页 (`pages/docs/index.vue`)
@@ -158,6 +158,9 @@
 | ApprovalChain（审批链可视化，支持 4 种状态 + 紧凑/垂直模式） | 2026-03-31 |
 | CommentThread（评论线程，支持嵌套回复/删除确认/Ctrl+Enter/动画） | 2026-03-31 |
 | ApprovalDrawer（审批抽屉，含文档信息/变更摘要/审批链/意见校验） | 2026-03-31 |
+| MemberSelectorModal（飞书风格成员选择器 / 部门钻入 / 已选面板 / PRD §254 权限下拉） | 2026-04-17 |
+| GroupMemberPanel（成员列表 / 行级权限下拉 / 移除 / 组负责人锁定） | 2026-04-17 |
+| GroupSettingsModal（组设置弹窗，三 Tab：审批流占位 / 成员管理 / 基本设置） | 2026-04-17 |
 
 ### 工具 / 后端
 
@@ -172,6 +175,7 @@
 | 登录 / 飞书 OAuth / RBAC 全链路 | 已有 |
 | 数据库全量重建（对齐 PRD v2.1，34 表） | 2026-04-16 |
 | Prisma schema 同步（34 模型） | 2026-04-16 |
+| 组成员管理 A 阶段（5 接口：成员 CRUD + 部门用户树 + 权限扩展） | 2026-04-17 |
 
 ### 第三方库
 
