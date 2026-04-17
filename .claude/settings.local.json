@@ -25,7 +25,8 @@
       "Bash(tasklist)",
       "Bash(findstr /i \"node nuxt\")",
       "Bash(find *)",
-      "Bash(npx vue-tsc *)"
+      "Bash(npx vue-tsc *)",
+      "Bash(tee /tmp/dev-log.txt)"
     ]
   }
 }

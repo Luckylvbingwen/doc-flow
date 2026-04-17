@@ -183,14 +183,14 @@ v-else-if="type === 'department' || type === 'productline'" type="primary" size=
 
 				<!-- Action -->
 				<div class="doc-panel__actions">
-					<el-button type="primary" size="small" @click="$emit('create-group')">
-						<el-icon :size="13">
+					<el-button type="primary" @click="$emit('create-group')">
+						<el-icon :size="14">
 							<Plus />
 						</el-icon>
 						创建子组
 					</el-button>
 					<NuxtLink v-if="data?.id" class="doc-panel__enter-btn" :to="`/docs/repo/${data.id}`">
-						<el-icon :size="15">
+						<el-icon :size="14">
 							<Right />
 						</el-icon>
 						进入仓库
@@ -557,6 +557,9 @@ defineEmits<{
 
 // ── Enter repo button ──
 .doc-panel__actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 	margin-bottom: 4px;
 }
 
@@ -564,12 +567,13 @@ defineEmits<{
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	padding: 9px 20px;
+	height: 32px;
+	padding: 0 15px;
 	font-size: 14px;
 	font-weight: 500;
 	color: #fff;
 	background: var(--df-primary);
-	border-radius: 8px;
+	border-radius: 4px;
 	text-decoration: none;
 	transition:
 		background 0.2s,

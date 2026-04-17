@@ -489,4 +489,13 @@ html.dark {
   .el-descriptions__body .el-descriptions__table td {
     border-color: var(--df-border);
   }
+
+  /* ---- 禁用态 primary 按钮对比度补强 ---- */
+  .el-button--primary.is-disabled,
+  .el-button--primary.is-disabled:hover,
+  .el-button--primary.is-disabled:focus {
+    background: rgba(59, 130, 246, 0.35);
+    border-color: rgba(59, 130, 246, 0.35);
+    color: rgba(255, 255, 255, 0.7);
+  }
 }

@@ -104,6 +104,18 @@
 | PUT | /api/groups/:id | 是 | 组负责人或 scope 管理角色 | 编辑组 |
 | DELETE | /api/groups/:id | 是 | 组负责人或 scope 管理角色 | 删除组（含文件/子组时拒绝） |
 
+### 组成员管理 (group-members)
+
+| 方法 | 路径 | 鉴权 | 权限/条件 | 说明 |
+| --- | --- | --- | --- | --- |
+| GET | /api/groups/:id/members | 是 | 登录即可 | 组成员列表 |
+| POST | /api/groups/:id/members | 是 | 组管理权限 | 批量添加成员 |
+| PUT | /api/groups/:id/members/:memberId | 是 | 组管理权限 | 修改成员权限 |
+| DELETE | /api/groups/:id/members/:memberId | 是 | 组管理权限 | 移除成员（软删除） |
+| GET | /api/users/tree | 是 | 登录即可 | 部门 + 部门下用户树（成员选择器数据源） |
+
+> 组管理权限：组负责人、对应 scope 的管理角色（company_admin / dept_head / pl_head）或组内管理员（role=1 的成员）。
+
 ### 产品线管理 (product-lines)
 
 | 方法 | 路径 | 鉴权 | 权限码 | 说明 |
@@ -618,7 +630,121 @@
 
 ---
 
-### 3.30 GET /api/product-lines
+### 3.34 GET /api/groups/:id/members
+
+获取组成员列表，按「组负责人→管理员→加入时间」排序。
+
+**成功响应 data：** `GroupMember[]`
+
+```json
+[{
+  "id": 60001, "userId": 10002, "name": "张三",
+  "email": "zhang@example.com", "avatar": "https://...",
+  "role": 1, "sourceType": 1, "immutableFlag": 1,
+  "joinedAt": 1713254400000
+}]
+```
+
+字段说明：
+- `role`：1=管理员 / 2=可编辑 / 3=上传下载
+- `sourceType`：1=手动添加 / 2=飞书同步 / 3=继承
+- `immutableFlag`：1=不可修改/移除（组负责人或继承成员）
+
+**错误码：** INVALID_PARAMS, GROUP_NOT_FOUND
+
+---
+
+### 3.35 POST /api/groups/:id/members
+
+批量添加组成员。已存在的 userId 自动跳过，不报错。
+
+**Body：**
+
+```json
+{
+  "members": [
+    { "userId": 10002, "role": 3 },
+    { "userId": 10003, "role": 2 }
+  ]
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| members | array | 是 | 成员数组，长度 1-50 |
+| members[].userId | number | 是 | 用户 ID |
+| members[].role | number | 是 | 1/2/3，见角色含义 |
+
+**成功响应 data：** `{ added: number, skipped: number }`
+
+**权限：** 组管理权限（组负责人 / scope 管理角色 / 组内管理员）。
+
+**错误码：** INVALID_PARAMS, GROUP_NOT_FOUND, PERMISSION_DENIED
+
+---
+
+### 3.36 PUT /api/groups/:id/members/:memberId
+
+修改指定成员的权限。组负责人（immutable_flag=1）不可修改。
+
+**Body：**
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| role | number | 是 | 1=管理员 / 2=可编辑 / 3=上传下载 |
+
+**权限：** 组管理权限。
+
+**错误码：** INVALID_PARAMS, GROUP_NOT_FOUND, PERMISSION_DENIED, MEMBER_IMMUTABLE
+
+---
+
+### 3.37 DELETE /api/groups/:id/members/:memberId
+
+移除组成员（软删除，设置 deleted_at）。
+
+**规则：**
+- `immutable_flag=1`（组负责人/继承成员）不可移除
+- 不可移除自己
+
+**权限：** 组管理权限。
+
+**错误码：** INVALID_PARAMS, GROUP_NOT_FOUND, PERMISSION_DENIED, MEMBER_IMMUTABLE, MEMBER_SELF_REMOVE
+
+---
+
+### 3.38 GET /api/users/tree
+
+返回部门列表 + 部门下用户，供成员选择器使用。数据来源为本地已同步的 `doc_departments` + `doc_feishu_users` + `doc_users`。同一用户可能属于多个部门，会在多个部门下重复出现。
+
+**Query：**
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| groupId | number | 否 | 传入时返回数据中标记已是该组成员的用户（`joined: true`） |
+
+**成功响应 data：**
+
+```json
+{
+  "departments": [
+    {
+      "id": 1, "name": "技术部", "memberCount": 5,
+      "members": [
+        {
+          "id": 10001, "name": "张三",
+          "email": "zhang@example.com", "avatar": "https://...",
+          "joined": false
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+### 3.39 GET /api/product-lines
 
 产品线列表（含负责人名称）。
 
@@ -633,7 +759,7 @@
 
 ---
 
-### 3.31 POST /api/product-lines
+### 3.40 POST /api/product-lines
 
 创建产品线。创建者自动成为负责人。**权限：** super_admin。
 
@@ -648,7 +774,7 @@
 
 ---
 
-### 3.32 PUT /api/product-lines/:id
+### 3.41 PUT /api/product-lines/:id
 
 编辑产品线。**权限：** super_admin。
 
@@ -663,7 +789,7 @@
 
 ---
 
-### 3.33 DELETE /api/product-lines/:id
+### 3.42 DELETE /api/product-lines/:id
 
 删除产品线（软删除）。含组时拒绝。**权限：** super_admin。
 

@@ -12,7 +12,7 @@ import { prisma } from '~/server/utils/prisma'
 import { PERMISSION_DENIED } from '~/server/constants/error-codes'
 import type { H3Event } from 'h3'
 
-interface GroupScope {
+export interface GroupScope {
 	scopeType: number
 	scopeRefId: number | null
 	ownerUserId: number | null
@@ -57,6 +57,33 @@ export async function requireGroupPermission(
 
 	if (!allowed) return fail(event, 403, PERMISSION_DENIED, '无操作权限')
 	return null
+}
+
+/**
+ * 校验当前用户是否有权管理指定组的成员
+ * 在 requireGroupPermission 基础上，增加：组内 role=1（管理员）也可管理成员
+ * 注意：先查组内管理员身份，再回落到 scope 校验，避免 fail() 预设状态码后被反转
+ */
+export async function requireMemberPermission(
+	event: H3Event,
+	group: GroupScope & { groupId: number },
+): Promise<ReturnType<typeof fail> | null> {
+	const userId = event.context.user?.id
+	if (!userId) return fail(event, 401, 'AUTH_REQUIRED', '请先登录')
+
+	const memberRole = await prisma.doc_group_members.findFirst({
+		where: {
+			group_id: BigInt(group.groupId),
+			user_id: BigInt(userId),
+			role: 1,
+			deleted_at: null,
+		},
+		select: { id: true },
+	})
+
+	if (memberRole) return null
+
+	return requireGroupPermission(event, group)
 }
 
 /**

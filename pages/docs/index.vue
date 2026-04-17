@@ -41,6 +41,10 @@ v-model:visible="groupModalVisible" :mode="groupModalMode" :group="groupModalDat
 v-model:visible="plModalVisible" :mode="plModalMode" :product-line="plModalData"
 			@success="refreshTree" />
 
+		<GroupSettingsModal
+v-model:visible="settingsModalVisible" :group-id="settingsModalGroupId"
+			:group-name="settingsModalGroupName" :group="settingsModalGroup" @success="onGroupSettingsSuccess" />
+
 		<!-- Context menu -->
 		<TreeActionMenu
 ref="actionMenuRef" @edit-group="onEditGroup" @create-child="onCreateChild"
@@ -53,6 +57,7 @@ ref="actionMenuRef" @edit-group="onEditGroup" @create-child="onCreateChild"
 <script setup lang="ts">
 import { Collection } from '@element-plus/icons-vue'
 import type { NavTreeCategory, NavTreeGroup, NavTreeFile, NavTreeOrgUnit } from '~/types/doc-nav-tree'
+import type { GroupDetail } from '~/types/group'
 import { apiGetGroupTree, apiGetGroup, apiDeleteGroup } from '~/api/groups'
 import { apiDeleteProductLine } from '~/api/product-lines'
 
@@ -345,9 +350,32 @@ function onManageEntity() {
 	msgWarning('管理功能即将上线')
 }
 
+// ── GroupSettingsModal state ──
+const settingsModalVisible = ref(false)
+const settingsModalGroupId = ref(0)
+const settingsModalGroupName = ref('')
+const settingsModalGroup = ref<GroupDetail | undefined>()
+
 function onGroupSettings() {
-	// TODO: 组设置功能（后续迭代实现）
-	msgWarning('组设置功能即将上线')
+	const data = selectedData.value
+	if (!data?.id) return
+	settingsModalGroupId.value = typeof data.id === 'number' ? data.id : Number(data.id)
+	settingsModalGroupName.value = data.name || ''
+	settingsModalGroup.value = data as GroupDetail
+	settingsModalVisible.value = true
+}
+
+async function onGroupSettingsSuccess() {
+	// 保存/删除后刷新树与当前选中详情
+	await refreshTree()
+	if (selectedType.value === 'group' && selectedGroupId.value) {
+		try {
+			const res = await apiGetGroup(selectedGroupId.value)
+			if (res.success && res.data) selectedData.value = res.data
+		} catch {
+			// 组已被删除
+		}
+	}
 }
 
 /** 右侧面板中的「创建组/创建子组」按钮 */
