@@ -52,7 +52,10 @@
       "Bash(python3 *)",
       "Bash(python *)",
       "Bash(NODE_OPTIONS=\"--max-old-space-size=2048\" npx eslint server/schemas/approval-template.ts server/types/approval-template.ts server/constants/error-codes.ts \"server/api/groups/[id]/approval-template.get.ts\" \"server/api/groups/[id]/approval-template.put.ts\" server/api/groups/index.post.ts types/approval-template.ts api/approval-template.ts components/MemberSelectorModal.vue components/GroupApprovalPanel.vue components/GroupSettingsModal.vue tests/unit/schemas/approval-template.test.ts)",
-      "Bash(NODE_OPTIONS=\"--max-old-space-size=3072\" timeout 40 npm run dev)"
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=3072\" timeout 40 npm run dev)",
+      "Bash(npm test *)",
+      "Read(//d/workspace/project//**)",
+      "Read(//d/workspace/project/**)"
     ]
   }
 }

@@ -1,0 +1,65 @@
+/* ── 筛选条卡片（FilterBar） ── */
+.df-filter-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px 16px;
+  margin-bottom: 12px;
+  background: var(--df-panel);
+  border: 1px solid var(--df-border);
+  border-radius: var(--df-radius-md);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.df-filter-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 16px;
+}
+
+.df-filter-actions {
+  display: flex;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+/* ── 单个筛选项 ── */
+.df-filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0; /* 防止 grid cell 撑破 */
+}
+
+.df-filter-item--double {
+  grid-column: span 2;
+}
+
+.df-filter-label {
+  font-size: 12px;
+  color: var(--df-subtext);
+  user-select: none;
+}
+
+.df-filter-item .el-select,
+.df-filter-item .el-input,
+.df-filter-item .el-date-editor {
+  width: 100%;
+}
+
+.df-filter-clear.el-button {
+  border-radius: 999px;
+  padding: 0 16px;
+  height: 32px;
+  color: var(--df-primary);
+  border-color: var(--df-primary);
+  background: #fff;
+
+  &:hover {
+    color: #fff;
+    background: var(--df-primary);
+    border-color: var(--df-primary);
+  }
+}

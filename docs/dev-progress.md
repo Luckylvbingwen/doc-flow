@@ -103,6 +103,24 @@
 - **测试**
   - 11 条 Zod schema 单元测试（批量 / 边界 / 非法值）
 
+### feat: 操作日志页 A 阶段
+- **后端**
+  - 新增常量 `server/constants/log-actions.ts` — `LOG_ACTIONS`（UPPER_SNAKE 标识符 → DB 存 `module.verb` 点分小写）、`LOG_TYPES`（PRD §6.7.2 的 14 大类）、`LOG_ACTION_TO_TYPE` / `LOG_TYPE_TO_ACTIONS` 双向映射，文件头写入埋点纪律：一事件一日志、系统自动事件 `actor_user_id=0` + `detail_json.triggeredBy`/`sourceLogId` 溯源
+  - 新增 `server/schemas/log.ts` — `logListQuerySchema`（type / keyword / startAt / endAt / page / pageSize，带开始≤结束校验）
+  - 新增接口 `GET /api/logs`（服务端分页，`Prisma.sql` 动态 WHERE，JOIN 操作人姓名 + 组名，按 `detail_json.desc` 输出描述，按 created_at DESC 排序）
+  - 鉴权：`requirePermission('log:read')`（rbac.sql 已授予 super_admin / company_admin / dept_head / pl_head）
+- **前端**
+  - 新增 `utils/log-types.ts` — 14 大类 UI 元数据（中文名 + 前景色 + 背景色 + `getLogTypeMeta()`）
+  - 新增 `types/log.ts`、`api/logs.ts`
+  - 重写 `pages/logs.vue` — 顶部筛选条（类型下拉 / 关键词 / 日期范围 / 重置）+ DataTable（分页/空态复用公共组件）+ 类型标签配色 + 页面级 `log:read` 守卫
+  - `layouts/prototype.vue` 菜单项支持 `perm` 字段，按 `useAuth().can()` 过滤，操作日志菜单对无 `log:read` 的用户隐藏
+- **数据**
+  - `doc_seed.sql` 新增 `id=0` 的「系统」用户（满足 actor_user_id=0 的 FK）
+  - 操作日志样例从 3 条扩展到 26 条，覆盖 14 大类代表性 action，含系统触发的 `approval.pass` + `doc.publish` 因果对
+- **规格依据**：PRD §6.7.1（日志表格字段 + 筛选）、§6.7.2（14 大类定义）
+- **范围**：A 阶段（查询 + 展示）；后续各业务模块按纪律补埋点，即在对应 Handler 里 INSERT `doc_operation_logs` 时写入 `detail_json.desc`
+- **测试**：14 条 Zod schema 单测（合法 / 非法 / 边界，含 trim / coerce / 日期比较）
+
 ### feat: 组审批流配置 Tab
 - **后端**
   - 新增 2 个接口：`GET /api/groups/:id/approval-template`（含兜底默认）+ `PUT /api/groups/:id/approval-template`（整包保存事务）

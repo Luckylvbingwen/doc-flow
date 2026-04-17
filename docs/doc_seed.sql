@@ -15,6 +15,7 @@ INSERT INTO doc_users (
   id, feishu_open_id, feishu_union_id, name, email, mobile, avatar_url, password_hash, status,
   last_login_at, created_at, updated_at, deleted_at
 ) VALUES
+  (    0, 'fs_open_system',    NULL,                 '系统',       NULL,                       NULL,          NULL,                                         NULL, 1, NULL,    NOW(3), NOW(3), NULL),
   (10001, 'fs_open_admin',     'fs_union_admin',     '系统管理员', 'admin@docflow.local',      '13800000001', 'https://example.com/avatar/admin.png',      NULL, 1, NOW(3), NOW(3), NOW(3), NULL),
   (10002, 'fs_open_owner',     'fs_union_owner',     '文档负责人', 'owner@docflow.local',      '13800000002', 'https://example.com/avatar/owner.png',      NULL, 1, NOW(3), NOW(3), NOW(3), NULL),
   (10003, 'fs_open_editor',    'fs_union_editor',    '文档编辑',   'editor@docflow.local',     '13800000003', 'https://example.com/avatar/editor.png',     NULL, 1, NOW(3), NOW(3), NOW(3), NULL),
@@ -246,13 +247,119 @@ ON DUPLICATE KEY UPDATE title = VALUES(title);
 -- =========================================================
 -- M. 操作日志样例
 -- =========================================================
+-- detail_json.desc 为预渲染的完整操作描述，后端直接读取（无 desc 时按 action+target 兜底）
+-- actor_user_id = 0 代表系统自动触发事件（对应 doc_users 里的 id=0 "系统" 用户）
 INSERT INTO doc_operation_logs (
   id, actor_user_id, action, target_type, target_id, group_id, document_id,
   detail_json, ip, user_agent, created_at
 ) VALUES
-  (80001, 10003, 'doc.upload',      'document', 50001, 40004, 50001, JSON_OBJECT('version', 'v1.1'),  '127.0.0.1', 'seed-script', NOW(3)),
-  (80002, 10004, 'approval.pass',   'approval', 62002, 40004, 50001, JSON_OBJECT('nodeOrder', 1),     '127.0.0.1', 'seed-script', NOW(3)),
-  (80003, 10005, 'approval.pass',   'approval', 62002, 40004, 50001, JSON_OBJECT('nodeOrder', 2),     '127.0.0.1', 'seed-script', NOW(3))
+  -- 文件上传
+  (80001, 10003, 'doc.upload',              'document', 50001, 40004, 50001,
+    JSON_OBJECT('desc', '上传文件《Alpha项目-技术方案.md》v1.0', 'version', 'v1.0'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 12 DAY)),
+  (80002, 10003, 'doc.upload_version',      'document', 50001, 40004, 50001,
+    JSON_OBJECT('desc', '上传文件《Alpha项目-技术方案.md》新版本 v1.1', 'version', 'v1.1'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 10 DAY)),
+  (80003, 10003, 'doc.import_feishu',       'document', 50002, 40002, 50002,
+    JSON_OBJECT('desc', '从飞书导入文档《研发提测流程规范.md》'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 9 DAY)),
+
+  -- 审批操作
+  (80004, 10004, 'approval.submit',         'approval', 62001, 40004, 50001,
+    JSON_OBJECT('desc', '提交文件《Alpha项目-技术方案.md》v1.1 的审批'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 8 DAY)),
+  (80005, 10004, 'approval.pass',           'approval', 62002, 40004, 50001,
+    JSON_OBJECT('desc', '审批通过文件《Alpha项目-技术方案.md》（第 1 级）', 'nodeOrder', 1),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 7 DAY)),
+  (80006, 10005, 'approval.pass',           'approval', 62002, 40004, 50001,
+    JSON_OBJECT('desc', '审批通过文件《Alpha项目-技术方案.md》（第 2 级）', 'nodeOrder', 2),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 7 DAY)),
+
+  -- 文件发布（系统自动触发，因果溯源指向上一条 approval.pass）
+  (80007, 0,     'doc.publish',             'document', 50001, 40004, 50001,
+    JSON_OBJECT('desc', '文件《Alpha项目-技术方案.md》v1.1 发布完成', 'version', 'v1.1',
+                'triggeredBy', 'approval.pass', 'sourceLogId', 80006),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 7 DAY)),
+
+  -- 文件下载
+  (80008, 10006, 'doc.download',            'version',  51002, 40004, 50001,
+    JSON_OBJECT('desc', '下载文件《Alpha项目-技术方案.md》v1.1', 'version', 'v1.1'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 6 DAY)),
+
+  -- 文件编辑
+  (80009, 10003, 'doc.draft_create',        'document', 50004, 40004, 50001,
+    JSON_OBJECT('desc', '创建文件《Alpha项目-技术方案.md》的编辑副本'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 5 DAY)),
+  (80010, 10003, 'doc.edit_save',           'document', 50004, 40004, 50001,
+    JSON_OBJECT('desc', '自动保存文件《Alpha项目-技术方案.md》的编辑副本', 'trigger', 'autosave'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 5 DAY)),
+  (80011, 10003, 'doc.snapshot_create',     'document', 50004, 40004, 50001,
+    JSON_OBJECT('desc', '创建命名快照「方案定稿v1」', 'snapshot', '方案定稿v1'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 4 DAY)),
+
+  -- 审批驳回
+  (80012, 10004, 'approval.reject',         'approval', 62003, 40002, 50002,
+    JSON_OBJECT('desc', '驳回文件《研发提测流程规范.md》的审批，原因：流程图需补充异常分支',
+                'reason', '流程图需补充异常分支'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 4 DAY)),
+
+  -- 组织管理
+  (80013, 10001, 'group.create',            'group',      40004, 40004, NULL,
+    JSON_OBJECT('desc', '创建组「Alpha项目组」'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 15 DAY)),
+  (80014, 10001, 'dept.create',             'department', 20001, NULL, NULL,
+    JSON_OBJECT('desc', '创建部门「研发中心」'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 20 DAY)),
+  (80015, 10001, 'pl.create',               'productline', 30001, NULL, NULL,
+    JSON_OBJECT('desc', '创建产品线「DocFlow产品线」'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 18 DAY)),
+
+  -- 成员变更
+  (80016, 10003, 'member.add',              'group',    40004, 40004, NULL,
+    JSON_OBJECT('desc', '向组「Alpha项目组」添加成员：审批人A', 'memberIds', JSON_ARRAY(10004)),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 14 DAY)),
+  (80017, 10003, 'member.remove',           'group',    40002, 40002, NULL,
+    JSON_OBJECT('desc', '从组「研发规范组」移除成员：普通成员', 'memberIds', JSON_ARRAY(10006)),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 3 DAY)),
+
+  -- 权限变更
+  (80018, 10003, 'permission.group_update', 'group',    40004, 40004, NULL,
+    JSON_OBJECT('desc', '修改组「Alpha项目组」中审批人A的权限为「可编辑」', 'userId', 10004, 'role', 2),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 3 DAY)),
+  (80019, 10003, 'permission.doc_update',   'document', 50001, 40004, 50001,
+    JSON_OBJECT('desc', '设置文件《Alpha项目-技术方案.md》的文档级权限（自定义 2 人）'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 2 DAY)),
+
+  -- 分享
+  (80020, 10003, 'share.create',            'document', 50001, 40004, 50001,
+    JSON_OBJECT('desc', '为文件《Alpha项目-技术方案.md》创建分享链接（有效期 7 天）', 'expiresInDays', 7),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 2 DAY)),
+
+  -- 收藏置顶
+  (80021, 10006, 'favorite.add',            'document', 50001, 40004, 50001,
+    JSON_OBJECT('desc', '收藏文件《Alpha项目-技术方案.md》'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 1 DAY)),
+  (80022, 10002, 'pin.add',                 'document', 50002, 40002, 50002,
+    JSON_OBJECT('desc', '置顶文件《研发提测流程规范.md》到组「研发规范组」'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 1 DAY)),
+
+  -- 文件移除
+  (80023, 10003, 'doc.remove',              'document', 50002, 40002, 50002,
+    JSON_OBJECT('desc', '从组「研发规范组」移除文件《研发提测流程规范.md》（退回归属人个人中心）'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 6 HOUR)),
+
+  -- 评论批注
+  (80024, 10004, 'comment.add',             'document', 50001, 40004, 50001,
+    JSON_OBJECT('desc', '在文件《Alpha项目-技术方案.md》添加评论'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 3 HOUR)),
+  (80025, 10005, 'annotation.add',          'document', 50001, 40004, 50001,
+    JSON_OBJECT('desc', '在文件《Alpha项目-技术方案.md》添加批注（P.2 第 1 段）'),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 2 HOUR)),
+
+  -- 归属人变更
+  (80026, 10003, 'ownership.request',       'document', 50001, 40004, 50001,
+    JSON_OBJECT('desc', '申请将文件《Alpha项目-技术方案.md》归属人转移给：审批人A', 'targetUserId', 10004),
+    '127.0.0.1', 'seed-script', DATE_SUB(NOW(3), INTERVAL 1 HOUR))
 ON DUPLICATE KEY UPDATE action = VALUES(action);
 
 -- =========================================================

@@ -4,6 +4,8 @@
    ============================================= */
 
 @forward 'components/data-table';
+@forward 'components/filter-bar';
+@forward 'components/list-shell';
 @forward 'components/modals';
 @forward 'components/file-upload';
 @forward 'components/version';

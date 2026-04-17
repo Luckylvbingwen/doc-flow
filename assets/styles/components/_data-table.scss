@@ -109,3 +109,31 @@
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
+
+/* ── 填高模式 ──
+   - 数据少：DataTable 自然短高度，分页紧跟在表格下方；body 剩余空间为页面背景
+   - 数据多：DataTable 被 max-height: 100% 封顶为 body 高度；el-table 以 JS 计算的像素 max-height 启动内部 el-scrollbar（漂亮、无箭头、sticky 表头）
+   - 实现：wrapper 自然尺寸（不滚），el-table 用 max-height 自带滚动
+*/
+.df-data-table.is-fill-height {
+  max-height: 100%;
+  min-height: 0;
+
+  .df-table-toolbar,
+  .df-pagination {
+    flex-shrink: 0;
+  }
+
+  .df-table-wrapper {
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+
+  /* 填高模式取消 Pagination 的 sticky 与投影 —— 由 shell 的 flex 保证它位于末尾 */
+  .df-pagination {
+    position: static;
+    box-shadow: none;
+    border-top: 1px solid var(--df-border);
+    border-radius: 12px;
+  }
+}

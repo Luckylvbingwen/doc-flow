@@ -1,0 +1,26 @@
+/* ── 列表页外壳 ListPageShell ── */
+/* 用法：外层页面需声明 definePageMeta({ fixedLayout: true })，由 prototype.vue 以 flex 容器替代 el-scrollbar 提供高度 */
+.df-list-shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.df-list-shell-header,
+.df-list-shell-filter,
+.df-list-shell-toolbar {
+  flex-shrink: 0;
+}
+
+.df-list-shell-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* DataTable 以 max-height: 100% 自限，让「数据少跟着内容短、数据多才撑满」成立 */
+  > .df-data-table {
+    min-height: 0;
+  }
+}

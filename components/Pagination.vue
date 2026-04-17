@@ -78,7 +78,7 @@ const onPageChange = (page: number) => {
 <style lang="scss" scoped>
 .df-pagination {
 	position: sticky;
-	bottom: 12px;
+	bottom: 0;
 	z-index: 10;
 	display: flex;
 	align-items: center;
@@ -89,9 +89,8 @@ const onPageChange = (page: number) => {
 	border: 1px solid var(--df-border);
 	border-radius: 12px;
 	box-shadow:
-		0 -4px 12px rgba(15, 23, 42, 0.06),
-		0 1px 2px rgba(15, 23, 42, 0.04),
-		0 16px 0 8px var(--df-bg);
+		0 -2px 8px rgba(15, 23, 42, 0.04),
+		0 1px 2px rgba(15, 23, 42, 0.04);
 
 	&-left {
 		display: flex;

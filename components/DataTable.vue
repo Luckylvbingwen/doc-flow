@@ -1,5 +1,5 @@
 <template>
-	<div class="df-data-table">
+	<div ref="rootRef" class="df-data-table" :class="{ 'is-fill-height': fillHeight }">
 		<!-- ── Toolbar: 搜索 + 操作按钮 ── -->
 		<div v-if="$slots.toolbar || showSearch" class="df-table-toolbar">
 			<div class="df-table-toolbar-left">
@@ -19,11 +19,12 @@ v-if="showSearch" v-model="searchKeyword" :placeholder="searchPlaceholder" clear
 		</div>
 
 		<!-- ── Table ── -->
+		<!-- fillHeight 模式：传 ResizeObserver 测得的像素 max-height 给 el-table，短内容自然渲染、长内容 el-table 自带的 el-scrollbar 滚动 + sticky 表头 -->
 		<div class="df-table-wrapper">
 			<el-table
 ref="tableRef" v-loading="loading" :data="data" :stripe="stripe" :border="border" :height="height"
-				:max-height="maxHeight" :row-key="rowKey" :empty-text="emptyText" :default-sort="defaultSort"
-				:row-class-name="rowClassName" :highlight-current-row="highlightCurrentRow"
+				:max-height="fillHeight ? (tableMaxHeight || undefined) : maxHeight" :row-key="rowKey" :empty-text="emptyText"
+				:default-sort="defaultSort" :row-class-name="rowClassName" :highlight-current-row="highlightCurrentRow"
 				@selection-change="onSelectionChange" @sort-change="onSortChange" @row-click="onRowClick">
 				<!-- 多选列 -->
 				<el-table-column
@@ -115,6 +116,8 @@ interface DataTableProps {
 	border?: boolean
 	height?: string | number
 	maxHeight?: string | number
+	/** 填充父容器高度：表格内部滚动，表头 + 分页常驻；与 ListPageShell 配套使用 */
+	fillHeight?: boolean
 	highlightCurrentRow?: boolean
 	rowClassName?: string | ((data: { row: Record<string, unknown>; rowIndex: number }) => string)
 	showSelection?: boolean
@@ -142,6 +145,7 @@ const props = withDefaults(defineProps<DataTableProps>(), {
 	border: false,
 	height: undefined,
 	maxHeight: undefined,
+	fillHeight: false,
 	highlightCurrentRow: false,
 	rowClassName: '',
 	showSelection: false,
@@ -170,7 +174,54 @@ const emit = defineEmits<{
 }>()
 
 const tableRef = ref<TableInstance>()
+const rootRef = ref<HTMLElement>()
 const searchKeyword = ref('')
+
+// ── fillHeight 模式：测量父容器可给表格的像素高度，传给 el-table 的 max-height ──
+// 逻辑：max = parent.clientHeight - (同级 toolbar + 同级 pagination + gap)
+// 效果：数据少时 table 自然高度、分页紧跟；数据多时 table 内部 el-scrollbar 滚动 + sticky 表头 + 漂亮无箭头滚动条
+const tableMaxHeight = ref<number>()
+let resizeObserver: ResizeObserver | null = null
+
+const GAP_PX = 12 // 与 .df-data-table { gap: 12px } 保持一致
+
+function updateTableMaxHeight() {
+	const root = rootRef.value
+	if (!root) return
+	const parent = root.parentElement
+	if (!parent) return
+	const parentH = parent.clientHeight
+	if (!parentH) return
+
+	const children = Array.from(root.children) as HTMLElement[]
+	let consumed = 0
+	let visibleCount = 0
+	for (const c of children) {
+		if (c.offsetHeight === 0) continue
+		visibleCount++
+		if (c.classList.contains('df-table-wrapper')) continue
+		consumed += c.offsetHeight
+	}
+	const gaps = Math.max(0, visibleCount - 1) * GAP_PX
+	tableMaxHeight.value = Math.max(0, parentH - consumed - gaps)
+}
+
+onMounted(async () => {
+	if (!props.fillHeight) return
+	await nextTick()
+	updateTableMaxHeight()
+	const root = rootRef.value
+	const parent = root?.parentElement
+	if (!root || !parent) return
+	resizeObserver = new ResizeObserver(() => updateTableMaxHeight())
+	resizeObserver.observe(parent)
+	resizeObserver.observe(root)
+})
+
+onBeforeUnmount(() => {
+	resizeObserver?.disconnect()
+	resizeObserver = null
+})
 
 // ── 分页双向绑定 ──
 const currentPage = computed({

@@ -542,8 +542,29 @@ a {
   overflow: hidden;
 }
 
+/* 固定布局（fixedLayout）列表页的内容区：纯 flex 容器，取代 el-scrollbar */
+.pf-content-area--fixed {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .pf-content {
   padding: 20px;
+}
+
+.pf-content--fixed {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* 页面内容（通常是 ListPageShell）吃满剩余高度 */
+  > * {
+    flex: 1;
+    min-height: 0;
+  }
 }
 
 .pf-page-stack {

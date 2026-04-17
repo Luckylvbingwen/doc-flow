@@ -140,6 +140,12 @@
 | --- | --- | --- | --- |
 | POST | /api/version/compare | 是 | 文档版本比较 |
 
+### 操作日志 (logs)
+
+| 方法 | 路径 | 鉴权 | 权限 | 说明 |
+| --- | --- | --- | --- | --- |
+| GET | /api/logs | 是 | log:read | 操作日志列表（分页，支持按类型/关键词/日期范围筛选） |
+
 ### 定时任务
 
 | 任务名 | cron | 说明 |
@@ -847,6 +853,42 @@
 删除产品线（软删除）。含组时拒绝。**权限：** super_admin。
 
 **错误码：** PRODUCT_LINE_NOT_FOUND, PERMISSION_DENIED, PRODUCT_LINE_HAS_GROUPS
+
+---
+
+### 3.45 GET /api/logs
+
+操作日志列表。**权限：** `log:read`（super_admin / company_admin / dept_head / pl_head）。
+
+**查询参数：**
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| type | string | 否 | 14 大类之一（`file_upload` / `file_edit` / `file_download` / `approval` / `file_publish` / `file_move` / `file_remove` / `permission` / `share` / `member` / `ownership` / `comment` / `org` / `favorite_pin`）；缺省=全部 |
+| keyword | string | 否 | 模糊匹配操作人姓名 / 描述 / 所属组名，最长 100 字符 |
+| startAt | string | 否 | 起始日期，格式 `YYYY-MM-DD`，含当天 |
+| endAt | string | 否 | 结束日期，格式 `YYYY-MM-DD`，含当天 |
+| page | number | 否 | 页码，默认 1 |
+| pageSize | number | 否 | 每页条数，默认 10，范围 1-100 |
+
+**响应 data：** `PaginatedData<LogItem>`，`LogItem` 字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| id | number | 日志 ID |
+| type | string | 14 大类（与 type 参数同枚举） |
+| action | string | 具体 action，如 `doc.upload` |
+| actorId | number | 操作人 ID；系统事件为 0 |
+| actorName | string | 操作人姓名；系统事件显示「系统」 |
+| description | string | 完整操作描述（取 `detail_json.desc`，兜底为 `action · target#id`） |
+| groupName | string | 所属组名；无关联组显示 `-` |
+| createdAt | number | 毫秒时间戳 |
+
+**说明：**
+- action → 14 类的聚合映射维护在 `server/constants/log-actions.ts` 的 `LOG_ACTION_TO_TYPE`
+- 埋点纪律：一事件一日志；系统自动触发的副作用独立成条，`actor_user_id = 0`，`detail_json.triggeredBy` + `sourceLogId` 溯源因果（如审批通过后自动发布 = `approval.pass` + `doc.publish` 两条）
+
+**错误码：** PERMISSION_DENIED, INVALID_PARAMS
 
 ---
 

@@ -94,8 +94,12 @@ v-show="avatarReady" class="pf-user-entry-avatar" :src="authStore.user.avatar"
 				</div>
 			</header>
 
-			<el-scrollbar class="pf-content-scrollbar">
-				<main class="pf-content">
+			<!-- 固定布局页（fixedLayout meta = true）：纯 flex 容器，不要外层滚动条，内部自行高度分配 -->
+			<!-- 普通页：外层 el-scrollbar 支持页面整体滚动 -->
+			<component
+:is="isFixedLayout ? 'div' : ElScrollbar"
+				:class="isFixedLayout ? 'pf-content-area pf-content-area--fixed' : 'pf-content-scrollbar'">
+				<main class="pf-content" :class="{ 'pf-content--fixed': isFixedLayout }">
 					<div v-show="pageLoading" class="df-page-skeleton">
 						<div
 class="df-skeleton-block"
@@ -129,9 +133,9 @@ class="df-skeleton-block"
 						</NuxtErrorBoundary>
 					</div>
 				</main>
-			</el-scrollbar>
+			</component>
 
-			<el-backtop target=".pf-content-scrollbar .el-scrollbar__wrap" :right="28" :bottom="28" />
+			<el-backtop v-if="!isFixedLayout" target=".pf-content-scrollbar .el-scrollbar__wrap" :right="28" :bottom="28" />
 		</section>
 	</div>
 </template>
@@ -151,6 +155,7 @@ import {
 	User,
 	WarningFilled
 } from '@element-plus/icons-vue'
+import { ElScrollbar } from 'element-plus'
 import { storeToRefs } from 'pinia'
 
 import { useAppStore } from '~/stores/app'
@@ -164,6 +169,9 @@ const route = useRoute()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const { sidebarCollapsed: isSidebarCollapsed } = storeToRefs(appStore)
+
+// 固定布局页（列表型）— 由页面通过 definePageMeta({ fixedLayout: true }) 声明，不使用外层 el-scrollbar
+const isFixedLayout = computed(() => Boolean(route.meta.fixedLayout))
 
 const userInitial = computed(() => {
 	const name = authStore.user?.name?.trim() || '访客'
@@ -183,7 +191,9 @@ watch(() => authStore.user?.avatar, () => {
 	avatarLoaded.value = false
 })
 
-const menuGroups = [
+const { can } = useAuth()
+
+const menuGroupsRaw = [
 	{
 		title: '文档协同',
 		items: [
@@ -196,11 +206,18 @@ const menuGroups = [
 	{
 		title: '系统',
 		items: [
-			{ to: '/logs', label: '操作日志', icon: Document, activeMode: 'exact' },
+			{ to: '/logs', label: '操作日志', icon: Document, activeMode: 'exact', perm: 'log:read' },
 			{ to: '/admin', label: '系统管理', icon: Setting, activeMode: 'exact' }
 		]
 	}
 ]
+
+// 按权限过滤：item.perm 未指定时人人可见；指定时需 can(perm) 为真
+const menuGroups = computed(() =>
+	menuGroupsRaw
+		.map(g => ({ ...g, items: g.items.filter(i => !i.perm || can(i.perm)) }))
+		.filter(g => g.items.length > 0),
+)
 
 const toggleSidebar = () => {
 	_userManualToggle = true
