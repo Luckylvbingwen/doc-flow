@@ -68,21 +68,27 @@
 					</el-tag>
 
 					<div class="ap-approver-row__actions">
-						<el-button text size="small" :disabled="idx === 0" @click="moveUp(idx)">
-							<el-icon :size="14">
-								<ArrowUp />
-							</el-icon>
-						</el-button>
-						<el-button text size="small" :disabled="idx === form.approvers.length - 1" @click="moveDown(idx)">
-							<el-icon :size="14">
-								<ArrowDown />
-							</el-icon>
-						</el-button>
-						<el-button v-if="form.approvers.length > 1" text size="small" type="danger" @click="removeApprover(idx)">
-							<el-icon :size="14">
-								<Close />
-							</el-icon>
-						</el-button>
+						<el-tooltip content="上移" placement="top" :show-after="300">
+							<el-button text size="small" :disabled="idx === 0" @click="moveUp(idx)">
+								<el-icon :size="14">
+									<ArrowUp />
+								</el-icon>
+							</el-button>
+						</el-tooltip>
+						<el-tooltip content="下移" placement="top" :show-after="300">
+							<el-button text size="small" :disabled="idx === form.approvers.length - 1" @click="moveDown(idx)">
+								<el-icon :size="14">
+									<ArrowDown />
+								</el-icon>
+							</el-button>
+						</el-tooltip>
+						<el-tooltip v-if="form.approvers.length > 1" content="删除" placement="top" :show-after="300">
+							<el-button text size="small" type="danger" @click="removeApprover(idx)">
+								<el-icon :size="14">
+									<Close />
+								</el-icon>
+							</el-button>
+						</el-tooltip>
 					</div>
 				</div>
 			</div>

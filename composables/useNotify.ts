@@ -108,6 +108,9 @@ export const msgConfirm = async (
 			cancelButtonText: options?.cancelText ?? '取消',
 			confirmButtonClass: options?.danger ? 'el-button--danger' : '',
 			closeOnClickModal: false,
+			// 嵌套弹窗场景 Element Plus 的 z-index 计数器不共享，强制提高以免被外层 dialog 盖住
+			modalClass: 'df-msgbox-on-top',
+			customClass: 'df-msgbox-on-top',
 		})
 		return true
 	} catch {
@@ -126,4 +129,6 @@ export const msgAlert = (
 	ElMessageBox.alert(message, title, {
 		type,
 		confirmButtonText: '知道了',
+		modalClass: 'df-msgbox-on-top',
+		customClass: 'df-msgbox-on-top',
 	})

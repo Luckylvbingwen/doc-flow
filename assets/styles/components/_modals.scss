@@ -1,3 +1,13 @@
+/* ── 嵌套 MessageBox 置顶 ──
+   Element Plus 的 Dialog 和 MessageBox 不共享 z-index 计数器，
+   当 MessageBox 从 Dialog 内触发（如 tab 切换二次确认），可能被 Dialog 遮挡。
+   通过 modalClass/customClass 强制提升 z-index。 */
+.el-overlay.df-msgbox-on-top,
+.el-overlay.df-msgbox-on-top .el-overlay-message-box,
+.el-message-box.df-msgbox-on-top {
+  z-index: 10000 !important;
+}
+
 /* ── 弹窗 ── */
 .el-dialog.df-modal {
   border-radius: var(--df-radius-lg);
@@ -243,9 +253,23 @@ html.dark .el-drawer.df-detail-drawer {
 .ms-selected-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 6px 14px;
   font-size: 13px;
+}
+
+.ms-selected-item__avatar {
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+}
+
+.ms-selected-item__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--df-text);
 }
 
 .ms-selected-item__remove {
@@ -492,9 +516,19 @@ html.dark .el-drawer.df-detail-drawer {
   gap: 2px;
 }
 
-/* 审批链预览 */
-.ap-preview .ap-card__header {
+/* 审批链预览 — 淡底 + 主色竖条突出只读预览身份 */
+.ap-preview {
   background: var(--df-primary-soft);
+  border-left: 3px solid var(--df-primary);
+}
+
+.ap-preview .ap-card__header {
+  background: transparent;
+  border-bottom-color: color-mix(
+    in srgb,
+    var(--df-primary) 18%,
+    var(--df-border)
+  );
 }
 
 .ap-chain {

@@ -36,8 +36,24 @@ const message = computed(() => {
 	return '服务器开了个小差，请稍后再试。'
 })
 
-const goHome = () => clearError({ redirect: '/docs' })
-const handleError = () => clearError({ redirect: props.error?.statusCode === 401 ? '/login' : '/docs' })
+// SSR 阶段抛出的 500 会使 clearError 的 navigateTo 失败，
+// 直接用 window.location 强制整页跳转更稳
+function goHome() {
+	const target = props.error?.statusCode === 401 ? '/login' : '/docs'
+	if (import.meta.client) {
+		window.location.href = target
+	} else {
+		clearError({ redirect: target })
+	}
+}
+
+function handleError() {
+	if (import.meta.client) {
+		window.location.reload()
+	} else {
+		clearError({ redirect: '/docs' })
+	}
+}
 </script>
 
 <style lang="scss" scoped>

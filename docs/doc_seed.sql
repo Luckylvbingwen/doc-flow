@@ -25,6 +25,37 @@ ON DUPLICATE KEY UPDATE
   name = VALUES(name), email = VALUES(email), status = VALUES(status), updated_at = NOW(3);
 
 -- =========================================================
+-- A.1 飞书用户（通讯录镜像，供成员选择器 /api/users/tree 使用）
+--     feishu_open_id 与 doc_users 对齐；feishu_department_ids 决定用户归属部门
+-- =========================================================
+INSERT INTO doc_feishu_users (
+  id, username, nickname, email, mobile, avatar, status,
+  feishu_open_id, feishu_union_id, feishu_user_id, feishu_department_ids,
+  created_at, updated_at
+) VALUES
+  (11001, 'admin',     '系统管理员', 'admin@docflow.local',      '13800000001', 'https://example.com/avatar/admin.png',      'normal',
+   'fs_open_admin',     'fs_union_admin',     'fs_user_admin',     JSON_ARRAY('feishu_dept_rd', 'feishu_dept_qa'),
+   NOW(3), NOW(3)),
+  (11002, 'owner',     '文档负责人', 'owner@docflow.local',      '13800000002', 'https://example.com/avatar/owner.png',      'normal',
+   'fs_open_owner',     'fs_union_owner',     'fs_user_owner',     JSON_ARRAY('feishu_dept_rd'),
+   NOW(3), NOW(3)),
+  (11003, 'editor',    '文档编辑',   'editor@docflow.local',     '13800000003', 'https://example.com/avatar/editor.png',     'normal',
+   'fs_open_editor',    'fs_union_editor',    'fs_user_editor',    JSON_ARRAY('feishu_dept_rd'),
+   NOW(3), NOW(3)),
+  (11004, 'reviewer1', '审批人A',    'reviewer.a@docflow.local', '13800000004', 'https://example.com/avatar/reviewer-a.png', 'normal',
+   'fs_open_reviewer1', 'fs_union_reviewer1', 'fs_user_reviewer1', JSON_ARRAY('feishu_dept_rd'),
+   NOW(3), NOW(3)),
+  (11005, 'reviewer2', '审批人B',    'reviewer.b@docflow.local', '13800000005', 'https://example.com/avatar/reviewer-b.png', 'normal',
+   'fs_open_reviewer2', 'fs_union_reviewer2', 'fs_user_reviewer2', JSON_ARRAY('feishu_dept_qa'),
+   NOW(3), NOW(3)),
+  (11006, 'reader',    '普通成员',   'reader@docflow.local',     '13800000006', 'https://example.com/avatar/reader.png',     'normal',
+   'fs_open_reader',    'fs_union_reader',    'fs_user_reader',    JSON_ARRAY('feishu_dept_qa'),
+   NOW(3), NOW(3))
+ON DUPLICATE KEY UPDATE
+  nickname = VALUES(nickname), email = VALUES(email),
+  feishu_department_ids = VALUES(feishu_department_ids), status = VALUES(status), updated_at = NOW(3);
+
+-- =========================================================
 -- B. 部门 + 部门管理员
 -- =========================================================
 INSERT INTO doc_departments (

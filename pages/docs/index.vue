@@ -99,6 +99,51 @@ async function fetchTree() {
 
 async function refreshTree() {
 	await fetchTree()
+	resyncSelection()
+}
+
+/** 树刷新后重新同步右侧面板：基于当前选中在新树中查找并重建 selectedData/selectedGroups */
+function resyncSelection() {
+	if (selectedType.value === 'category') {
+		const cat = treeCategories.value.find(c => c.id === selectedData.value?.id)
+		if (!cat) return resetSelection()
+		selectedData.value = cat
+		if (cat.groups?.length) selectedGroups.value = cat.groups
+		else if (cat.orgUnits?.length) selectedGroups.value = cat.orgUnits.flatMap(o => o.groups)
+		else selectedGroups.value = []
+	} else if (selectedType.value === 'department' || selectedType.value === 'productline') {
+		const orgId = selectedData.value?.id
+		for (const cat of treeCategories.value) {
+			const org = cat.orgUnits?.find(o => o.id === orgId)
+			if (org) {
+				selectedData.value = { ...org, scope: cat.scope }
+				selectedGroups.value = org.groups ?? []
+				return
+			}
+		}
+		resetSelection()
+	} else if (selectedType.value === 'group' && selectedGroupId.value != null) {
+		for (const cat of treeCategories.value) {
+			const allGroups = [
+				...(cat.groups ?? []),
+				...(cat.orgUnits?.flatMap(o => o.groups) ?? []),
+			]
+			const found = findGroupById(allGroups, selectedGroupId.value)
+			if (found) {
+				selectedGroups.value = found.children ?? []
+				return
+			}
+		}
+		resetSelection()
+	}
+}
+
+function resetSelection() {
+	selectedType.value = 'empty'
+	selectedData.value = null
+	selectedGroups.value = []
+	selectedGroupId.value = null
+	selectedBreadcrumb.value = []
 }
 
 // ── Selection state ──

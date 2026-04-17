@@ -27,8 +27,8 @@ class="df-modal df-member-selector-modal" :model-value="visible" title="选择�
 v-for="user in filteredSearchUsers" :key="user.id" class="ms-item"
 							:class="{ 'ms-item--disabled': user.joined || isExcluded(user.id) }" @click="toggleUser(user)">
 							<el-checkbox
-:model-value="isSelected(user.id)" :disabled="user.joined || isExcluded(user.id)" @click.stop
-								@change="toggleUser(user)" />
+:model-value="isCheckboxChecked(user)" :disabled="user.joined || isExcluded(user.id)"
+								@click.stop @change="toggleUser(user)" />
 							<span class="ms-item__avatar ms-item__avatar--text">{{ user.name?.slice(0, 1) }}</span>
 							<span class="ms-item__name">{{ user.name }}</span>
 							<span v-if="user.joined" class="ms-item__tag">已加入</span>
@@ -57,8 +57,8 @@ v-for="user in filteredSearchUsers" :key="user.id" class="ms-item"
 v-for="user in filteredDeptMembers" :key="user.id" class="ms-item"
 							:class="{ 'ms-item--disabled': user.joined || isExcluded(user.id) }" @click="toggleUser(user)">
 							<el-checkbox
-:model-value="isSelected(user.id)" :disabled="user.joined || isExcluded(user.id)" @click.stop
-								@change="toggleUser(user)" />
+:model-value="isCheckboxChecked(user)" :disabled="user.joined || isExcluded(user.id)"
+								@click.stop @change="toggleUser(user)" />
 							<span class="ms-item__avatar ms-item__avatar--text">{{ user.name?.slice(0, 1) }}</span>
 							<span class="ms-item__name">{{ user.name }}</span>
 							<span v-if="user.joined" class="ms-item__tag">已加入</span>
@@ -73,7 +73,9 @@ v-for="user in filteredDeptMembers" :key="user.id" class="ms-item"
 				<div class="ms-right__title">已选：{{ selectedUsers.length }} 个</div>
 				<el-scrollbar class="ms-right__list">
 					<div v-for="user in selectedUsers" :key="user.id" class="ms-selected-item">
-						<span>{{ user.name }}</span>
+						<span class="ms-item__avatar ms-item__avatar--text ms-selected-item__avatar">{{ user.name?.slice(0, 1)
+							}}</span>
+						<span class="ms-selected-item__name">{{ user.name }}</span>
 						<el-icon class="ms-selected-item__remove" @click="removeSelected(user.id)">
 							<Close />
 						</el-icon>
@@ -160,6 +162,11 @@ function isSelected(userId: number) {
 
 function isExcluded(userId: number) {
 	return props.excludeUserIds.includes(userId)
+}
+
+/** 已加入/已排除的用户 checkbox 常态显示为勾选（不可取消） */
+function isCheckboxChecked(user: DeptTreeMember) {
+	return user.joined || isExcluded(user.id) || isSelected(user.id)
 }
 
 function toggleUser(user: DeptTreeMember) {
