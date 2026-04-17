@@ -116,6 +116,15 @@
 
 > 组管理权限：组负责人、对应 scope 的管理角色（company_admin / dept_head / pl_head）或组内管理员（role=1 的成员）。
 
+### 组审批流配置 (approval-template)
+
+| 方法 | 路径 | 鉴权 | 权限/条件 | 说明 |
+| --- | --- | --- | --- | --- |
+| GET | /api/groups/:id/approval-template | 是 | 组管理权限 | 读取组审批配置（模板不存在时兜底默认值） |
+| PUT | /api/groups/:id/approval-template | 是 | 组管理权限 | 整包保存审批配置（开关 + 模式 + 审批人有序列表） |
+
+> 组管理权限等同「组成员管理」：组负责人 / scope 管理角色 / 组内管理员（role=1）。
+
 ### 产品线管理 (product-lines)
 
 | 方法 | 路径 | 鉴权 | 权限码 | 说明 |
@@ -744,7 +753,51 @@
 
 ---
 
-### 3.39 GET /api/product-lines
+### 3.39 GET /api/groups/:id/approval-template
+
+读取组审批配置。模板不存在时兜底返回默认值（不写库）。
+
+**成功响应 data：**
+
+```json
+{
+  "approvalEnabled": 1,
+  "mode": 1,
+  "approvers": [
+    { "userId": 10002, "name": "张三", "avatar": "https://...", "isOwner": true },
+    { "userId": 10005, "name": "李四", "avatar": null, "isOwner": false }
+  ]
+}
+```
+
+字段说明：
+- `approvalEnabled`：取自 `doc_groups.approval_enabled`（0/1）
+- `mode`：1=依次审批 / 2=会签审批
+- `approvers`：按 `order_no ASC` 返回，`isOwner` 表示是否当前组负责人
+
+**错误码：** INVALID_PARAMS, GROUP_NOT_FOUND, PERMISSION_DENIED
+
+---
+
+### 3.40 PUT /api/groups/:id/approval-template
+
+整包保存审批配置。服务端在一个事务内 upsert 模板、批量重建审批人 nodes、更新组总开关。
+
+**Body：**
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| approvalEnabled | number | 是 | 0 或 1 |
+| mode | number | 是 | 1=依次 / 2=会签 |
+| approverUserIds | number[] | 是 | 审批人 userId 数组（顺序即审批顺序，1..20，去重，`approvalEnabled=1` 时非空） |
+
+**权限：** 组管理权限（组负责人 / scope 管理角色 / 组内管理员）。
+
+**错误码：** INVALID_PARAMS, GROUP_NOT_FOUND, PERMISSION_DENIED, APPROVAL_APPROVERS_REQUIRED, APPROVAL_INVALID_APPROVER
+
+---
+
+### 3.41 GET /api/product-lines
 
 产品线列表（含负责人名称）。
 
@@ -759,7 +812,7 @@
 
 ---
 
-### 3.40 POST /api/product-lines
+### 3.42 POST /api/product-lines
 
 创建产品线。创建者自动成为负责人。**权限：** super_admin。
 
@@ -774,7 +827,7 @@
 
 ---
 
-### 3.41 PUT /api/product-lines/:id
+### 3.43 PUT /api/product-lines/:id
 
 编辑产品线。**权限：** super_admin。
 
@@ -789,7 +842,7 @@
 
 ---
 
-### 3.42 DELETE /api/product-lines/:id
+### 3.44 DELETE /api/product-lines/:id
 
 删除产品线（软删除）。含组时拒绝。**权限：** super_admin。
 

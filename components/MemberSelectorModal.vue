@@ -84,8 +84,8 @@ v-for="user in filteredDeptMembers" :key="user.id" class="ms-item"
 		</div>
 
 		<template #footer>
-			<div class="ms-footer">
-				<div class="ms-footer__role">
+			<div class="ms-footer" :class="{ 'ms-footer--no-role': !showRoleSelector }">
+				<div v-if="showRoleSelector" class="ms-footer__role">
 					<span class="ms-footer__role-label">默认权限</span>
 					<el-select v-model="selectedRole" size="default" style="width: 130px">
 						<el-option :value="1" label="管理员" />
@@ -114,10 +114,12 @@ const props = withDefaults(defineProps<{
 	groupId?: number
 	multiple?: boolean
 	excludeUserIds?: number[]
+	showRoleSelector?: boolean
 }>(), {
 	groupId: undefined,
 	multiple: true,
 	excludeUserIds: () => [],
+	showRoleSelector: true,
 })
 
 const emit = defineEmits<{

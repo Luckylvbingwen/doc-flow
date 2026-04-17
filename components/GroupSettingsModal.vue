@@ -2,11 +2,9 @@
 	<el-dialog
 class="df-modal" :model-value="visible" :title="`「${groupName}」设置`" width="780px"
 		:close-on-click-modal="false" destroy-on-close @close="close">
-		<el-tabs v-model="activeTab">
+		<el-tabs v-model="activeTab" :before-leave="beforeLeaveTab">
 			<el-tab-pane label="审批流配置" name="approval">
-				<div class="gs-placeholder">
-					<el-empty description="审批流配置即将上线" :image-size="100" />
-				</div>
+				<GroupApprovalPanel ref="approvalPanelRef" :group-id="groupId" @success="emit('success')" />
 			</el-tab-pane>
 
 			<el-tab-pane label="成员管理" name="members">
@@ -68,7 +66,8 @@ const emit = defineEmits<{
 	'success': []
 }>()
 
-const activeTab = ref('members')
+const activeTab = ref('approval')
+const approvalPanelRef = ref<{ isDirty: boolean; reset: () => void } | null>(null)
 const selectorVisible = ref(false)
 const saving = ref(false)
 const formRef = ref<FormInstance>()
@@ -95,12 +94,29 @@ watch(() => props.visible, (val) => {
 	if (val && props.group) {
 		form.value.name = props.group.name
 		form.value.description = props.group.description ?? ''
-		activeTab.value = 'members'
+		activeTab.value = 'approval'
 	}
 })
 
-function close() {
+async function close() {
+	if (activeTab.value === 'approval' && approvalPanelRef.value?.isDirty) {
+		const ok = await msgConfirm('审批流配置有未保存的修改，确认放弃？', '放弃修改')
+		if (!ok) return
+		approvalPanelRef.value.reset()
+	}
 	emit('update:visible', false)
+}
+
+async function beforeLeaveTab(_activeName: string | number, oldActiveName: string | number): Promise<boolean> {
+	// 仅当离开 approval Tab 且有未保存修改时拦截
+	if (oldActiveName === 'approval' && approvalPanelRef.value?.isDirty) {
+		const ok = await msgConfirm('审批流配置有未保存的修改，确认放弃？', '放弃修改')
+		if (ok && approvalPanelRef.value) {
+			approvalPanelRef.value.reset()
+		}
+		return ok
+	}
+	return true
 }
 
 function openMemberSelector() {

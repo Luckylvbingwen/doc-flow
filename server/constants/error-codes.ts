@@ -87,3 +87,9 @@ export const PRODUCT_LINE_HAS_GROUPS = 'PRODUCT_LINE_HAS_GROUPS'
 export const MEMBER_IMMUTABLE = 'MEMBER_IMMUTABLE'
 /** 不可移除自己 (400) */
 export const MEMBER_SELF_REMOVE = 'MEMBER_SELF_REMOVE'
+
+// ─── 审批模板 ───
+/** 开启审批时审批人不能为空 (400) */
+export const APPROVAL_APPROVERS_REQUIRED = 'APPROVAL_APPROVERS_REQUIRED'
+/** 审批人用户不存在或已停用 (400) */
+export const APPROVAL_INVALID_APPROVER = 'APPROVAL_INVALID_APPROVER'

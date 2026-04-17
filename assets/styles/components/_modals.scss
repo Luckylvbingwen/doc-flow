@@ -327,3 +327,258 @@ html.dark .el-drawer.df-detail-drawer {
     font-weight: 600;
   }
 }
+
+/* ── MemberSelectorModal：无权限下拉时底部布局 ── */
+.ms-footer--no-role {
+  justify-content: flex-end;
+}
+
+/* ── 审批流配置面板 ── */
+.ap-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ap-card {
+  border: 1px solid var(--df-border);
+  border-radius: 8px;
+  background: var(--df-panel);
+  overflow: hidden;
+}
+
+.ap-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--df-border);
+  font-size: 14px;
+
+  .el-button {
+    margin-left: auto;
+  }
+}
+
+.ap-card__title {
+  font-weight: 600;
+  color: var(--df-text);
+}
+
+.ap-card__hint {
+  font-size: 12px;
+  color: var(--df-subtext);
+}
+
+.ap-switch-card {
+  .ap-card__header {
+    border-bottom: none;
+    padding-bottom: 8px;
+  }
+}
+
+.ap-switch-card__hint {
+  padding: 0 16px 14px;
+  font-size: 12px;
+  color: var(--df-subtext);
+}
+
+.ap-empty {
+  padding: 40px 0;
+  text-align: center;
+
+  &__hint {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--df-subtext);
+  }
+}
+
+/* 模式卡片 */
+.ap-mode-wrap {
+  display: flex;
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+.ap-mode-card {
+  flex: 1;
+  padding: 14px;
+  border: 2px solid var(--df-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+
+  &:hover {
+    background: var(--df-surface);
+  }
+
+  &--selected {
+    border-color: var(--df-primary);
+    background: var(--df-primary-soft);
+  }
+}
+
+.ap-mode-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--df-text);
+}
+
+.ap-mode-card__desc {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--df-subtext);
+}
+
+/* 审批人列表 */
+.ap-approver-list {
+  padding: 8px 0;
+}
+
+.ap-approver-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+
+  &:hover {
+    background: var(--df-surface);
+  }
+}
+
+.ap-approver-row__order {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--df-surface);
+  color: var(--df-subtext);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ap-approver-row__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--df-primary), #818cf8);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ap-approver-row__name {
+  flex: 1;
+  font-size: 14px;
+  color: var(--df-text);
+}
+
+.ap-approver-row__actions {
+  display: flex;
+  gap: 2px;
+}
+
+/* 审批链预览 */
+.ap-preview .ap-card__header {
+  background: var(--df-primary-soft);
+}
+
+.ap-chain {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 16px;
+}
+
+.ap-chain__node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--df-border);
+  border-radius: 6px;
+  background: var(--df-panel);
+  font-size: 13px;
+  color: var(--df-text);
+
+  &--neutral {
+    color: var(--df-subtext);
+  }
+
+  &--success {
+    border-color: #22c55e;
+    background: #f0fdf4;
+    color: #15803d;
+  }
+}
+
+.ap-chain__avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--df-primary), #818cf8);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ap-chain__arrow {
+  color: var(--df-subtext);
+  font-size: 14px;
+}
+
+.ap-chain__parallel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 1.5px dashed #f59e0b;
+  border-radius: 8px;
+  background: var(--df-panel);
+}
+
+.ap-chain__parallel-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f59e0b;
+}
+
+.ap-chain__parallel-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.ap-chain__hint {
+  font-size: 12px;
+  color: var(--df-subtext);
+}
+
+/* 底部操作区 */
+.ap-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--df-border);
+  margin-top: 4px;
+}

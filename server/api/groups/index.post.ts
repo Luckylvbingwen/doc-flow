@@ -61,6 +61,8 @@ export default defineEventHandler(async (event) => {
 
 	const groupId = generateId()
 	const memberId = generateId()
+	const templateId = generateId()
+	const nodeId = generateId()
 
 	try {
 		await prisma.$transaction([
@@ -74,6 +76,7 @@ export default defineEventHandler(async (event) => {
 					description,
 					owner_user_id: BigInt(userId),
 					created_by: BigInt(userId),
+					approval_enabled: 1,
 				},
 			}),
 			prisma.doc_group_members.create({
@@ -85,6 +88,25 @@ export default defineEventHandler(async (event) => {
 					source_type: 1,    // 手动添加
 					immutable_flag: 1, // 不可移除
 					created_by: BigInt(userId),
+				},
+			}),
+			// PRD §244：组创建默认开启审批（mode=1 依次审批），审批人=组负责人
+			prisma.doc_approval_templates.create({
+				data: {
+					id: templateId,
+					group_id: groupId,
+					mode: 1,
+					timeout_hours: 24,
+					enabled: 1,
+					created_by: BigInt(userId),
+				},
+			}),
+			prisma.doc_approval_template_nodes.create({
+				data: {
+					id: nodeId,
+					template_id: templateId,
+					order_no: 1,
+					approver_user_id: BigInt(userId),
 				},
 			}),
 		])
