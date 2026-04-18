@@ -55,7 +55,8 @@
       "Bash(NODE_OPTIONS=\"--max-old-space-size=3072\" timeout 40 npm run dev)",
       "Bash(npm test *)",
       "Read(//d/workspace/project//**)",
-      "Read(//d/workspace/project/**)"
+      "Read(//d/workspace/project/**)",
+      "Bash(git reset *)"
     ]
   }
 }

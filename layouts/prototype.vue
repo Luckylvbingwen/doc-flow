@@ -19,21 +19,24 @@ class="pf-sidebar-toggle" type="button" :aria-label="isSidebarCollapsed ? '展�
 			</div>
 
 			<el-scrollbar class="pf-nav-scrollbar">
-				<nav class="pf-nav">
-					<template v-for="group in menuGroups" :key="group.title ?? 'default'">
-						<p v-if="group.title" class="pf-nav-title">{{ group.title }}</p>
-						<el-tooltip
+				<!-- menuGroups 按 can(perm) 过滤，auth 仅在客户端水合；ClientOnly 避免 SSR/客户端菜单项不一致 -->
+				<ClientOnly>
+					<nav class="pf-nav">
+						<template v-for="group in menuGroups" :key="group.title ?? 'default'">
+							<p v-if="group.title" class="pf-nav-title">{{ group.title }}</p>
+							<el-tooltip
 v-for="item in group.items" :key="item.to" :content="item.label" placement="right"
-							:disabled="!isSidebarCollapsed" :show-after="300">
-							<NuxtLink class="pf-nav-item" :class="{ active: isItemActive(item) }" :to="item.to">
-								<el-icon class="pf-nav-icon">
-									<component :is="item.icon" />
-								</el-icon>
-								<span class="pf-nav-label">{{ item.label }}</span>
-							</NuxtLink>
-						</el-tooltip>
-					</template>
-				</nav>
+								:disabled="!isSidebarCollapsed" :show-after="300">
+								<NuxtLink class="pf-nav-item" :class="{ active: isItemActive(item) }" :to="item.to">
+									<el-icon class="pf-nav-icon">
+										<component :is="item.icon" />
+									</el-icon>
+									<span class="pf-nav-label">{{ item.label }}</span>
+								</NuxtLink>
+							</el-tooltip>
+						</template>
+					</nav>
+				</ClientOnly>
 			</el-scrollbar>
 		</aside>
 

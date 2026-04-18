@@ -53,13 +53,14 @@
   border-radius: 999px;
   padding: 0 16px;
   height: 32px;
-  color: var(--df-primary);
-  border-color: var(--df-primary);
+  color: #dc2626;
+  border-color: #dc2626;
   background: #fff;
 
-  &:hover {
+  &:hover,
+  &:focus {
     color: #fff;
-    background: var(--df-primary);
-    border-color: var(--df-primary);
+    background: #dc2626;
+    border-color: #dc2626;
   }
 }
