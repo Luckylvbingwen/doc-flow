@@ -164,6 +164,13 @@
 | POST | /api/recycle-bin/restore | 是 | recycle:restore | 批量恢复（1-50 条，原组被删的条目放入 failed 列表） |
 | POST | /api/recycle-bin/purge | 是 | recycle:delete | 批量永久删除（软删 `deleted_at` 标记，不可恢复） |
 
+### 审批中心 (approvals)
+
+| 方法 | 路径 | 鉴权 | 权限/条件 | 说明 |
+| --- | --- | --- | --- | --- |
+| GET | /api/approvals | 是 | 仅操作自己相关 | 审批列表（按 tab 分三路：待我审批/我发起的/我已处理；分页，支持状态筛选） |
+| POST | /api/approvals/:id/withdraw | 是 | 仅发起人 + reviewing | 撤回审批（status=5） |
+
 ### 定时任务
 
 | 任务名 | cron | 说明 |
@@ -1161,6 +1168,83 @@
   }
 }
 ```
+
+---
+
+### 3.54 GET /api/approvals
+
+**路径**：`GET /api/approvals`
+**鉴权**：JWT 登录即可；**不挂** `approval:read`，仅按 `event.context.user.id` 过滤
+
+**Query**：
+- `tab` 必填，`pending` / `submitted` / `handled`
+- `status` 可选，2 审批中 / 3 已通过 / 4 已驳回 / 5 已撤回（pending tab 忽略此参数）
+- `page` 默认 1，`pageSize` 默认 10，范围 [1, 100]
+
+**三路 SQL**：
+- `pending`：`doc_approval_instance_nodes.approver_user_id=self AND action_status=1 AND instance.status=2 AND instance.current_node_order=node.node_order`
+- `submitted`：`doc_approval_instances.initiator_user_id=self`（叠加 status 筛选）
+- `handled`：`doc_approval_instance_nodes.approver_user_id=self AND action_status IN (2,3)`（叠加 status 筛选）
+
+**排序**：pending/submitted 按 `inst.created_at DESC`；handled 按 `node.action_at DESC`。
+
+**「新增/迭代」徽章判定**：`SELECT COUNT(*) FROM doc_document_versions vc WHERE vc.document_id = inst.document_id AND vc.id < inst.biz_id AND vc.deleted_at IS NULL` = 0 → new；否则 iterate。
+
+**响应**：
+```json
+{
+  "success": true, "code": "OK", "message": "OK",
+  "data": {
+    "list": [
+      {
+        "id": 62001,
+        "status": 2,
+        "documentId": 50001,
+        "title": "Alpha项目-技术方案",
+        "ext": "pdf",
+        "versionId": 51002,
+        "versionNo": "v1.1",
+        "changeType": "iterate",
+        "groupId": 40004,
+        "groupName": "Alpha项目组",
+        "initiatorId": 10003,
+        "initiatorName": "文档编辑",
+        "submittedAt": 1744858800000,
+        "handledAt": null,
+        "currentApproverName": "审批人A",
+        "allApproverNames": "审批人A,审批人B",
+        "rejectReason": null,
+        "remindCount": 0,
+        "canWithdraw": false
+      }
+    ],
+    "total": 1, "page": 1, "pageSize": 10
+  }
+}
+```
+
+---
+
+### 3.55 POST /api/approvals/:id/withdraw
+
+**路径**：`POST /api/approvals/:id/withdraw`
+**鉴权**：JWT 登录即可（仅对自己发起的审批生效）
+
+**规则**：
+- 必须是 `inst.initiator_user_id = self`，否则 403 `APPROVAL_NOT_INITIATOR`
+- 仅 `inst.status=2`（审批中）可撤回，其他状态返回 409 `APPROVAL_NOT_WITHDRAWABLE`
+- 成功：`status=5`（已撤回）+ `finished_at=NOW()` + 写 `approval.withdraw` 操作日志
+
+**响应**：
+```json
+{ "success": true, "code": "OK", "message": "已撤回审批", "data": { "id": 62001 } }
+```
+
+**错误码**：
+- 400 `INVALID_PARAMS` — ID 非法
+- 404 `APPROVAL_NOT_FOUND` — 审批实例不存在
+- 403 `APPROVAL_NOT_INITIATOR` — 非发起人
+- 409 `APPROVAL_NOT_WITHDRAWABLE` — 当前状态不可撤回
 
 ---
 

@@ -211,6 +211,25 @@
 - **测试**：新增 14 条 `useListPage` 单测（初始状态/默认值/immediate/成功/失败/异常/onError 自定义/筛选&分页&重置语义/Race condition/loading 生命周期），全部通过
 - **累计**：Test Files 15 passed，Tests 186 passed
 
+### feat: 审批中心 A 阶段（读端列表 + 撤回）
+
+- **后端**
+  - 新增常量 `server/constants/approval.ts`（`APPROVAL_STATUS` 1-5 / `NODE_ACTION` / `CHANGE_TYPE` / `APPROVAL_TABS` / `APPROVAL_FILTERABLE_STATUSES`）
+  - 新增 Zod schema `server/schemas/approval.ts`（listQuery：tab 必填 + status 可选 + page/pageSize）
+  - 新增错误码 3 个：`APPROVAL_NOT_FOUND` / `APPROVAL_NOT_INITIATOR` / `APPROVAL_NOT_WITHDRAWABLE`
+  - 新增接口 `GET /api/approvals` — 按 tab 三路 SQL（pending / submitted / handled），JOIN 文档/版本/组/发起人/当前待审批人，子查询计算"新增/迭代"（`COUNT(versions WHERE id < biz_id)=0`）、当前节点催办次数、所有审批人姓名拼接
+  - 新增接口 `POST /api/approvals/:id/withdraw` — 撤回规则校验（必须 initiator=self + status=2），成功后 UPDATE status=5 + 写 `approval.withdraw` 日志
+  - 两接口均**不挂** `requirePermission`，仅以 `event.context.user.id` 过滤 —— 与 PRD §4.3 权限矩阵无审批中心行一致，审批面向所有员工
+- **前端**
+  - 扩展 `types/approval.ts` — 新增 `ApprovalTab` / `ApprovalStatus` / `ApprovalChangeType` / `ApprovalItem` / `ApprovalListQuery`（旧 `ApprovalDetail` 保留给后续 ApprovalDrawer 用）
+  - 新增 `api/approvals.ts`（`apiGetApprovals` / `apiWithdrawApproval`）
+  - 新增 `utils/approval-meta.ts` — 状态色（5 态）+ 变更类型色（新增绿/迭代蓝）+ `getStatusMeta` / `getChangeTypeMeta`
+  - 新增组件 `components/ApprovalListCard.vue` — 卡片式审批项（文件图标 + 标题 + 变更徽章 + 催办徽章 + 次行 group/time/version + 审批人信息 + 驳回原因红底条 + 右侧状态徽章 + [撤回] 按钮）
+  - 重写 `pages/approvals.vue` — ListPageShell + TabBar（三 Tab）+ FilterBar（状态筛选，pending tab 自动禁用）+ 卡片列表 + Pagination + 三种空态 preset；用 `useListPage` 编排；撤回走 msgConfirm 二次确认，按行级 `withdrawingId` 追踪 loading
+- **规格依据**：PRD §6.4（审批中心 三 Tab）、§6.4.2（列表项字段 / 撤回按钮 / 催办徽章）、§4.3（权限矩阵无审批中心行）
+- **范围**：A 阶段 = 读端三 Tab 列表 + 撤回；**不做** ApprovalDrawer 抽屉 / 通过 / 驳回 / 全屏预览 / 全屏对比 / 催办触发定时任务 —— 归后续"审批流运行时"
+- **测试**：9 条 Zod schema 单测 + 10 条 approval-meta 单测，全部通过
+
 ---
 
 ## 待开发（按优先级排序）
@@ -219,7 +238,7 @@
 |--------|------|------|
 | P0 | 文档管理核心 — 上传/元数据/版本/状态流转 | ⏳ 待排期 |
 | P1 | 组成员管理 B 阶段 — 继承机制 / 负责人移交 | 🕓 待产品讨论 |
-| P1 | 审批流运行时 — 实例起审批 / 通过驳回 / 超时催办 | ⏳ 待排期（模板配置已完成于 2026-04-17） |
+| P1 | 审批流运行时 — 实例起审批 / 通过驳回 / 超时催办 | ⏳ 待排期（模板配置 2026-04-17 完成；审批中心 A 阶段列表 + 撤回 2026-04-18 完成） |
 | P1 | 站内通知 — 三类通知 + 已读未读 | ✅ A 阶段完成于 2026-04-18（触发点接入随各业务补） |
 | P2 | 操作日志 | ✅ A 阶段完成于 2026-04-17（埋点随各业务补） |
 | P2 | 回收站 | ✅ A 阶段完成于 2026-04-18（30 天自动清理 cron 后续排期） |

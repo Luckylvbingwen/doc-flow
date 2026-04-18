@@ -94,6 +94,14 @@ export const APPROVAL_APPROVERS_REQUIRED = 'APPROVAL_APPROVERS_REQUIRED'
 /** 审批人用户不存在或已停用 (400) */
 export const APPROVAL_INVALID_APPROVER = 'APPROVAL_INVALID_APPROVER'
 
+// ─── 审批实例 ───
+/** 审批实例不存在 (404) */
+export const APPROVAL_NOT_FOUND = 'APPROVAL_NOT_FOUND'
+/** 仅发起人可撤回 (403) */
+export const APPROVAL_NOT_INITIATOR = 'APPROVAL_NOT_INITIATOR'
+/** 当前状态不可撤回（非"审批中"） (409) */
+export const APPROVAL_NOT_WITHDRAWABLE = 'APPROVAL_NOT_WITHDRAWABLE'
+
 // ─── 回收站 ───
 /** 回收站项不存在或已被永久删除 (404) */
 export const RECYCLE_NOT_FOUND = 'RECYCLE_NOT_FOUND'

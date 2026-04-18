@@ -262,6 +262,145 @@ INSERT INTO doc_approval_instance_nodes (
 ON DUPLICATE KEY UPDATE action_status = VALUES(action_status), updated_at = NOW(3);
 
 -- =========================================================
+-- K.1 审批 seed 补充：系统管理员 (10001) 视角（patch-004 同步）
+--     三 Tab 分布：我发起的 4 + 待我审批 8 + 我已处理 5 = 17 条
+-- =========================================================
+INSERT INTO doc_documents (
+  id, group_id, owner_user_id, title, ext, status, source_doc_id, current_version_id,
+  deleted_at_real, deleted_by_user_id,
+  created_by, updated_by, created_at, updated_at, deleted_at
+) VALUES
+  -- 我发起的 (10001 initiator)
+  (50010, 40001, 10001, '系统审计报告-v1.0',     'pdf',  3, NULL, 51010, NULL, NULL, 10001, 10001, NOW(3), NOW(3), NULL),
+  (50011, 40001, 10001, '预算申请-Q2',           'xlsx', 4, NULL, 51011, NULL, NULL, 10001, 10001, NOW(3), NOW(3), NULL),
+  (50012, 40001, 10001, '采购申请-办公设备',     'docx', 5, NULL, 51012, NULL, NULL, 10001, 10001, NOW(3), NOW(3), NULL),
+  (50013, 40001, 10001, '策略调整方案',           'md',   2, NULL, 51013, NULL, NULL, 10001, 10001, NOW(3), NOW(3), NULL),
+  -- 待我审批 (10001 pending approver)
+  (50014, 40002, 10002, '研发流程更新-v2',        'docx', 3, NULL, 51014, NULL, NULL, 10002, 10002, NOW(3), NOW(3), NULL),
+  (50015, 40002, 10003, '文档规范更新',           'md',   3, NULL, 51015, NULL, NULL, 10003, 10003, NOW(3), NOW(3), NULL),
+  (50016, 40002, 10004, '测试标准',                'docx', 3, NULL, 51016, NULL, NULL, 10004, 10004, NOW(3), NOW(3), NULL),
+  (50017, 40002, 10005, '质量门禁',                'pdf',  3, NULL, 51017, NULL, NULL, 10005, 10005, NOW(3), NOW(3), NULL),
+  (50018, 40003, 10002, '安全策略-v3',            'pdf',  3, NULL, 51018, NULL, NULL, 10002, 10002, NOW(3), NOW(3), NULL),
+  (50019, 40003, 10003, 'API 规范',                'md',   3, NULL, 51019, NULL, NULL, 10003, 10003, NOW(3), NOW(3), NULL),
+  (50020, 40001, 10006, '新员工手册',              'pdf',  3, NULL, 51020, NULL, NULL, 10006, 10006, NOW(3), NOW(3), NULL),
+  (50021, 40001, 10004, '紧急预案',                'docx', 3, NULL, 51021, NULL, NULL, 10004, 10004, NOW(3), NOW(3), NULL),
+  -- 我已处理 (10001 handled)
+  (50022, 40001, 10002, '年度目标',                'pdf',  4, NULL, 51022, NULL, NULL, 10002, 10002, NOW(3), NOW(3), NULL),
+  (50023, 40002, 10003, '岗位晋升申请',            'docx', 4, NULL, 51023, NULL, NULL, 10003, 10003, NOW(3), NOW(3), NULL),
+  (50024, 40002, 10002, '跨区调动申请',            'docx', 5, NULL, 51024, NULL, NULL, 10002, 10002, NOW(3), NOW(3), NULL),
+  (50025, 40003, 10005, '季度复盘',                'pdf',  4, NULL, 51025, NULL, NULL, 10005, 10005, NOW(3), NOW(3), NULL),
+  (50026, 40002, 10004, '版本重构方案',            'md',   5, NULL, 51026, NULL, NULL, 10004, 10004, NOW(3), NOW(3), NULL)
+ON DUPLICATE KEY UPDATE
+  status = VALUES(status), owner_user_id = VALUES(owner_user_id), current_version_id = VALUES(current_version_id), updated_at = NOW(3);
+
+INSERT INTO doc_document_versions (
+  id, document_id, version_no, storage_key, storage_bucket, file_size, mime_type,
+  checksum, source_type, source_meta, change_note, uploaded_by, published_at,
+  created_at, updated_at, deleted_at
+) VALUES
+  (51010, 50010, 'v1.0', 'docs/approval/audit-v1.pdf',       'docflow-local', 524288, 'application/pdf',
+   'sha256_appr_50010_v1', 1, JSON_OBJECT('channel', 'web'), '初版提交审批', 10001, NULL, NOW(3), NOW(3), NULL),
+  (51011, 50011, 'v1.0', 'docs/approval/budget-q2.xlsx',     'docflow-local', 204800,
+   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+   'sha256_appr_50011_v1', 1, JSON_OBJECT('channel', 'web'), 'Q2 预算申请', 10001, DATE_SUB(NOW(3), INTERVAL 1 DAY), NOW(3), NOW(3), NULL),
+  (51012, 50012, 'v1.0', 'docs/approval/purchase.docx',      'docflow-local', 102400,
+   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+   'sha256_appr_50012_v1', 1, JSON_OBJECT('channel', 'web'), '采购清单', 10001, NULL, NOW(3), NOW(3), NULL),
+  (51013, 50013, 'v1.0', 'docs/approval/strategy.md',        'docflow-local',  16384, 'text/markdown',
+   'sha256_appr_50013_v1', 1, JSON_OBJECT('channel', 'web'), '策略草案', 10001, NULL, NOW(3), NOW(3), NULL),
+  (51014, 50014, 'v2.0', 'docs/approval/rd-flow-v2.docx',    'docflow-local', 307200,
+   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+   'sha256_appr_50014_v1', 1, JSON_OBJECT('channel', 'web'), '流程修订', 10002, NULL, NOW(3), NOW(3), NULL),
+  (51015, 50015, 'v1.0', 'docs/approval/doc-spec.md',        'docflow-local',  20480, 'text/markdown',
+   'sha256_appr_50015_v1', 1, JSON_OBJECT('channel', 'web'), '规范初版', 10003, NULL, NOW(3), NOW(3), NULL),
+  (51016, 50016, 'v1.0', 'docs/approval/test-std.docx',      'docflow-local', 153600,
+   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+   'sha256_appr_50016_v1', 1, JSON_OBJECT('channel', 'web'), '测试标准', 10004, NULL, NOW(3), NOW(3), NULL),
+  (51017, 50017, 'v1.0', 'docs/approval/qa-gate.pdf',        'docflow-local', 409600, 'application/pdf',
+   'sha256_appr_50017_v1', 1, JSON_OBJECT('channel', 'web'), '质量门禁', 10005, NULL, NOW(3), NOW(3), NULL),
+  (51018, 50018, 'v3.0', 'docs/approval/security-v3.pdf',    'docflow-local', 768000, 'application/pdf',
+   'sha256_appr_50018_v1', 1, JSON_OBJECT('channel', 'web'), '安全策略升级', 10002, NULL, NOW(3), NOW(3), NULL),
+  (51019, 50019, 'v1.0', 'docs/approval/api-spec.md',        'docflow-local',  32768, 'text/markdown',
+   'sha256_appr_50019_v1', 1, JSON_OBJECT('channel', 'web'), 'API 约定', 10003, NULL, NOW(3), NOW(3), NULL),
+  (51020, 50020, 'v1.0', 'docs/approval/onboarding.pdf',     'docflow-local', 614400, 'application/pdf',
+   'sha256_appr_50020_v1', 1, JSON_OBJECT('channel', 'web'), '新员工手册', 10006, NULL, NOW(3), NOW(3), NULL),
+  (51021, 50021, 'v1.0', 'docs/approval/emergency.docx',     'docflow-local', 256000,
+   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+   'sha256_appr_50021_v1', 1, JSON_OBJECT('channel', 'web'), '应急预案', 10004, NULL, NOW(3), NOW(3), NULL),
+  (51022, 50022, 'v1.0', 'docs/approval/annual-goal.pdf',    'docflow-local', 184320, 'application/pdf',
+   'sha256_appr_50022_v1', 1, JSON_OBJECT('channel', 'web'), '年度目标', 10002, DATE_SUB(NOW(3), INTERVAL 2 DAY), NOW(3), NOW(3), NULL),
+  (51023, 50023, 'v1.0', 'docs/approval/promotion.docx',     'docflow-local',  81920,
+   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+   'sha256_appr_50023_v1', 1, JSON_OBJECT('channel', 'web'), '晋升申请', 10003, DATE_SUB(NOW(3), INTERVAL 3 DAY), NOW(3), NOW(3), NULL),
+  (51024, 50024, 'v1.0', 'docs/approval/transfer.docx',      'docflow-local',  72000,
+   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+   'sha256_appr_50024_v1', 1, JSON_OBJECT('channel', 'web'), '调动申请', 10002, NULL, NOW(3), NOW(3), NULL),
+  (51025, 50025, 'v1.0', 'docs/approval/quarterly.pdf',      'docflow-local', 286720, 'application/pdf',
+   'sha256_appr_50025_v1', 1, JSON_OBJECT('channel', 'web'), '季度复盘', 10005, DATE_SUB(NOW(3), INTERVAL 5 DAY), NOW(3), NOW(3), NULL),
+  (51026, 50026, 'v1.0', 'docs/approval/refactor.md',        'docflow-local',  45056, 'text/markdown',
+   'sha256_appr_50026_v1', 1, JSON_OBJECT('channel', 'web'), '重构方案', 10004, NULL, NOW(3), NOW(3), NULL)
+ON DUPLICATE KEY UPDATE
+  version_no = VALUES(version_no), file_size = VALUES(file_size), updated_at = NOW(3);
+
+INSERT INTO doc_approval_instances (
+  id, biz_type, biz_id, document_id, template_id, mode, status, initiator_user_id,
+  current_node_order, started_at, finished_at, created_at, updated_at
+) VALUES
+  -- 我发起的
+  (62003, 1, 51010, 50010, NULL, 1, 2, 10001, 1,    DATE_SUB(NOW(3), INTERVAL 3 HOUR), NULL,                              DATE_SUB(NOW(3), INTERVAL 3 HOUR), NOW(3)),
+  (62004, 1, 51011, 50011, NULL, 1, 3, 10001, NULL, DATE_SUB(NOW(3), INTERVAL 2 DAY),  DATE_SUB(NOW(3), INTERVAL 1 DAY),  DATE_SUB(NOW(3), INTERVAL 2 DAY),  NOW(3)),
+  (62005, 1, 51012, 50012, NULL, 1, 4, 10001, NULL, DATE_SUB(NOW(3), INTERVAL 5 DAY),  DATE_SUB(NOW(3), INTERVAL 4 DAY),  DATE_SUB(NOW(3), INTERVAL 5 DAY),  NOW(3)),
+  (62006, 1, 51013, 50013, NULL, 1, 5, 10001, NULL, DATE_SUB(NOW(3), INTERVAL 6 HOUR), DATE_SUB(NOW(3), INTERVAL 5 HOUR), DATE_SUB(NOW(3), INTERVAL 6 HOUR), NOW(3)),
+  -- 待我审批
+  (62007, 1, 51014, 50014, NULL, 1, 2, 10002, 1, DATE_SUB(NOW(3), INTERVAL 10 HOUR), NULL, DATE_SUB(NOW(3), INTERVAL 10 HOUR), NOW(3)),
+  (62008, 1, 51015, 50015, NULL, 1, 2, 10003, 1, DATE_SUB(NOW(3), INTERVAL 8 HOUR),  NULL, DATE_SUB(NOW(3), INTERVAL 8 HOUR),  NOW(3)),
+  (62009, 1, 51016, 50016, NULL, 1, 2, 10004, 1, DATE_SUB(NOW(3), INTERVAL 6 HOUR),  NULL, DATE_SUB(NOW(3), INTERVAL 6 HOUR),  NOW(3)),
+  (62010, 1, 51017, 50017, NULL, 1, 2, 10005, 1, DATE_SUB(NOW(3), INTERVAL 4 HOUR),  NULL, DATE_SUB(NOW(3), INTERVAL 4 HOUR),  NOW(3)),
+  (62011, 1, 51018, 50018, NULL, 1, 2, 10002, 1, DATE_SUB(NOW(3), INTERVAL 1 DAY),   NULL, DATE_SUB(NOW(3), INTERVAL 1 DAY),   NOW(3)),
+  (62012, 1, 51019, 50019, NULL, 1, 2, 10003, 1, DATE_SUB(NOW(3), INTERVAL 2 DAY),   NULL, DATE_SUB(NOW(3), INTERVAL 2 DAY),   NOW(3)),
+  (62013, 1, 51020, 50020, NULL, 1, 2, 10006, 1, DATE_SUB(NOW(3), INTERVAL 3 DAY),   NULL, DATE_SUB(NOW(3), INTERVAL 3 DAY),   NOW(3)),
+  (62014, 1, 51021, 50021, NULL, 1, 2, 10004, 1, DATE_SUB(NOW(3), INTERVAL 2 DAY),   NULL, DATE_SUB(NOW(3), INTERVAL 2 DAY),   NOW(3)),
+  -- 我已处理
+  (62015, 1, 51022, 50022, NULL, 1, 3, 10002, NULL, DATE_SUB(NOW(3), INTERVAL 3 DAY), DATE_SUB(NOW(3), INTERVAL 2 DAY), DATE_SUB(NOW(3), INTERVAL 3 DAY), NOW(3)),
+  (62016, 1, 51023, 50023, NULL, 1, 3, 10003, NULL, DATE_SUB(NOW(3), INTERVAL 4 DAY), DATE_SUB(NOW(3), INTERVAL 3 DAY), DATE_SUB(NOW(3), INTERVAL 4 DAY), NOW(3)),
+  (62017, 1, 51024, 50024, NULL, 1, 4, 10002, NULL, DATE_SUB(NOW(3), INTERVAL 5 DAY), DATE_SUB(NOW(3), INTERVAL 4 DAY), DATE_SUB(NOW(3), INTERVAL 5 DAY), NOW(3)),
+  (62018, 1, 51025, 50025, NULL, 1, 3, 10005, NULL, DATE_SUB(NOW(3), INTERVAL 6 DAY), DATE_SUB(NOW(3), INTERVAL 5 DAY), DATE_SUB(NOW(3), INTERVAL 6 DAY), NOW(3)),
+  (62019, 1, 51026, 50026, NULL, 1, 4, 10004, NULL, DATE_SUB(NOW(3), INTERVAL 7 DAY), DATE_SUB(NOW(3), INTERVAL 6 DAY), DATE_SUB(NOW(3), INTERVAL 7 DAY), NOW(3))
+ON DUPLICATE KEY UPDATE status = VALUES(status), current_node_order = VALUES(current_node_order), finished_at = VALUES(finished_at), updated_at = NOW(3);
+
+INSERT INTO doc_approval_instance_nodes (
+  id, instance_id, node_order, approver_user_id, action_status, action_comment,
+  action_at, remind_count, last_reminded_at, created_at, updated_at
+) VALUES
+  -- 我发起的
+  (63005, 62003, 1, 10004, 1, NULL,                         NULL,                             0, NULL,                             DATE_SUB(NOW(3), INTERVAL 3 HOUR), NOW(3)),
+  (63006, 62004, 1, 10004, 2, '同意，继续推进',             DATE_SUB(NOW(3), INTERVAL 1 DAY), 0, NULL,                             DATE_SUB(NOW(3), INTERVAL 2 DAY),  NOW(3)),
+  (63007, 62005, 1, 10005, 3, '预算超出上限，请缩减后再提', DATE_SUB(NOW(3), INTERVAL 4 DAY), 0, NULL,                             DATE_SUB(NOW(3), INTERVAL 5 DAY),  NOW(3)),
+  (63008, 62006, 1, 10004, 1, NULL,                         NULL,                             0, NULL,                             DATE_SUB(NOW(3), INTERVAL 6 HOUR), NOW(3)),
+  -- 待我审批（10001 pending）
+  (63009, 62007, 1, 10001, 1, NULL, NULL, 0, NULL, DATE_SUB(NOW(3), INTERVAL 10 HOUR), NOW(3)),
+  (63010, 62008, 1, 10001, 1, NULL, NULL, 0, NULL, DATE_SUB(NOW(3), INTERVAL 8 HOUR),  NOW(3)),
+  (63011, 62009, 1, 10001, 1, NULL, NULL, 0, NULL, DATE_SUB(NOW(3), INTERVAL 6 HOUR),  NOW(3)),
+  (63012, 62010, 1, 10001, 1, NULL, NULL, 0, NULL, DATE_SUB(NOW(3), INTERVAL 4 HOUR),  NOW(3)),
+  (63013, 62011, 1, 10001, 1, NULL, NULL, 0, NULL, DATE_SUB(NOW(3), INTERVAL 1 DAY),   NOW(3)),
+  (63014, 62012, 1, 10001, 1, NULL, NULL, 0, NULL, DATE_SUB(NOW(3), INTERVAL 2 DAY),   NOW(3)),
+  (63015, 62013, 1, 10001, 1, NULL, NULL, 0, NULL, DATE_SUB(NOW(3), INTERVAL 3 DAY),   NOW(3)),
+  (63016, 62014, 1, 10001, 1, NULL, NULL, 2, DATE_SUB(NOW(3), INTERVAL 1 DAY), DATE_SUB(NOW(3), INTERVAL 2 DAY), NOW(3)),   -- 催办 2 次
+  -- 我已处理（10001 approved/rejected）
+  (63017, 62015, 1, 10001, 2, '目标清晰，同意',             DATE_SUB(NOW(3), INTERVAL 2 DAY), 0, NULL, DATE_SUB(NOW(3), INTERVAL 3 DAY), NOW(3)),
+  (63018, 62016, 1, 10001, 2, '符合晋升条件',               DATE_SUB(NOW(3), INTERVAL 3 DAY), 0, NULL, DATE_SUB(NOW(3), INTERVAL 4 DAY), NOW(3)),
+  (63019, 62017, 1, 10001, 3, '人员安排冲突，暂缓处理',     DATE_SUB(NOW(3), INTERVAL 4 DAY), 0, NULL, DATE_SUB(NOW(3), INTERVAL 5 DAY), NOW(3)),
+  (63020, 62018, 1, 10001, 2, '复盘完整',                   DATE_SUB(NOW(3), INTERVAL 5 DAY), 0, NULL, DATE_SUB(NOW(3), INTERVAL 6 DAY), NOW(3)),
+  (63021, 62019, 1, 10001, 3, '方案细节不足，请补充后再提', DATE_SUB(NOW(3), INTERVAL 6 DAY), 0, NULL, DATE_SUB(NOW(3), INTERVAL 7 DAY), NOW(3))
+ON DUPLICATE KEY UPDATE
+  action_status = VALUES(action_status),
+  action_comment = VALUES(action_comment),
+  action_at = VALUES(action_at),
+  remind_count = VALUES(remind_count),
+  last_reminded_at = VALUES(last_reminded_at),
+  updated_at = NOW(3);
+
+-- =========================================================
 -- L. 站内通知样例（§6.8 / M1-M24 每种 ≥1 条，共 45 条）
 --    user_id: 10001-10006（见 A 节）
 --    biz_id:  document=50001..50004 / group=40001..40004
