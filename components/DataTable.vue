@@ -106,10 +106,13 @@ export interface TableColumn {
 }
 
 interface DataTableProps {
-	data?: Record<string, unknown>[]
+	// 放宽为 Record<string, any>[]：允许具体业务类型（LogItem / RecycleItem 等）直接传入，
+	// 避免每个页面都要 `as unknown as Record<string, unknown>[]` 强转；行渲染通过插槽与 TableColumn.prop，
+	// 此处严格类型没有实际价值
+	data?: Record<string, any>[]
 	columns: TableColumn[]
 	loading?: boolean
-	rowKey?: string | ((row: Record<string, unknown>) => string)
+	rowKey?: string | ((row: Record<string, any>) => string)
 	emptyText?: string
 	emptyPreset?: string
 	stripe?: boolean

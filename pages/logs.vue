@@ -66,7 +66,7 @@ class="log-type-tag"
 import { Search } from '@element-plus/icons-vue'
 import type { TableColumn } from '~/components/DataTable.vue'
 import { LOG_TYPE_META, getLogTypeMeta, type LogTypeCode } from '~/utils/log-types'
-import { apiGetLogs } from '~/api/logs'
+import { apiGetLogs, type LogListQuery } from '~/api/logs'
 import { formatTime } from '~/utils/format'
 import type { LogItem } from '~/types/log'
 
@@ -87,15 +87,6 @@ const filterType = ref<LogTypeCode | ''>('')
 const filterKeyword = ref('')
 const dateRange = ref<[string, string] | null>(null)
 
-// ── 分页状态 ──
-const currentPage = ref(1)
-const currentPageSize = ref(10)
-
-// ── 数据 ──
-const list = ref<LogItem[]>([])
-const total = ref(0)
-const loading = ref(false)
-
 const activeFilterCount = computed(() => {
 	let n = 0
 	if (filterType.value) n++
@@ -112,48 +103,32 @@ const columns: TableColumn[] = [
 	{ label: '操作时间', slot: 'time', width: 160 },
 ]
 
-async function fetchLogs() {
-	loading.value = true
-	try {
-		const res = await apiGetLogs({
-			type: filterType.value || undefined,
-			keyword: filterKeyword.value || undefined,
-			startAt: dateRange.value?.[0] || undefined,
-			endAt: dateRange.value?.[1] || undefined,
-			page: currentPage.value,
-			pageSize: currentPageSize.value,
-		})
-		if (res.success) {
-			list.value = res.data.list
-			total.value = res.data.total
-		} else {
-			msgError(res.message || '加载失败')
-		}
-	} catch {
-		msgError('加载失败')
-	} finally {
-		loading.value = false
-	}
-}
-
-function onFilterChange() {
-	currentPage.value = 1
-	fetchLogs()
-}
-
-function onResetFilter() {
-	filterType.value = ''
-	filterKeyword.value = ''
-	dateRange.value = null
-	currentPage.value = 1
-	fetchLogs()
-}
-
-function onPageChange() {
-	fetchLogs()
-}
-
-onMounted(fetchLogs)
+const {
+	page: currentPage,
+	pageSize: currentPageSize,
+	list,
+	total,
+	loading,
+	refresh: fetchLogs,
+	onFilterChange,
+	onResetFilter,
+	onPageChange,
+} = useListPage<LogItem, LogListQuery>({
+	fetchFn: apiGetLogs,
+	buildQuery: ({ page, pageSize }) => ({
+		type: filterType.value || undefined,
+		keyword: filterKeyword.value || undefined,
+		startAt: dateRange.value?.[0] || undefined,
+		endAt: dateRange.value?.[1] || undefined,
+		page,
+		pageSize,
+	}),
+	resetFilters: () => {
+		filterType.value = ''
+		filterKeyword.value = ''
+		dateRange.value = null
+	},
+})
 </script>
 
 <style lang="scss" scoped>

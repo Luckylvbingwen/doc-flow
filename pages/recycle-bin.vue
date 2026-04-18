@@ -82,6 +82,7 @@ import {
 	apiGetRecycleFilterGroups,
 	apiRestoreRecycle,
 	apiPurgeRecycle,
+	type RecycleListQuery,
 } from '~/api/recycle-bin'
 import type {
 	RecycleItem,
@@ -118,15 +119,6 @@ const activeFilterCount = computed(() => {
 	if (filterGroupId.value != null) n++
 	return n
 })
-
-// ── 分页 ──
-const currentPage = ref(1)
-const currentPageSize = ref(10)
-
-// ── 数据 ──
-const list = ref<RecycleItem[]>([])
-const total = ref(0)
-const loading = ref(false)
 
 // ── 选择 ──
 const tableRef = ref<{ clearSelection: () => void } | null>(null)
@@ -170,27 +162,29 @@ function getFileTypeLabel(ext: string): string {
 }
 
 // ── 加载 ──
-async function fetchList() {
-	loading.value = true
-	try {
-		const res = await apiGetRecycleList({
-			keyword: filterKeyword.value || undefined,
-			groupId: filterGroupId.value ?? undefined,
-			page: currentPage.value,
-			pageSize: currentPageSize.value,
-		})
-		if (res.success) {
-			list.value = res.data.list
-			total.value = res.data.total
-		} else {
-			msgError(res.message || '加载失败')
-		}
-	} catch {
-		msgError('加载失败')
-	} finally {
-		loading.value = false
-	}
-}
+const {
+	page: currentPage,
+	pageSize: currentPageSize,
+	list,
+	total,
+	loading,
+	refresh: fetchList,
+	onFilterChange,
+	onResetFilter,
+	onPageChange,
+} = useListPage<RecycleItem, RecycleListQuery>({
+	fetchFn: apiGetRecycleList,
+	buildQuery: ({ page, pageSize }) => ({
+		keyword: filterKeyword.value || undefined,
+		groupId: filterGroupId.value ?? undefined,
+		page,
+		pageSize,
+	}),
+	resetFilters: () => {
+		filterKeyword.value = ''
+		filterGroupId.value = null
+	},
+})
 
 // RemoteSelect 的 fetch 适配
 async function fetchFilterGroups(params: { keyword: string; page: number; pageSize: number }) {
@@ -201,20 +195,6 @@ async function fetchFilterGroups(params: { keyword: string; page: number; pageSi
 	})
 	if (res.success) return { list: res.data.list as RecycleFilterGroup[], total: res.data.total }
 	return { list: [], total: 0 }
-}
-
-function onFilterChange() {
-	currentPage.value = 1
-	fetchList()
-}
-function onResetFilter() {
-	filterKeyword.value = ''
-	filterGroupId.value = null
-	currentPage.value = 1
-	fetchList()
-}
-function onPageChange() {
-	fetchList()
 }
 
 // ── 行操作 ──
@@ -306,8 +286,6 @@ function reportBatchResult(res: BatchRes, verb: string) {
 	clearSelection()
 	fetchList()
 }
-
-onMounted(fetchList)
 </script>
 
 <style lang="scss" scoped>

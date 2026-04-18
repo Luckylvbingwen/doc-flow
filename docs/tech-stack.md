@@ -131,6 +131,7 @@
 - **实时**：`useWs` / `stores/ws`、WebSocket badge 推送
 - **通知**：`useNotify`（msgSuccess/msgError/msgConfirm/msgErrorDetail/msgAlert）
 - **页面骨架**：`ListPageShell` + `FilterBar` + `DataTable` + `EmptyState` + `BulkActionBar`
+- **列表页编排**：`useListPage<T, Q>()` — 分页/加载/筛选/Race condition 保护；页面只需传 `fetchFn` + `buildQuery`，可选 `resetFilters` / `immediate` / `defaultPageSize` / `onError`
 - **表单**：`Modal` / `DetailDrawer`
 - **选择器**：`MemberSelectorModal`（飞书风格）、`RemoteSelect`（远程搜索+滚动分页泛型）
 - **编辑器辅助**：`DocPreview`、`VersionCompareViewer`、`VersionSidebar`、`CommentThread`、`ApprovalChain`、`ApprovalDrawer`

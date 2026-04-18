@@ -195,6 +195,22 @@
   2. 30 天自动清理 cron
 - **测试**：18 条 Zod schema 单测（list / filter-groups / batch 的合法 / 非法 / 边界），全部通过
 
+### refactor: 抽取 useListPage composable + 重构三个现存列表页
+
+- **新增** `composables/useListPage.ts` — 泛型列表页分页/加载/刷新编排
+  - 状态：`page` / `pageSize` / `list` / `total` / `loading`
+  - 动作：`refresh` / `onFilterChange`（重置 page=1 + 刷新）/ `onPageChange`（保 page + 刷新）/ `onResetFilter`（调页面 `resetFilters` 回调 + 重置 + 刷新）
+  - 特性：Race condition 保护（请求自增序号，过时响应丢弃）、immediate 自动首次加载（可关）、defaultPageSize / onError 可定制
+  - 边界：不持有 filter ref（由页面声明，在 `buildQuery` 里注入）；不管 columns/slot/selection/行级 loading 等页面级关切
+- **认知统一**：auth 跳转冲刷 bug（cookie 跟 accessToken 15m 对齐）修正为**跟 refreshToken 7d 对齐**，SSR 只关心"会话是否存在"，accessToken 过期由 `useAuthFetch` 静默续命。同步更新 `CLAUDE.md` SSR 桥接条目
+- **重构三个页面**：
+  - `pages/logs.vue` — 去 ~35 行模板代码
+  - `pages/recycle-bin.vue` — 去 ~30 行模板代码
+  - `pages/notifications.vue` — 去 ~30 行模板代码 + 移除 `watch(onlyUnread)`，改 `el-segmented @change="onFilterChange"`
+- **连带修复** `components/DataTable.vue` `data` prop 从 `Record<string, unknown>[]` 放宽到 `Record<string, any>[]`，消除具体业务类型（LogItem/RecycleItem 等）直接传入时的类型不匹配
+- **测试**：新增 14 条 `useListPage` 单测（初始状态/默认值/immediate/成功/失败/异常/onError 自定义/筛选&分页&重置语义/Race condition/loading 生命周期），全部通过
+- **累计**：Test Files 15 passed，Tests 186 passed
+
 ---
 
 ## 待开发（按优先级排序）

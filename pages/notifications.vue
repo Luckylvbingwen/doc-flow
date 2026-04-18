@@ -26,7 +26,7 @@ v-if="unreadByTab(t.value) > 0" :value="unreadByTab(t.value) > 99 ? '99+' : unre
 				</el-tab-pane>
 			</el-tabs>
 
-			<el-segmented v-model="onlyUnread" :options="unreadOptions" size="small" />
+			<el-segmented v-model="onlyUnread" :options="unreadOptions" size="small" @change="onFilterChange" />
 		</div>
 
 		<div v-loading="loading" class="df-notifications-page__list">
@@ -34,17 +34,18 @@ v-if="unreadByTab(t.value) > 0" :value="unreadByTab(t.value) > 99 ? '99+' : unre
 			<NotificationCard v-for="item in list" :key="item.id" :item="item" @click="handleCardClick" />
 		</div>
 
-		<Pagination v-if="total > 0" v-model:page="page" v-model:page-size="pageSize" :total="total" @change="load" />
+		<Pagination
+v-if="total > 0" v-model:page="page" v-model:page-size="pageSize" :total="total"
+			@change="onPageChange" />
 	</section>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
 import { Check } from '@element-plus/icons-vue'
 import { fetchNotifications, fetchUnreadCount, markNotificationRead, markAllRead } from '~/api/notifications'
 import { resolveRoute } from '~/utils/notification-meta'
 import { useWsStore } from '~/stores/ws'
-import type { NotificationItem, NotificationCategory } from '~/types/notification'
+import type { NotificationItem, NotificationCategory, NotificationListQuery } from '~/types/notification'
 
 definePageMeta({
 	layout: 'prototype',
@@ -63,11 +64,6 @@ const tabs: Array<{ value: TabValue, label: string }> = [
 
 const tab = ref<TabValue>('all')
 const onlyUnread = ref<boolean>(false)
-const page = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
-const list = ref<NotificationItem[]>([])
-const loading = ref(false)
 const markingAll = ref(false)
 
 const unreadOptions = [
@@ -103,48 +99,37 @@ async function loadUnreadCount() {
 	} catch { /* 静默 */ }
 }
 
-async function load() {
-	loading.value = true
-	try {
-		const category: NotificationCategory | undefined = tab.value === 'all' ? undefined : (Number(tab.value) as NotificationCategory)
-		const res = await fetchNotifications({
-			category,
-			onlyUnread: onlyUnread.value,
-			page: page.value,
-			pageSize: pageSize.value,
-		})
-		if (res.success) {
-			list.value = res.data.list
-			total.value = res.data.total
-		} else {
-			list.value = []
-			total.value = 0
-			msgError(res.message || '加载通知失败')
-		}
-	} catch (e) {
-		msgError((e as Error)?.message || '加载通知失败')
-	} finally {
-		loading.value = false
-	}
-}
+const {
+	page,
+	pageSize,
+	list,
+	total,
+	loading,
+	refresh: load,
+	onFilterChange,
+	onPageChange,
+} = useListPage<NotificationItem, NotificationListQuery>({
+	fetchFn: fetchNotifications,
+	defaultPageSize: 20,
+	buildQuery: ({ page, pageSize }) => ({
+		category: tab.value === 'all' ? undefined : (Number(tab.value) as NotificationCategory),
+		onlyUnread: onlyUnread.value,
+		page,
+		pageSize,
+	}),
+	onError: (e) => msgError((e as Error)?.message || '加载通知失败'),
+})
 
 function onTabChange() {
-	page.value = 1
-	load()
+	onFilterChange()
 }
 
 async function handleRefresh() {
 	await Promise.all([loadUnreadCount(), load()])
 }
 
-watch(onlyUnread, () => {
-	page.value = 1
-	load()
-})
-
-onMounted(async () => {
-	await loadUnreadCount()
-	await load()
+onMounted(() => {
+	loadUnreadCount()
 })
 
 async function handleCardClick(item: NotificationItem) {
