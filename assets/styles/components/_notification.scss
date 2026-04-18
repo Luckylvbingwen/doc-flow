@@ -1,0 +1,228 @@
+// =============================================
+// 通知中心 — 铃铛 / Popover / 卡片 / 整页
+// =============================================
+
+// ─── 顶栏铃铛 ─────────────────────────────────────
+.df-notification-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--df-subtext);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+
+  &:hover {
+    background: var(--df-surface);
+    color: var(--df-text);
+  }
+
+  &__dot {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: var(--el-color-danger);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--df-panel);
+
+    &--wide {
+      min-width: 20px;
+    }
+  }
+}
+
+// ─── Popover ────────────────────────────────────
+.df-notification-popper.el-popper {
+  padding: 0 !important;
+  border: 1px solid var(--df-border);
+  box-shadow: 0 10px 32px rgba(15, 23, 42, 0.12);
+}
+
+.df-notification-popover {
+  display: flex;
+  flex-direction: column;
+  width: 380px;
+  height: 480px;
+
+  &__head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--df-border);
+  }
+
+  &__body {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  &__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-top: 1px solid var(--df-border);
+    background: var(--df-surface);
+  }
+}
+
+// ─── 卡片 ────────────────────────────────────────
+.df-notification-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--df-border);
+  background: transparent;
+  transition: background 0.15s;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &--clickable {
+    cursor: pointer;
+  }
+
+  &:hover {
+    background: var(--df-surface);
+  }
+
+  &--unread {
+    background: var(--df-primary-soft);
+
+    &:hover {
+      background: color-mix(in srgb, var(--df-primary-soft) 80%, #fff);
+    }
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+
+    &[data-color='primary'] {
+      color: var(--el-color-primary);
+      background: color-mix(in srgb, var(--el-color-primary) 14%, transparent);
+    }
+    &[data-color='success'] {
+      color: var(--el-color-success);
+      background: color-mix(in srgb, var(--el-color-success) 14%, transparent);
+    }
+    &[data-color='warning'] {
+      color: var(--el-color-warning);
+      background: color-mix(in srgb, var(--el-color-warning) 14%, transparent);
+    }
+    &[data-color='danger'] {
+      color: var(--el-color-danger);
+      background: color-mix(in srgb, var(--el-color-danger) 14%, transparent);
+    }
+    &[data-color='info'] {
+      color: var(--el-color-info);
+      background: color-mix(in srgb, var(--el-color-info) 14%, transparent);
+    }
+  }
+
+  &__body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--df-text);
+    word-break: break-word;
+  }
+
+  &--unread &__title {
+    font-weight: 500;
+  }
+
+  &__content {
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--df-subtext);
+    word-break: break-word;
+  }
+
+  &__time {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--df-subtext);
+  }
+
+  &__dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    margin-top: 12px;
+    border-radius: 50%;
+    background: var(--el-color-primary);
+  }
+}
+
+// ─── 整页 /notifications ──────────────────────────
+.df-notifications-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 12px 0;
+
+    .el-tabs {
+      flex: 1;
+    }
+
+    .el-tabs__header {
+      margin: 0;
+      border-bottom: 0;
+    }
+
+    // 去掉 el-tabs 底部灰线，仅保留切换时的蓝色指示条
+    .el-tabs__nav-wrap::after {
+      display: none;
+    }
+  }
+
+  &__list {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--df-panel);
+    border: 1px solid var(--df-border);
+    border-radius: 8px;
+  }
+}
+
+.df-notif-tab-badge {
+  margin-left: 6px;
+  vertical-align: 2px;
+
+  .el-badge__content {
+    top: 2px;
+    right: -4px;
+  }
+}

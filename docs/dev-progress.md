@@ -137,6 +137,40 @@
 
 ---
 
+## 2026-04-18
+
+### feat: 通知中心 A 阶段
+
+- **后端**
+  - 新增 4 接口：`GET /api/notifications`（分页）、`GET /api/notifications/unread-count`、`PUT /api/notifications/:id/read`、`PUT /api/notifications/read-all`（可按 category）
+  - 鉴权：接口不挂 `requirePermission`，仅以 `event.context.user.id` 过滤 `user_id`（用户只能读/改自己的通知）
+  - 新增 `server/utils/notify.ts` — `createNotification` / `createNotifications` helper（INSERT + WS 推 `badge` 未读数）；提取 `pushBadgeToUser` 为导出函数供读端 handler 复用
+  - 新增 `server/constants/notification-templates.ts` — M1-M24 强类型模板表，每项含 `category` / `msgCode` / `triggerModule` / `triggerPoint` / `build(params)`
+  - 新增 `server/schemas/notification.ts` — 列表 query + read-all body 校验
+  - WebSocket 复用 `'badge'` 消息类型，不新增 type
+- **前端**
+  - 新增 `NotificationBell`（顶栏入口，红角标 99+）+ `NotificationPopover`（380×480，未读/全部 segmented + 近 20 条 + 底部两按钮）+ `NotificationCard`（单条卡片，复用于 Popover 和整页）
+  - 重写 `pages/notifications.vue` — 4 Tab（全部/审批/系统/成员变更，带未读角标）+ 只看未读 segment + Pagination 分页
+  - 新增 `composables/useNotificationBadge.ts` — 对账逻辑（登录时 + WS 重连时各拉一次 `/unread-count`）
+  - `composables/useWs.ts` `open` 事件里动态 import 对账（避免 WS 基础设施硬依赖通知模块）
+  - `layouts/prototype.vue` 顶栏插入铃铛
+  - 新增 `utils/notification-meta.ts` — `NOTIFICATION_META[msgCode]` 映射 Element Plus 图标+语义色；`resolveRoute` 按 biz_type/biz_id 返回跳转路由
+  - 新增 `api/notifications.ts`、`types/notification.ts`
+- **样式**
+  - `assets/styles/components/_notification.scss`（被 `components.scss` `@forward`）
+  - `assets/styles/dark.scss` 追加暗黑适配（未读态用 color-mix 保持可辨识）
+- **数据**
+  - `doc_seed.sql` L 节从 3 条扩展到 45 条，覆盖 M1-M24 每种 ≥1 条
+- **规格依据**：PRD §6.8（站内通知中心）、§1284（通知推送延迟 < 5s）
+- **范围**：A 阶段 = 读端 + helper + 模板表；各业务模块触发点接入按 `feature-gap-checklist.md` 「七、通知触发点接入清单」纪律后续补
+- **双保险纪律**
+  - 代码模板表（`NOTIFICATION_TEMPLATES`）确保业务模块调用契约一致
+  - 文档清单表记录 M1-M24 各自归属模块与状态，防止遗漏
+- **延迟项**：`/docs/repo/[id].vue` 的 `?openSettings=approval` query 自动打开审批配置 Tab，待 repo 页整合 GroupSettingsModal 时一并实现
+- **测试**：13+3=16 条 schema 单测 + 11 条 meta 工具单测
+
+---
+
 ## 待开发（按优先级排序）
 
 | 优先级 | 模块 | 状态 |

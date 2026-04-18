@@ -368,6 +368,34 @@ html.dark {
     scrollbar-color: #475569 transparent;
   }
 
+  /* ── 通知中心暗黑 ── */
+  .df-notification-bell {
+    color: var(--df-subtext);
+
+    &:hover {
+      background: var(--df-surface);
+      color: var(--df-text);
+    }
+
+    &__dot {
+      box-shadow: 0 0 0 2px var(--df-panel);
+    }
+  }
+
+  .df-notification-card {
+    &--unread {
+      background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+
+      &:hover {
+        background: color-mix(
+          in srgb,
+          var(--el-color-primary) 18%,
+          transparent
+        );
+      }
+    }
+  }
+
   /* ---- Responsive overrides ---- */
   @media (max-width: 860px) {
     .pf-header {

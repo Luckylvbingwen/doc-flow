@@ -45,10 +45,10 @@
 
 ### 2.3 通知中心 (`pages/notifications.vue`)
 
-- [ ] 分类 tab（审批通知 / 系统通知 / 成员变更）
-- [ ] 未读计数 badge
-- [ ] 全部标为已读
-- [ ] 已读/未读视觉状态区分
+- [x] ~~分类 tab（审批通知 / 系统通知 / 成员变更）~~ ✅ 2026-04-18
+- [x] ~~未读计数 badge~~ ✅ 2026-04-18
+- [x] ~~全部标为已读~~ ✅ 2026-04-18
+- [x] ~~已读/未读视觉状态区分~~ ✅ 2026-04-18
 
 ### 2.4 回收站 (`pages/recycle-bin.vue`)
 
@@ -130,8 +130,48 @@
 - [ ] 上传新版本 API
 - [ ] 审批流 CRUD API
 - [ ] 文档 CRUD API
-- [ ] 通知 API
+- [x] ~~通知 API~~ ✅ 2026-04-18（4 接口已完成，见「七、通知触发点接入清单」）
 - [ ] 日志查询 API
+
+---
+
+## 七、通知触发点接入清单
+
+> M1-M24 各消息归属模块和触发点。开发对应业务模块时对照此表接入
+> `NOTIFICATION_TEMPLATES.Mx.build(...)`，接入后打 ✅ 并写完成日期。
+> 权威源：`server/constants/notification-templates.ts`
+
+| 消息 | 归属模块 | 触发点 | 状态 |
+|---|---|---|---|
+| M1 | approval-runtime | 文件提交审批 — 通知当前审批人 | ⏳ 待接入 |
+| M2 | approval-runtime | 审批流转下一级 — 通知下一级 | ⏳ 待接入 |
+| M3 | approval-runtime | 最后一级通过 — 通知提交人 | ⏳ 待接入 |
+| M4 | approval-runtime | 任一级驳回 — 通知提交人 | ⏳ 待接入 |
+| M5 | approval-runtime | 超时 24h 催办 — 通知该步审批人 | ⏳ 待接入 |
+| M6 | approval-runtime | 催办达上限 — 通知提交人 | ⏳ 待接入 |
+| M7 | approval-runtime | 提交人撤回 — 通知已参与审批人 | ⏳ 待接入 |
+| M8 | document-lifecycle | 新版本发布 — 通知归属人+编辑成员+管理员 | ⏳ 待接入 |
+| M9 | document-lifecycle | 管理员从组移除文件 — 通知归属人 | ⏳ 待接入 |
+| M10 | ownership-transfer | 发起归属人转移 — 通知新归属人 | ⏳ 待接入 |
+| M11 | ownership-transfer | 转移同意/拒绝/过期 — 通知发起人 | ⏳ 待接入 |
+| M12 | cross-move | 发起跨组移动 — 通知目标组负责人 | ⏳ 待接入 |
+| M13 | cross-move | 移动同意/拒绝/过期 — 通知发起人 | ⏳ 待接入 |
+| M14 | permission-request | 阅读权限申请 — 通知归属人 | ⏳ 待接入 |
+| M15 | permission-request | 编辑权限申请 — 通知归属人 | ⏳ 待接入 |
+| M16 | permission-request | 权限审批结果 — 通知申请人 | ⏳ 待接入 |
+| M17 | share | 分享文档 — 通知被分享人 | ⏳ 待接入 |
+| M18 | group-member | 被加入组 — 通知被添加成员 | ⏳ 待接入（组成员管理已有 API，B 阶段可一并补） |
+| M19 | group-member | 成员权限变更 — 通知被变更成员 | ⏳ 待接入（同上） |
+| M20 | group-member | 被移出组 — 通知被移出成员 | ⏳ 待接入（同上） |
+| M21 | role-assign | 管理员角色指派/撤销 | ⏳ 待接入 |
+| M22 | group-owner | 组负责人变更 | ⏳ 待接入 |
+| M23 | hr-handover | 员工离职交接 | ⏳ 待接入 |
+| M24 | approval-chain-change | 审批链成员因离职/调岗移除 | ⏳ 待接入 |
+
+**开发流程：** 做某业务模块前 → `grep "triggerModule: 'xxx'" server/constants/notification-templates.ts` 反查 M 码 → 依模板接入 → 本表打 ✅ + 日期。
+
+**延迟项**：
+- `/docs/repo/[id].vue` 页的 `?openSettings=approval` query 自动打开组设置审批配置 Tab，因 repo 页当前未集成 GroupSettingsModal，推迟到 repo 页整合时一并实现。通知中心 M24 卡片点击会跳到 `/docs/repo/:id?openSettings=approval`，目前只跳转不自动开弹窗。
 
 ---
 
@@ -163,6 +203,9 @@
 | GroupMemberPanel（成员列表 / 行级权限下拉 / 移除 / 组负责人锁定） | 2026-04-17 |
 | GroupSettingsModal（组设置弹窗，三 Tab：审批流占位 / 成员管理 / 基本设置） | 2026-04-17 |
 | GroupApprovalPanel（审批流配置面板：开关 / 模式 / 审批人 / 链路预览） | 2026-04-17 |
+| NotificationBell（顶栏铃铛 + 红角标 99+ + Popover 触发） | 2026-04-18 |
+| NotificationPopover（下拉面板 380×480，未读/全部切换 + 底部全部已读/查看全部） | 2026-04-18 |
+| NotificationCard（单条卡片，未读态底色 + 点击跳转） | 2026-04-18 |
 
 ### 工具 / 后端
 
@@ -180,6 +223,7 @@
 | 组成员管理 A 阶段（5 接口：成员 CRUD + 部门用户树 + 权限扩展） | 2026-04-17 |
 | 组审批模板 A 阶段（2 接口 + 组创建初始化） | 2026-04-17 |
 | 操作日志 A 阶段（14 类聚合 / `GET /api/logs` / 筛选分页 / 埋点纪律） | 2026-04-17 |
+| 通知中心 A 阶段（4 接口 / createNotification helper / NOTIFICATION_TEMPLATES M1-M24 模板表 / WS badge 对账） | 2026-04-18 |
 
 ### 第三方库
 

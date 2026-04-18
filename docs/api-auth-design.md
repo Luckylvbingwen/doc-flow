@@ -146,6 +146,15 @@
 | --- | --- | --- | --- | --- |
 | GET | /api/logs | 是 | log:read | 操作日志列表（分页，支持按类型/关键词/日期范围筛选） |
 
+### 通知中心 (notifications)
+
+| 方法 | 路径 | 鉴权 | 权限/条件 | 说明 |
+| --- | --- | --- | --- | --- |
+| GET | /api/notifications | 是 | 仅读自己 | 通知列表（分页，支持分类/只看未读筛选） |
+| GET | /api/notifications/unread-count | 是 | 仅读自己 | 未读数（总数 + 按分类） |
+| PUT | /api/notifications/:id/read | 是 | 仅 owner | 标记单条已读 |
+| PUT | /api/notifications/read-all | 是 | 仅当前用户 | 全部标为已读（可按 category） |
+
 ### 定时任务
 
 | 任务名 | cron | 说明 |
@@ -889,6 +898,112 @@
 - 埋点纪律：一事件一日志；系统自动触发的副作用独立成条，`actor_user_id = 0`，`detail_json.triggeredBy` + `sourceLogId` 溯源因果（如审批通过后自动发布 = `approval.pass` + `doc.publish` 两条）
 
 **错误码：** PERMISSION_DENIED, INVALID_PARAMS
+
+---
+
+### 3.46 GET /api/notifications
+
+**路径**：`GET /api/notifications`
+**鉴权**：JWT（不挂 `requirePermission`，仅通过 `event.context.user.id` 过滤，用户只能读自己的通知）
+
+**Query**：
+| 参数 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| category | number (1\|2\|3) | 否 | 1=审批通知 / 2=系统通知 / 3=成员变更；不传=全部 |
+| onlyUnread | boolean | 否 | 默认 false；true 只返回未读 |
+| page | number | 否 | 默认 1 |
+| pageSize | number | 否 | 默认 20，上限 50 |
+
+**响应**（`ApiResponse<NotificationListResp>`）：
+```json
+{
+  "success": true,
+  "code": "OK",
+  "message": "OK",
+  "data": {
+    "list": [
+      {
+        "id": "70001",
+        "category": 1,
+        "msgCode": "M1",
+        "title": "王建国 提交了文件《xxx》的审批，请处理",
+        "content": null,
+        "bizType": "document",
+        "bizId": "50001",
+        "read": false,
+        "readAt": null,
+        "createdAt": 1713600000000
+      }
+    ],
+    "total": 45,
+    "page": 1,
+    "pageSize": 20
+  }
+}
+```
+
+---
+
+### 3.47 GET /api/notifications/unread-count
+
+**路径**：`GET /api/notifications/unread-count`
+**鉴权**：同上
+
+**响应**：
+```json
+{
+  "success": true,
+  "code": "OK",
+  "message": "OK",
+  "data": {
+    "total": 17,
+    "byCategory": { "1": 5, "2": 8, "3": 4 }
+  }
+}
+```
+
+---
+
+### 3.48 PUT /api/notifications/:id/read
+
+**路径**：`PUT /api/notifications/:id/read`
+**鉴权**：JWT，仅 owner（非 owner 返回 404）
+
+**行为**：
+- 已读幂等（已有 `read_at` 不覆盖）
+- 操作后推 WS `'badge'` 消息更新未读数
+
+**响应**：
+```json
+{ "success": true, "code": "OK", "message": "OK", "data": {} }
+```
+
+**错误码**：
+- 400 `BAD_REQUEST` — ID 非纯数字
+- 404 `NOT_FOUND` — 通知不存在或非本人拥有
+
+---
+
+### 3.49 PUT /api/notifications/read-all
+
+**路径**：`PUT /api/notifications/read-all`
+**鉴权**：JWT，仅影响当前用户
+
+**Body**：
+```json
+{ "category": 1 }
+```
+- `category` 可选，不传=全部分类未读
+
+**响应**：
+```json
+{
+  "success": true,
+  "code": "OK",
+  "message": "OK",
+  "data": { "updated": 5 }
+}
+```
 
 ---
 

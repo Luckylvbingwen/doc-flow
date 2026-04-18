@@ -60,6 +60,10 @@ class="pf-dark-toggle" type="button" :aria-label="appStore.darkMode ? '切换亮
 						</el-icon>
 					</button>
 
+					<ClientOnly>
+						<NotificationBell v-if="authStore.isAuthenticated" />
+					</ClientOnly>
+
 					<!-- <button
             class="pf-locale-toggle"
             type="button"

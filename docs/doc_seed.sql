@@ -234,15 +234,69 @@ INSERT INTO doc_approval_instance_nodes (
 ON DUPLICATE KEY UPDATE action_status = VALUES(action_status), updated_at = NOW(3);
 
 -- =========================================================
--- L. 通知样例
+-- L. 站内通知样例（§6.8 / M1-M24 每种 ≥1 条，共 45 条）
+--    user_id: 10001-10006（见 A 节）
+--    biz_id:  document=50001..50004 / group=40001..40004
+--    时间分布近 7 天；约 1/3 未读（read_at IS NULL）
 -- =========================================================
 INSERT INTO doc_notifications (
   id, user_id, category, msg_code, title, content, biz_type, biz_id, read_at, created_at
 ) VALUES
-  (70001, 10004, 1, 'M1', '待审批提醒',    '文档编辑 提交了文件《研发提测流程规范》的审批，请处理',                1, 62001, NULL,    NOW(3)),
-  (70002, 10005, 1, 'M2', '审批流转通知',  '文件《研发提测流程规范》的审批已流转到您（第 2/2 级），请处理',        1, 62001, NULL,    NOW(3)),
-  (70003, 10003, 2, 'M3', '审批通过通知',  '您提交的文件《Alpha项目-技术方案》已审批通过并发布',                   1, 62002, NOW(3), NOW(3))
-ON DUPLICATE KEY UPDATE title = VALUES(title);
+  -- ---- 审批类 M1-M7 ----
+  (70001, 10004, 1, 'M1',  '文档编辑 提交了文件《研发提测流程规范》的审批，请处理',                          NULL,                             'document', 50002, NULL,                              DATE_SUB(NOW(3), INTERVAL 20 MINUTE)),
+  (70002, 10005, 1, 'M2',  '文件《研发提测流程规范》的审批已流转到您（第 2/2 级），请处理',                   NULL,                             'document', 50002, NULL,                              DATE_SUB(NOW(3), INTERVAL 2 HOUR)),
+  (70003, 10003, 1, 'M3',  '您提交的文件《Alpha项目-技术方案》已审批通过并发布',                            NULL,                             'document', 50001, DATE_SUB(NOW(3), INTERVAL 1 DAY),   DATE_SUB(NOW(3), INTERVAL 1 DAY)),
+  (70004, 10003, 1, 'M4',  '您提交的文件《研发提测流程规范》被驳回，请补充后重新提交',                       '数据不完整，缺少性能对比数据',    'document', 50002, DATE_SUB(NOW(3), INTERVAL 2 DAY),   DATE_SUB(NOW(3), INTERVAL 2 DAY)),
+  (70005, 10004, 1, 'M5',  '文件《研发提测流程规范》的审批已超时 48 小时，请尽快处理',                       NULL,                             'document', 50002, NULL,                              DATE_SUB(NOW(3), INTERVAL 6 HOUR)),
+  (70006, 10003, 1, 'M6',  '文件《Alpha项目-技术方案》的审批催办已达上限（3 次），您可撤回重新提交',         NULL,                             'document', 50001, DATE_SUB(NOW(3), INTERVAL 3 DAY),   DATE_SUB(NOW(3), INTERVAL 3 DAY)),
+  (70007, 10004, 1, 'M7',  '文档编辑 已撤回文件《研发提测流程规范》的审批',                                  NULL,                             'document', 50002, DATE_SUB(NOW(3), INTERVAL 4 DAY),   DATE_SUB(NOW(3), INTERVAL 4 DAY)),
+  -- ---- 文档生命周期 M8-M9 ----
+  (70008, 10003, 2, 'M8',  '文件《Alpha项目-技术方案》已发布新版本 v1.1',                                    NULL,                             'document', 50001, NULL,                              DATE_SUB(NOW(3), INTERVAL 50 MINUTE)),
+  (70009, 10003, 2, 'M9',  '管理员 系统管理员 已将文件《未命名文档》从组《产品资料组》中移除，文档已退回您的个人中心', NULL,                   'document', 50003, DATE_SUB(NOW(3), INTERVAL 2 DAY),   DATE_SUB(NOW(3), INTERVAL 2 DAY)),
+  -- ---- 归属人转移 M10-M11 ----
+  (70010, 10002, 2, 'M10', '系统管理员 希望将文件《Alpha项目-技术方案》的归属人转移给您，请处理',             NULL,                             NULL,       NULL,  NULL,                              DATE_SUB(NOW(3), INTERVAL 3 HOUR)),
+  (70011, 10001, 2, 'M11', '文件《Alpha项目-技术方案》的归属人转移已同意',                                   NULL,                             NULL,       NULL,  DATE_SUB(NOW(3), INTERVAL 1 DAY),   DATE_SUB(NOW(3), INTERVAL 1 DAY)),
+  -- ---- 跨组移动 M12-M13 ----
+  (70012, 10002, 2, 'M12', '文档编辑 申请将文件《Alpha项目-技术方案》从组《Alpha项目组》移动到您负责的组《研发规范组》', NULL,                NULL,       NULL,  NULL,                              DATE_SUB(NOW(3), INTERVAL 4 HOUR)),
+  (70013, 10003, 2, 'M13', '文件《Alpha项目-技术方案》的跨组移动申请已同意',                                  NULL,                             NULL,       NULL,  DATE_SUB(NOW(3), INTERVAL 2 DAY),   DATE_SUB(NOW(3), INTERVAL 2 DAY)),
+  -- ---- 权限申请 M14-M16 ----
+  (70014, 10003, 2, 'M14', '普通成员 申请阅读文件《Alpha项目-技术方案》',                                     NULL,                             NULL,       NULL,  NULL,                              DATE_SUB(NOW(3), INTERVAL 5 HOUR)),
+  (70015, 10003, 2, 'M15', '普通成员 申请文件《Alpha项目-技术方案》的编辑权限',                               '需要补充技术细节',                NULL,       NULL,  NULL,                              DATE_SUB(NOW(3), INTERVAL 7 HOUR)),
+  (70016, 10006, 2, 'M16', '您对文件《Alpha项目-技术方案》的编辑权限申请已同意',                              NULL,                             NULL,       NULL,  DATE_SUB(NOW(3), INTERVAL 1 DAY),   DATE_SUB(NOW(3), INTERVAL 1 DAY)),
+  -- ---- 分享 M17 ----
+  (70017, 10006, 2, 'M17', '文档编辑 向您分享了文件《Alpha项目-技术方案》（可编辑）',                         NULL,                             'document', 50001, NULL,                              DATE_SUB(NOW(3), INTERVAL 30 MINUTE)),
+  -- ---- 审批链变更 M24 ----
+  (70018, 10002, 2, 'M24', '成员 审批人A 已从组《研发规范组》的审批链中移除（离职），请检查审批配置',           NULL,                             'group_approval', 40002, NULL,                        DATE_SUB(NOW(3), INTERVAL 12 HOUR)),
+  -- ---- 成员变更 M18-M23 ----
+  (70019, 10006, 3, 'M18', '您已被添加为组《研发规范组》的成员（权限：可编辑）',                              NULL,                             'group',    40002, DATE_SUB(NOW(3), INTERVAL 2 DAY),   DATE_SUB(NOW(3), INTERVAL 2 DAY)),
+  (70020, 10006, 3, 'M19', '您在组《Alpha项目组》的权限已从「可编辑」变更为「管理员」',                       NULL,                             NULL,       NULL,  DATE_SUB(NOW(3), INTERVAL 3 DAY),   DATE_SUB(NOW(3), INTERVAL 3 DAY)),
+  (70021, 10006, 3, 'M20', '您已被移出组《产品资料组》',                                                       NULL,                             NULL,       NULL,  DATE_SUB(NOW(3), INTERVAL 5 DAY),   DATE_SUB(NOW(3), INTERVAL 5 DAY)),
+  (70022, 10002, 3, 'M21', '您已被部门负责人 系统管理员 指派为部门管理员（研发中心）',                        NULL,                             NULL,       NULL,  DATE_SUB(NOW(3), INTERVAL 4 DAY),   DATE_SUB(NOW(3), INTERVAL 4 DAY)),
+  (70023, 10003, 3, 'M22', '组《Alpha项目组》的负责人已由 文档编辑 变更为 审批人A',                           NULL,                             'group',    40004, DATE_SUB(NOW(3), INTERVAL 3 DAY),   DATE_SUB(NOW(3), INTERVAL 3 DAY)),
+  (70024, 10001, 3, 'M23', '员工 普通成员 已离职，其负责的组《产品资料组》已交接给 文档编辑，请确认',          NULL,                             'group',    40003, NULL,                              DATE_SUB(NOW(3), INTERVAL 8 HOUR)),
+  -- ---- 补充样本（让每用户都有若干条） ----
+  (70025, 10006, 1, 'M1',  '文档负责人 提交了文件《Alpha项目-技术方案》的审批，请处理',                       NULL,                             'document', 50001, NULL,                              DATE_SUB(NOW(3), INTERVAL 40 MINUTE)),
+  (70026, 10006, 1, 'M3',  '您提交的文件《研发提测流程规范》已审批通过并发布',                                NULL,                             'document', 50002, DATE_SUB(NOW(3), INTERVAL 6 DAY),   DATE_SUB(NOW(3), INTERVAL 6 DAY)),
+  (70027, 10002, 1, 'M4',  '您提交的文件《Alpha项目-技术方案》被驳回，请补充后重新提交',                      '缺少容量规划章节',                'document', 50001, NULL,                              DATE_SUB(NOW(3), INTERVAL 1 HOUR)),
+  (70028, 10001, 2, 'M8',  '文件《研发提测流程规范》已发布新版本 v2.0',                                        NULL,                             'document', 50002, DATE_SUB(NOW(3), INTERVAL 5 DAY),   DATE_SUB(NOW(3), INTERVAL 5 DAY)),
+  (70029, 10002, 2, 'M17', '系统管理员 向您分享了文件《Alpha项目-技术方案》（只读）',                         NULL,                             'document', 50001, DATE_SUB(NOW(3), INTERVAL 2 DAY),   DATE_SUB(NOW(3), INTERVAL 2 DAY)),
+  (70030, 10001, 3, 'M18', '您已被添加为组《公司文档中心》的成员（权限：管理员）',                            NULL,                             'group',    40001, DATE_SUB(NOW(3), INTERVAL 7 DAY),   DATE_SUB(NOW(3), INTERVAL 7 DAY)),
+  (70031, 10002, 3, 'M19', '您在组《研发规范组》的权限已从「可编辑」变更为「管理员」',                         NULL,                             NULL,       NULL,  DATE_SUB(NOW(3), INTERVAL 4 DAY),   DATE_SUB(NOW(3), INTERVAL 4 DAY)),
+  (70032, 10001, 3, 'M22', '组《产品资料组》的负责人已由 普通成员 变更为 系统管理员',                          NULL,                             'group',    40003, DATE_SUB(NOW(3), INTERVAL 5 DAY),   DATE_SUB(NOW(3), INTERVAL 5 DAY)),
+  (70033, 10003, 2, 'M8',  '文件《Alpha项目-技术方案》已发布新版本 v1.2',                                      NULL,                             'document', 50001, NULL,                              DATE_SUB(NOW(3), INTERVAL 10 MINUTE)),
+  (70034, 10003, 1, 'M5',  '文件《Alpha项目-技术方案》的审批已超时 24 小时，请尽快处理',                       NULL,                             'document', 50001, NULL,                              DATE_SUB(NOW(3), INTERVAL 3 HOUR)),
+  (70035, 10002, 2, 'M14', '普通成员 申请阅读文件《研发提测流程规范》',                                         NULL,                             NULL,       NULL,  NULL,                              DATE_SUB(NOW(3), INTERVAL 9 HOUR)),
+  (70036, 10001, 2, 'M11', '文件《研发提测流程规范》的归属人转移已拒绝',                                        NULL,                             NULL,       NULL,  DATE_SUB(NOW(3), INTERVAL 1 DAY),   DATE_SUB(NOW(3), INTERVAL 1 DAY)),
+  (70037, 10002, 2, 'M13', '文件《Alpha项目-技术方案》的跨组移动申请已过期',                                    NULL,                             NULL,       NULL,  DATE_SUB(NOW(3), INTERVAL 3 DAY),   DATE_SUB(NOW(3), INTERVAL 3 DAY)),
+  (70038, 10001, 2, 'M16', '您对文件《研发提测流程规范》的阅读权限申请已拒绝',                                  NULL,                             NULL,       NULL,  DATE_SUB(NOW(3), INTERVAL 6 DAY),   DATE_SUB(NOW(3), INTERVAL 6 DAY)),
+  (70039, 10002, 3, 'M20', '您已被移出组《临时协作组》',                                                        NULL,                             NULL,       NULL,  DATE_SUB(NOW(3), INTERVAL 4 DAY),   DATE_SUB(NOW(3), INTERVAL 4 DAY)),
+  (70040, 10001, 3, 'M21', '您的系统管理员身份已被撤销',                                                        NULL,                             NULL,       NULL,  DATE_SUB(NOW(3), INTERVAL 10 DAY),  DATE_SUB(NOW(3), INTERVAL 10 DAY)),
+  (70041, 10002, 3, 'M23', '员工 审批人B 已离职，其负责的组《研发规范组》已交接给 文档负责人，请确认',           NULL,                             'group',    40002, NULL,                              DATE_SUB(NOW(3), INTERVAL 2 HOUR)),
+  (70042, 10002, 1, 'M6',  '文件《研发提测流程规范》的审批催办已达上限（3 次），您可撤回重新提交',              NULL,                             'document', 50002, DATE_SUB(NOW(3), INTERVAL 2 DAY),   DATE_SUB(NOW(3), INTERVAL 2 DAY)),
+  (70043, 10006, 1, 'M7',  '系统管理员 已撤回文件《Alpha项目-技术方案》的审批',                                NULL,                             'document', 50001, DATE_SUB(NOW(3), INTERVAL 5 DAY),   DATE_SUB(NOW(3), INTERVAL 5 DAY)),
+  (70044, 10001, 2, 'M9',  '管理员 文档负责人 已将文件《未命名文档》从组《产品资料组》中移除，文档已退回您的个人中心', NULL,                     'document', 50003, DATE_SUB(NOW(3), INTERVAL 6 DAY),   DATE_SUB(NOW(3), INTERVAL 6 DAY)),
+  (70045, 10002, 2, 'M24', '成员 审批人B 已从组《研发规范组》的审批链中移除（调岗），请检查审批配置',           NULL,                             'group_approval', 40002, DATE_SUB(NOW(3), INTERVAL 1 DAY), DATE_SUB(NOW(3), INTERVAL 1 DAY))
+ON DUPLICATE KEY UPDATE title = VALUES(title), category = VALUES(category), msg_code = VALUES(msg_code), content = VALUES(content), biz_type = VALUES(biz_type), biz_id = VALUES(biz_id), read_at = VALUES(read_at);
 
 -- =========================================================
 -- M. 操作日志样例

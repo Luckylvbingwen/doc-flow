@@ -76,6 +76,8 @@ function connectWs(token: string) {
 		wsStore.setConnected(true)
 		reconnectAttempts = 0
 		startPing()
+		// 重连成功后对账未读数（动态 import 避免 useWs 强耦合通知模块）
+		import('~/composables/useNotificationBadge').then(m => m.reconcileNotificationBadge())
 	})
 
 	ws.addEventListener('message', handleMessage)
