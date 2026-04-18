@@ -124,7 +124,11 @@ INSERT INTO sys_permissions (code, name, module, description, sort_order) VALUES
 ('notification:read',   '查看通知', 'notification', '查看站内通知', 800),
 ('notification:manage', '管理通知', 'notification', '管理通知策略', 801),
 -- 系统
-('system:config', '系统配置', 'system', '修改系统级配置', 900);
+('system:config', '系统配置', 'system', '修改系统级配置', 900),
+-- 回收站
+('recycle:read',    '查看回收站', 'recycle', '查看回收站列表',       1000),
+('recycle:restore', '恢复文件',   'recycle', '从回收站恢复文件',     1001),
+('recycle:delete',  '永久删除',   'recycle', '从回收站永久删除文件', 1002);
 
 -- ── 角色种子（§4.1 / §6.9）──
 INSERT INTO sys_roles (code, name, description, is_system) VALUES
@@ -151,7 +155,8 @@ WHERE code IN (
 	'group:read','group:create','group:update','group:delete','group:member',
 	'approval:read','approval:process','approval:config',
 	'log:read',
-	'notification:read'
+	'notification:read',
+	'recycle:read','recycle:restore','recycle:delete'
 );
 
 -- ── dept_head → 与 company_admin 对称 + 用户查看 ──
@@ -166,7 +171,8 @@ WHERE code IN (
 	'group:read','group:create','group:update','group:delete','group:member',
 	'approval:read','approval:process','approval:config',
 	'log:read',
-	'notification:read'
+	'notification:read',
+	'recycle:read','recycle:restore','recycle:delete'
 );
 
 -- ── pl_head → 与 dept_head 对称 ──
@@ -181,7 +187,8 @@ WHERE code IN (
 	'group:read','group:create','group:update','group:delete','group:member',
 	'approval:read','approval:process','approval:config',
 	'log:read',
-	'notification:read'
+	'notification:read',
+	'recycle:read','recycle:restore','recycle:delete'
 );
 
 SET FOREIGN_KEY_CHECKS = 1;

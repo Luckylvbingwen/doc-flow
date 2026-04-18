@@ -133,18 +133,30 @@ ON DUPLICATE KEY UPDATE
 -- =========================================================
 INSERT INTO doc_documents (
   id, group_id, owner_user_id, title, ext, status, source_doc_id, current_version_id,
+  deleted_at_real, deleted_by_user_id,
   created_by, updated_by, created_at, updated_at, deleted_at
 ) VALUES
   -- 已发布文档
-  (50001, 40004, 10003, 'Alpha项目-技术方案',  'pdf',  4, NULL, 51002, 10003, 10003, NOW(3), NOW(3), NULL),
+  (50001, 40004, 10003, 'Alpha项目-技术方案',   'pdf',  4, NULL,  51002, NULL,                              NULL,  10003, 10003, NOW(3), NOW(3), NULL),
   -- 审批中文档
-  (50002, 40002, 10003, '研发提测流程规范',     'docx', 3, NULL, 51003, 10003, 10003, NOW(3), NOW(3), NULL),
+  (50002, 40002, 10003, '研发提测流程规范',      'docx', 3, NULL,  51003, NULL,                              NULL,  10003, 10003, NOW(3), NOW(3), NULL),
   -- 个人草稿（无 group）
-  (50003, NULL,  10003, '未命名文档',           'md',   1, NULL, NULL,  10003, NULL,  NOW(3), NOW(3), NULL),
+  (50003, NULL,  10003, '未命名文档',            'md',   1, NULL,  NULL,  NULL,                              NULL,  10003, NULL,  NOW(3), NOW(3), NULL),
   -- 编辑副本（关联源文档 50001）
-  (50004, 40004, 10003, 'Alpha项目-技术方案',  'pdf',  2, 50001, NULL,  10003, 10003, NOW(3), NOW(3), NULL)
+  (50004, 40004, 10003, 'Alpha项目-技术方案',   'pdf',  2, 50001, NULL,  NULL,                              NULL,  10003, 10003, NOW(3), NOW(3), NULL),
+  -- 回收站样例（status=6，不同组/删除人/时间）
+  (50005, 40002, 10003, '[已删]研发规范过期版', 'pdf',  6, NULL,  51004, DATE_SUB(NOW(3), INTERVAL 3 DAY),  10002, 10003, 10002, NOW(3), NOW(3), NULL),
+  (50006, 40004, 10003, '[已删]Alpha方案草案',  'docx', 6, NULL,  51006, DATE_SUB(NOW(3), INTERVAL 2 DAY),  10003, 10003, 10003, NOW(3), NOW(3), NULL),
+  (50007, 40003, 10003, '[已删]竞品调研-旧版',  'md',   6, NULL,  51007, DATE_SUB(NOW(3), INTERVAL 7 DAY),  10003, 10003, 10003, NOW(3), NOW(3), NULL),
+  (50008, 40002, 10006, '[已删]线上问题汇总',   'xlsx', 6, NULL,  51008, DATE_SUB(NOW(3), INTERVAL 1 DAY),  10006, 10006, 10006, NOW(3), NOW(3), NULL),
+  (50009, 40001, 10001, '[已删]公司制度-v0.1',  'pdf',  6, NULL,  51009, DATE_SUB(NOW(3), INTERVAL 15 DAY), 10001, 10001, 10001, NOW(3), NOW(3), NULL)
 ON DUPLICATE KEY UPDATE
-  status = VALUES(status), owner_user_id = VALUES(owner_user_id), updated_at = NOW(3);
+  status             = VALUES(status),
+  owner_user_id      = VALUES(owner_user_id),
+  deleted_at_real    = VALUES(deleted_at_real),
+  deleted_by_user_id = VALUES(deleted_by_user_id),
+  current_version_id = VALUES(current_version_id),
+  updated_at         = NOW(3);
 
 -- =========================================================
 -- G. 文档版本
@@ -160,9 +172,25 @@ INSERT INTO doc_document_versions (
    'sha256_demo_alpha_v1_1', 1, JSON_OBJECT('channel', 'web'), '补充架构图', 10003, NOW(3), NOW(3), NOW(3), NULL),
   (51003, 50002, 'v1.0', 'docs/rd-process-v1.0.docx', 'docflow-local', 145890,
    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-   'sha256_demo_rd_v1', 1, JSON_OBJECT('channel', 'web'), '提测流程初版', 10003, NULL, NOW(3), NOW(3), NULL)
+   'sha256_demo_rd_v1', 1, JSON_OBJECT('channel', 'web'), '提测流程初版', 10003, NULL, NOW(3), NOW(3), NULL),
+  -- 回收站样例版本
+  (51004, 50005, 'v1.0', 'docs/deleted/rd-guide-v1.pdf',     'docflow-local',  512000, 'application/pdf',
+   'sha256_recycle_50005_v1', 1, JSON_OBJECT('channel', 'web'), '初版',       10002, DATE_SUB(NOW(3), INTERVAL 30 DAY), NOW(3), NOW(3), NULL),
+  (51005, 50006, 'v1.0', 'docs/deleted/alpha-draft-v1.docx', 'docflow-local',  128000,
+   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+   'sha256_recycle_50006_v1', 1, JSON_OBJECT('channel', 'web'), '草案',       10003, DATE_SUB(NOW(3), INTERVAL 20 DAY), NOW(3), NOW(3), NULL),
+  (51006, 50006, 'v2.0', 'docs/deleted/alpha-draft-v2.docx', 'docflow-local',  160000,
+   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+   'sha256_recycle_50006_v2', 1, JSON_OBJECT('channel', 'web'), '修订',       10003, DATE_SUB(NOW(3), INTERVAL 10 DAY), NOW(3), NOW(3), NULL),
+  (51007, 50007, 'v1.0', 'docs/deleted/competitor-v1.md',    'docflow-local',    8192, 'text/markdown',
+   'sha256_recycle_50007_v1', 1, JSON_OBJECT('channel', 'web'), '初版',       10003, DATE_SUB(NOW(3), INTERVAL 40 DAY), NOW(3), NOW(3), NULL),
+  (51008, 50008, 'v1.0', 'docs/deleted/issue-log-v1.xlsx',   'docflow-local', 2048000,
+   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+   'sha256_recycle_50008_v1', 1, JSON_OBJECT('channel', 'web'), '第一周汇总', 10006, DATE_SUB(NOW(3), INTERVAL 5 DAY),  NOW(3), NOW(3), NULL),
+  (51009, 50009, 'v0.1', 'docs/deleted/policy-v0.1.pdf',     'docflow-local', 1048576, 'application/pdf',
+   'sha256_recycle_50009_v1', 1, JSON_OBJECT('channel', 'web'), '早期稿',     10001, DATE_SUB(NOW(3), INTERVAL 60 DAY), NOW(3), NOW(3), NULL)
 ON DUPLICATE KEY UPDATE
-  version_no = VALUES(version_no), updated_at = NOW(3);
+  version_no = VALUES(version_no), file_size = VALUES(file_size), updated_at = NOW(3);
 
 -- =========================================================
 -- H. 文档级权限（permission: 1可编辑 2可阅读）

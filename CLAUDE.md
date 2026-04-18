@@ -59,7 +59,7 @@ server/
 ### 认证与权限 (RBAC)
 
 - **双令牌 JWT**: accessToken (15m) + refreshToken (7d)，刷新令牌存 Redis blocklist
-- **SSR 桥接**: `docflow_auth_flag` cookie 用于 SSR 阶段判断登录状态，敏感数据存 localStorage
+- **SSR 桥接**: `docflow_auth_flag` cookie 用于 SSR 阶段判断登录状态，敏感数据存 localStorage；cookie 有效期**跟随 refreshToken（7d）**，不跟 accessToken（15m），accessToken 过期由 `useAuthFetch` 静默续命，SSR 不参与
 - **权限模型**: 角色(Role) → 权限(Permission) 映射，前端通过 `useAuth()` 的 `can()` / `hasRole()` 判断
 - **v-auth 指令**: 模板中 `v-auth="'doc:create'"` 控制元素显示
 - **服务端**: `requirePermission(event, 'code')` 校验接口权限
@@ -127,9 +127,14 @@ SQL 补丁 → server/api/ Handler → 鉴权白名单(可选) → types/ 类型
 
 ### 数据库变更
 
-- 数据库补丁以 SQL 文件交付（放在 `docs/` 目录），**不使用 Prisma migration**
-- 执行完 SQL 后同步更新 `prisma/schema.prisma` 保持模型一致
-- 初始化 SQL: `docs/doc.sql`（建表）、`docs/doc_seed.sql`（种子数据）
+- 数据库补丁以 SQL 文件交付（`docs/patch-NNN-<topic>.sql`，NNN 按序递增），**不使用 Prisma migration**
+- **四地同步纪律**：每个 patch 落地后，必须把新增字段 / 索引 / 外键 / 权限码 / 种子回写到对应的全量文件：
+  - `docs/doc.sql` — 表结构类 DDL 改动（ALTER 对应的列、索引、FK 加进 `CREATE TABLE` 定义）
+  - `docs/rbac.sql` — 新权限码 + 角色授权
+  - `docs/doc_seed.sql` — 新种子数据
+  - `prisma/schema.prisma` — 字段 + 索引 + 关系（含反向关系）
+- patch 必须**可重入**：DDL 用 `information_schema` 检查字段存在，DML 用 `ON DUPLICATE KEY UPDATE` / `INSERT IGNORE`
+- 初始化流程：`doc.sql` → `rbac.sql` → `doc_seed.sql`（新建库），已有库追加执行对应 patch
 
 ### 类型与常量
 

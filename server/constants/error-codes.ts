@@ -93,3 +93,13 @@ export const MEMBER_SELF_REMOVE = 'MEMBER_SELF_REMOVE'
 export const APPROVAL_APPROVERS_REQUIRED = 'APPROVAL_APPROVERS_REQUIRED'
 /** 审批人用户不存在或已停用 (400) */
 export const APPROVAL_INVALID_APPROVER = 'APPROVAL_INVALID_APPROVER'
+
+// ─── 回收站 ───
+/** 回收站项不存在或已被永久删除 (404) */
+export const RECYCLE_NOT_FOUND = 'RECYCLE_NOT_FOUND'
+/** 目标文档未处于已删除状态，不可恢复 (400) */
+export const RECYCLE_NOT_DELETED = 'RECYCLE_NOT_DELETED'
+/** 原组已被删除，无法恢复到原组 (400) */
+export const RECYCLE_GROUP_MISSING = 'RECYCLE_GROUP_MISSING'
+/** 恢复操作已过期（超 30 天） (400) */
+export const RECYCLE_EXPIRED = 'RECYCLE_EXPIRED'

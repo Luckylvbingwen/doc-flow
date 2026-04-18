@@ -17,6 +17,7 @@
 | ApprovalChain | ~~审批流程节点可视化（发起→审批人→…→完成）~~ ✅ 已完成 | ~~approvals、file/[id]~~ |
 | CommentThread | ~~评论线程（头像+内容+时间+回复）~~ ✅ 已完成 | ~~file/[id]~~ |
 | ActivityFilterBar | 日志筛选条（搜索+时间范围+操作类型 chips） | logs |
+| RemoteSelect | ~~远程搜索 + 滚动分页下拉~~ ✅ 2026-04-18 | 回收站原仓库筛选、未来成员选择 |
 | MemberPicker | ~~成员选择器（飞书风格 / 部门钻入 / 已选面板）~~ ✅ 已完成 `MemberSelectorModal` | ~~组设置、admin~~ |
 | PermissionEditor | 权限编辑弹窗（继承/自定义+角色矩阵） | repo 设置、file/[id] |
 | MoveTargetPicker | 跨组移动目标选择器（复用 DocNavTree） | file/[id]、docs |
@@ -52,10 +53,14 @@
 
 ### 2.4 回收站 (`pages/recycle-bin.vue`)
 
-- [ ] 批量选择
-- [ ] 恢复确认弹窗
-- [ ] 永久删除确认弹窗
-- [ ] 来源组信息展示
+- [x] ~~批量选择~~ ✅ 2026-04-18（DataTable showSelection + BulkActionBar）
+- [x] ~~恢复确认弹窗~~ ✅ 2026-04-18（msgConfirm，原组已删走失败列表）
+- [x] ~~永久删除确认弹窗~~ ✅ 2026-04-18（msgConfirm type=error + danger 按钮）
+- [x] ~~来源组信息展示~~ ✅ 2026-04-18（含删除人列，PRD 外 +1）
+- [x] ~~关键词 / 原仓库筛选~~ ✅ 2026-04-18（原仓库用 RemoteSelect 远程分页；删除时间范围按 PRD 未做）
+- [x] ~~按角色自动过滤数据范围~~ ✅ 2026-04-18（super/company 全站；dept/pl 范围内；其他仅自己+所在组）
+- [ ] **查看按钮（PRD §6.6.2 "仅展示改版正文"）** — 延迟至文件上传/预览模块完成后接入（当前正文依赖未就绪）
+- [ ] 30 天过期自动清理（cron 任务，后续排期）
 
 ### 2.5 仓库详情 (`pages/docs/repo/[id].vue`)
 

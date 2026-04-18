@@ -344,6 +344,7 @@ model doc_documents {
   current_version_id                                                            BigInt?                    @db.UnsignedBigInt
   download_count                                                                Int                        @default(0) @db.UnsignedInt
   deleted_at_real                                                               DateTime?
+  deleted_by_user_id                                                            BigInt?                    @db.UnsignedBigInt
   created_by                                                                    BigInt                     @db.UnsignedBigInt
   updated_by                                                                    BigInt?                    @db.UnsignedBigInt
   created_at                                                                    DateTime                   @default(now())
@@ -366,6 +367,7 @@ model doc_documents {
   doc_documents                                                                 doc_documents?             @relation("doc_documentsTodoc_documents", fields: [source_doc_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_documents_source")
   other_doc_documents                                                           doc_documents[]            @relation("doc_documentsTodoc_documents")
   doc_users_doc_documents_updated_byTodoc_users                                 doc_users?                 @relation("doc_documents_updated_byTodoc_users", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_documents_updated_by")
+  doc_users_doc_documents_deleted_by_user_idTodoc_users                         doc_users?                 @relation("doc_documents_deleted_by_user_idTodoc_users", fields: [deleted_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_documents_deleted_by")
   doc_ownership_transfers                                                       doc_ownership_transfers[]
   doc_permission_requests                                                       doc_permission_requests[]
   doc_search_index_docs                                                         doc_search_index_docs?
@@ -375,6 +377,7 @@ model doc_documents {
   @@index([updated_by], map: "fk_documents_updated_by")
   @@index([created_by], map: "idx_created_by")
   @@index([deleted_at], map: "idx_deleted_at")
+  @@index([deleted_by_user_id, deleted_at_real], map: "idx_deleted_by")
   @@index([group_id, status, updated_at], map: "idx_group_status")
   @@index([owner_user_id], map: "idx_owner")
   @@index([status, deleted_at_real], map: "idx_recycle")
@@ -657,6 +660,7 @@ model doc_users {
   doc_document_snapshots                                                  doc_document_snapshots[]
   doc_document_versions                                                   doc_document_versions[]
   doc_documents_doc_documents_created_byTodoc_users                       doc_documents[]               @relation("doc_documents_created_byTodoc_users")
+  doc_documents_doc_documents_deleted_by_user_idTodoc_users               doc_documents[]               @relation("doc_documents_deleted_by_user_idTodoc_users")
   doc_documents_doc_documents_owner_user_idTodoc_users                    doc_documents[]               @relation("doc_documents_owner_user_idTodoc_users")
   doc_documents_doc_documents_updated_byTodoc_users                       doc_documents[]               @relation("doc_documents_updated_byTodoc_users")
   doc_group_members_doc_group_members_created_byTodoc_users               doc_group_members[]           @relation("doc_group_members_created_byTodoc_users")

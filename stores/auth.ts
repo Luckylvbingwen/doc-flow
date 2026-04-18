@@ -39,7 +39,9 @@ export const useAuthStore = defineStore('auth', {
 
 			this._persistToStorage()
 			// 同步 cookie 标记，让 SSR 能判断登录态
-			this._syncAuthCookie(session.expiresIn)
+			// cookie 有效期跟 refreshToken 对齐（不是 accessToken），因为 SSR 只关心"会话是否存在"，
+			// accessToken 过期由客户端 refresh 静默续命，SSR 不该因此误判未登录
+			this._syncAuthCookie(session.refreshExpiresIn)
 		},
 		clearSession() {
 			this.token = ''
@@ -94,8 +96,8 @@ export const useAuthStore = defineStore('auth', {
 				if (!this.isAuthenticated) {
 					this.clearSession()
 				} else {
-					// 确保 cookie 标记与 localStorage 同步
-					const remainingSec = Math.floor((this.expiresAt - Date.now()) / 1000)
+					// 确保 cookie 标记与 localStorage 同步；cookie 跟 refreshToken 对齐
+					const remainingSec = Math.floor((this.refreshExpiresAt - Date.now()) / 1000)
 					if (remainingSec > 0) {
 						this._syncAuthCookie(remainingSec)
 					}
@@ -119,7 +121,10 @@ export const useAuthStore = defineStore('auth', {
 				this._persistToStorage()
 			}
 		},
-		/** 设置 cookie 标记，让 SSR 中间件判断登录态（不含敏感信息） */
+		/**
+		 * 设置 cookie 标记，让 SSR 中间件判断"会话是否存在"（不含敏感信息）
+		 * 语义：跟随 refreshToken 有效期，而非 accessToken；accessToken 过期由 useAuthFetch 静默 refresh 续命
+		 */
 		_syncAuthCookie(maxAgeSec: number) {
 			if (!import.meta.client) return
 			document.cookie = `docflow_auth_flag=1; path=/; max-age=${Math.floor(maxAgeSec)}; SameSite=Lax`

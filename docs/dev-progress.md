@@ -169,6 +169,32 @@
 - **延迟项**：`/docs/repo/[id].vue` 的 `?openSettings=approval` query 自动打开审批配置 Tab，待 repo 页整合 GroupSettingsModal 时一并实现
 - **测试**：13+3=16 条 schema 单测 + 11 条 meta 工具单测
 
+### feat: 回收站 A 阶段（含批量操作）
+
+- **数据库**
+  - 新增补丁 `docs/patch-003-recycle-bin.sql`：`doc_documents` 加 `deleted_by_user_id` 字段 + 索引 + FK；新增 3 个权限码 `recycle:read` / `recycle:restore` / `recycle:delete`；授权 super_admin / company_admin / dept_head / pl_head；回收站种子 5 条软删文档 + 对应版本
+  - 四地同步：`docs/doc.sql` / `docs/rbac.sql` / `docs/doc_seed.sql` / `prisma/schema.prisma`
+  - 更新 `CLAUDE.md` 写入"四地同步纪律"与 patch 可重入要求
+- **后端**
+  - 新增 Zod schema `server/schemas/recycle-bin.ts`（list / filter-groups / batch ids）
+  - 新增错误码 4 个：`RECYCLE_NOT_FOUND` / `RECYCLE_NOT_DELETED` / `RECYCLE_GROUP_MISSING` / `RECYCLE_EXPIRED`
+  - 新增 4 个接口 `GET /api/recycle-bin`（列表）/ `GET /api/recycle-bin/filter-groups`（组筛选源）/ `POST /api/recycle-bin/restore`（批量恢复）/ `POST /api/recycle-bin/purge`（批量永久删除）
+  - 新增 `server/utils/recycle-scope.ts` — 按角色构造数据范围过滤 `Prisma.Sql`，列表/筛选源/恢复/永删共用
+  - 新增 `server/utils/operation-log.ts` — `writeLog` / `writeLogs` 埋点 helper（单条用 create、批量用 createMany，JSON 字段走 `Prisma.InputJsonValue`）
+- **前端**
+  - 新增 `types/recycle-bin.ts` / `api/recycle-bin.ts`
+  - 新增 `components/RemoteSelect.vue` — 远程搜索 + 滚动分页通用下拉（基于 el-select + remote-method + scroll 监听，300ms 防抖，支持泛型）
+  - 重写 `pages/recycle-bin.vue` — 按 `logs.vue` 范式（ListPageShell + FilterBar + DataTable fillHeight + `recycle:read` 页面守卫），含多选 + BulkActionBar 批量恢复/永删，行级 / 批量 loading 追踪
+  - 扩展 `utils/format.ts` — `formatBytes` 文件大小格式化
+- **埋点**：每次恢复/永删成功写一条 `recycle.restore` / `recycle.purge` 操作日志（`detail_json.desc` 预渲染）
+- **规格依据**：PRD §6.6（回收站）、§4.3（权限矩阵无回收站行，数据范围按角色自定）
+- **范围**：A 阶段 = 读端列表 + 恢复 + 永久删除 + 批量；筛选项仅"关键词 + 原仓库"（PRD §6.6.2 对齐）
+- **PRD 外 +**：删除人作为显示列（用户决策，便于管理员追溯）
+- **延迟项**：
+  1. 查看按钮（PRD §6.6.2"仅展示改版正文"）— 依赖文件上传/预览模块，待其完成后接入
+  2. 30 天自动清理 cron
+- **测试**：18 条 Zod schema 单测（list / filter-groups / batch 的合法 / 非法 / 边界），全部通过
+
 ---
 
 ## 待开发（按优先级排序）
@@ -178,7 +204,7 @@
 | P0 | 文档管理核心 — 上传/元数据/版本/状态流转 | ⏳ 待排期 |
 | P1 | 组成员管理 B 阶段 — 继承机制 / 负责人移交 | 🕓 待产品讨论 |
 | P1 | 审批流运行时 — 实例起审批 / 通过驳回 / 超时催办 | ⏳ 待排期（模板配置已完成于 2026-04-17） |
-| P1 | 站内通知 — 三类通知 + 已读未读 | ⏳ 待排期 |
-| P2 | 操作日志 | ⏳ 待排期 |
-| P2 | 回收站 | ⏳ 待排期 |
+| P1 | 站内通知 — 三类通知 + 已读未读 | ✅ A 阶段完成于 2026-04-18（触发点接入随各业务补） |
+| P2 | 操作日志 | ✅ A 阶段完成于 2026-04-17（埋点随各业务补） |
+| P2 | 回收站 | ✅ A 阶段完成于 2026-04-18（30 天自动清理 cron 后续排期） |
 | P2 | 评论/批注、收藏/置顶、文档引用、搜索、分享 | ⏳ 待排期 |

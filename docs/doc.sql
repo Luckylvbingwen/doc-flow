@@ -192,6 +192,7 @@ CREATE TABLE doc_documents (
   current_version_id BIGINT UNSIGNED DEFAULT NULL COMMENT '当前发布版本ID',
   download_count     INT UNSIGNED    NOT NULL DEFAULT 0 COMMENT '下载次数',
   deleted_at_real    DATETIME(3)     DEFAULT NULL COMMENT '进入回收站的时间（30天后自动永久删除）',
+  deleted_by_user_id BIGINT UNSIGNED DEFAULT NULL COMMENT '删除人（软删操作人）',
   created_by         BIGINT UNSIGNED NOT NULL COMMENT '创建人',
   updated_by         BIGINT UNSIGNED DEFAULT NULL,
   created_at         DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -203,12 +204,14 @@ CREATE TABLE doc_documents (
   KEY idx_source_doc    (source_doc_id),
   KEY idx_deleted_at    (deleted_at),
   KEY idx_recycle       (status, deleted_at_real),
+  KEY idx_deleted_by    (deleted_by_user_id, deleted_at_real),
   FULLTEXT KEY ft_title (title),
-  CONSTRAINT fk_documents_group      FOREIGN KEY (group_id)      REFERENCES doc_groups(id),
-  CONSTRAINT fk_documents_owner      FOREIGN KEY (owner_user_id) REFERENCES doc_users(id),
-  CONSTRAINT fk_documents_source     FOREIGN KEY (source_doc_id) REFERENCES doc_documents(id),
-  CONSTRAINT fk_documents_created_by FOREIGN KEY (created_by)    REFERENCES doc_users(id),
-  CONSTRAINT fk_documents_updated_by FOREIGN KEY (updated_by)    REFERENCES doc_users(id)
+  CONSTRAINT fk_documents_group       FOREIGN KEY (group_id)           REFERENCES doc_groups(id),
+  CONSTRAINT fk_documents_owner       FOREIGN KEY (owner_user_id)      REFERENCES doc_users(id),
+  CONSTRAINT fk_documents_source      FOREIGN KEY (source_doc_id)      REFERENCES doc_documents(id),
+  CONSTRAINT fk_documents_created_by  FOREIGN KEY (created_by)         REFERENCES doc_users(id),
+  CONSTRAINT fk_documents_updated_by  FOREIGN KEY (updated_by)         REFERENCES doc_users(id),
+  CONSTRAINT fk_documents_deleted_by  FOREIGN KEY (deleted_by_user_id) REFERENCES doc_users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档主表（§5.3）';
 
 -- ---------------------------------------------------------

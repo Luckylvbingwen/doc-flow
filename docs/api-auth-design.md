@@ -155,6 +155,15 @@
 | PUT | /api/notifications/:id/read | 是 | 仅 owner | 标记单条已读 |
 | PUT | /api/notifications/read-all | 是 | 仅当前用户 | 全部标为已读（可按 category） |
 
+### 回收站 (recycle-bin)
+
+| 方法 | 路径 | 鉴权 | 权限 | 说明 |
+| --- | --- | --- | --- | --- |
+| GET | /api/recycle-bin | 是 | recycle:read | 回收站列表（分页，支持组/删除人/时间范围/关键词筛选；按角色自动过滤数据范围） |
+| GET | /api/recycle-bin/filter-groups | 是 | recycle:read | "按组筛选"下拉源（远程分页，只返回回收站里有数据的组） |
+| POST | /api/recycle-bin/restore | 是 | recycle:restore | 批量恢复（1-50 条，原组被删的条目放入 failed 列表） |
+| POST | /api/recycle-bin/purge | 是 | recycle:delete | 批量永久删除（软删 `deleted_at` 标记，不可恢复） |
+
 ### 定时任务
 
 | 任务名 | cron | 说明 |
@@ -1002,6 +1011,154 @@
   "code": "OK",
   "message": "OK",
   "data": { "updated": 5 }
+}
+```
+
+---
+
+### 3.50 GET /api/recycle-bin
+
+**路径**：`GET /api/recycle-bin`
+**鉴权**：JWT + `recycle:read`
+
+**Query**：
+- `keyword` 可选，文件名模糊匹配（≤100 字符）
+- `groupId` 可选，按原仓库过滤（正整数）
+- `deletedBy` 可选，按删除人 user.id 过滤
+- `startAt` / `endAt` 可选，删除时间范围（`YYYY-MM-DD`，含当天；开始 ≤ 结束）
+- `page` 默认 1，`pageSize` 默认 10，范围 [1, 100]
+
+**数据范围（服务端自动按角色过滤）**：
+- `super_admin` / `company_admin` → 全站
+- `dept_head` → 本部门下的组（`sys_user_roles.scope_type=1` → `doc_groups.scope_type=2`）
+- `pl_head` → 本产品线下的组（`sys_user_roles.scope_type=2` → `doc_groups.scope_type=3`）
+- 其他用户 → 自己删除的 + 自己所在组里的
+
+**响应**：
+```json
+{
+  "success": true, "code": "OK", "message": "OK",
+  "data": {
+    "list": [
+      {
+        "id": 50005,
+        "title": "[已删]研发规范过期版",
+        "ext": "pdf",
+        "groupId": 40002,
+        "groupName": "研发规范组",
+        "ownerUserId": 10003,
+        "deletedByUserId": 10002,
+        "deletedByName": "文档负责人",
+        "deletedAt": 1744858800000,
+        "fileSize": 512000,
+        "versionCount": 1
+      }
+    ],
+    "total": 5,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+---
+
+### 3.51 GET /api/recycle-bin/filter-groups
+
+**路径**：`GET /api/recycle-bin/filter-groups`
+**鉴权**：JWT + `recycle:read`
+
+**Query**：
+- `keyword` 可选，组名模糊匹配
+- `page` 默认 1，`pageSize` 默认 20，范围 [1, 100]
+
+**行为**：
+- 仅返回回收站里"当前有数据"的组（`doc_documents.status=6` 且 `deleted_at_real IS NOT NULL`），避免空选项
+- 数据范围过滤规则与 `GET /api/recycle-bin` 一致
+
+**响应**：
+```json
+{
+  "success": true, "code": "OK", "message": "OK",
+  "data": {
+    "list": [{ "id": 40002, "name": "研发规范组" }],
+    "total": 3, "page": 1, "pageSize": 20
+  }
+}
+```
+
+---
+
+### 3.52 POST /api/recycle-bin/restore
+
+**路径**：`POST /api/recycle-bin/restore`
+**鉴权**：JWT + `recycle:restore`
+
+**Body**：
+```json
+{ "ids": [50005, 50006] }
+```
+- 1-50 个文档 id，去重由后端处理
+
+**规则**：
+- 仅对在数据范围内的 id 生效
+- 恢复即：`status=4 已发布` / `deleted_at_real=NULL` / `deleted_by_user_id=NULL`
+- 原组已被删除的条目 → 失败列表（`原组已被删除，无法恢复`）
+- 每成功一条写一条 `recycle.restore` 操作日志
+
+**响应**：
+```json
+{
+  "success": true, "code": "OK",
+  "message": "已恢复 2 项",
+  "data": {
+    "restoredCount": 2,
+    "restoredIds": [50005, 50006],
+    "failed": []
+  }
+}
+```
+
+**失败示例**：
+```json
+{
+  "data": {
+    "restoredCount": 1,
+    "restoredIds": [50005],
+    "failed": [
+      { "id": 50099, "title": "-", "reason": "不存在或无权操作" }
+    ]
+  }
+}
+```
+
+---
+
+### 3.53 POST /api/recycle-bin/purge
+
+**路径**：`POST /api/recycle-bin/purge`
+**鉴权**：JWT + `recycle:delete`
+
+**Body**：
+```json
+{ "ids": [50007] }
+```
+
+**规则**：
+- "永久删除"实现为**全局软删**：`doc_documents.deleted_at` 和所有 `doc_document_versions.deleted_at` 同步标记为当前时间
+- 其他关联表（annotations / comments / favorites / pins 等）不做级联，因应用层始终过滤 `doc.deleted_at IS NULL`
+- 每成功一条写一条 `recycle.purge` 操作日志
+
+**响应**：
+```json
+{
+  "success": true, "code": "OK",
+  "message": "已永久删除 1 项",
+  "data": {
+    "purgedCount": 1,
+    "purgedIds": [50007],
+    "failed": []
+  }
 }
 ```
 
