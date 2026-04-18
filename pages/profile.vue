@@ -1,449 +1,428 @@
 <template>
-	<section class="pf-page-stack">
-		<PageTitle title="个人中心" subtitle="管理个人信息、查看我的文档与操作记录">
-			<template #actions>
-				<el-button type="primary" @click="editModalVisible = true">
-					<el-icon>
-						<Edit />
-					</el-icon>编辑资料
-				</el-button>
-			</template>
-		</PageTitle>
+	<ListPageShell>
+		<template #header>
+			<PageTitle title="个人中心" subtitle="我创建的、分享给我的、个人收藏、离职交接" :refreshing="loading" @refresh="load" />
+		</template>
 
-		<!-- ── 用户信息卡 ── -->
-		<div class="pf-card profile-head">
-			<div class="pf-user-avatar lg">刘</div>
-			<div class="profile-head-info">
-				<h4>刘思远</h4>
-				<p class="pf-muted">系统管理员 · liusy@co.com</p>
-				<div class="profile-stats">
-					<span><strong>36</strong> 篇文档</span>
-					<span><strong>12</strong> 个收藏</span>
-					<span><strong>5</strong> 待审批</span>
-					<span class="profile-join">加入于 2024-06-15</span>
-				</div>
+		<template #filter>
+			<div class="profile-toolbar">
+				<TabBar v-model="tab" :tabs="tabs" @update:model-value="onTabChange" />
+				<FilterBar v-if="statusFilterEnabled" :clear-count="activeFilterCount" @clear="onResetFilter">
+					<div class="df-filter-item">
+						<label class="df-filter-label">状态</label>
+						<el-select
+v-model="filterStatus" placeholder="全部状态" clearable @change="onFilterChange"
+							@clear="onFilterChange">
+							<el-option v-for="opt in statusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+						</el-select>
+					</div>
+					<div class="df-filter-item">
+						<label class="df-filter-label">关键词</label>
+						<el-input
+v-model="filterKeyword" placeholder="搜索文件名..." clearable @keyup.enter="onFilterChange"
+							@clear="onFilterChange">
+							<template #prefix>
+								<el-icon>
+									<Search />
+								</el-icon>
+							</template>
+						</el-input>
+					</div>
+				</FilterBar>
 			</div>
+		</template>
+
+		<!-- 离职移交：手风琴视图 -->
+		<div v-if="tab === 'handover'" class="profile-handover-body">
+			<el-scrollbar>
+				<div class="profile-handover-inner">
+					<EmptyState v-if="handoverForbidden" preset="no-content" title="无权访问" description="离职交接仅部门负责人可见" />
+					<HandoverAccordion v-else-if="!loading" :groups="handoverGroups" @view="onView" />
+				</div>
+			</el-scrollbar>
 		</div>
 
-		<!-- ── Tabs ── -->
-		<TabBar v-model="activeTab" :tabs="profileTabs" />
-
-		<!-- Tab: 我的文档 -->
-		<template v-if="activeTab === 'docs'">
-			<DataTable
-v-model:page="docPage" v-model:page-size="docPageSize" :data="pagedDocs" :columns="docColumns"
-				:total="filteredDocs.length" :loading="docLoading" show-search search-placeholder="搜索文档标题…"
-				:action-width="160" @search="onDocSearch" @row-click="onDocRowClick">
-				<template #toolbar>
-					<el-button @click="onExportClick">
-						<el-icon>
-							<Download />
-						</el-icon>导出列表
-					</el-button>
-				</template>
-				<template #title="{ row }">
-					<span class="doc-title-link">{{ row.title }}</span>
-				</template>
-				<template #action="{ row }">
-					<el-button link type="primary" size="small" @click.stop="onDocRowClick(row)">
-						查看
-					</el-button>
-					<el-button link type="primary" size="small" @click.stop="onDocEdit(row)">
-						编辑
-					</el-button>
-					<el-button link type="danger" size="small" @click.stop="onDocDelete(row)">
-						删除
-					</el-button>
-				</template>
-			</DataTable>
-		</template>
-
-		<!-- Tab: 操作日志 -->
-		<template v-if="activeTab === 'logs'">
-			<DataTable
-v-model:page="logPage" v-model:page-size="logPageSize" :data="pagedLogs" :columns="logColumns"
-				:total="mockLogs.length" :show-pagination="true" show-index />
-		</template>
-
-		<!-- Tab: 安全设置 -->
-		<template v-if="activeTab === 'security'">
-			<div class="pf-card">
-				<div class="profile-security">
-					<div class="security-item">
-						<div>
-							<h5>登录密码</h5>
-							<p class="pf-muted">上次修改：2025-12-01</p>
-						</div>
-						<el-button size="small" @click="changePwdVisible = true">修改密码</el-button>
+		<!-- 普通 Tab：DataTable -->
+		<DataTable
+v-else v-model:page="page" v-model:page-size="pageSize" :data="list" :columns="columns" :total="total"
+			:loading="loading" :page-sizes="[10, 15, 30, 50]" :empty-preset="emptyPreset" row-key="id" fill-height
+			:action-width="180" @page-change="onPageChange">
+			<template #title="{ row }">
+				<div class="profile-title">
+					<div class="profile-file-icon" :class="getFileTypeClass(row.ext)">
+						{{ getFileTypeLabel(row.ext) }}
 					</div>
-					<div class="security-item">
-						<div>
-							<h5>多因素认证</h5>
-							<p class="pf-muted">已绑定飞书账号进行二次认证</p>
-						</div>
-						<el-tag type="success" size="small">已开启</el-tag>
-					</div>
-					<div class="security-item">
-						<div>
-							<h5>登录设备</h5>
-							<p class="pf-muted">当前共有 3 台设备保持登录状态</p>
-						</div>
-						<el-button size="small" type="danger" plain>退出全部</el-button>
-					</div>
-				</div>
-			</div>
-		</template>
-
-		<!-- ── 文档详情抽屉 ── -->
-		<DetailDrawer v-model="drawerVisible" :title="currentDoc?.title || '文档详情'">
-			<template v-if="currentDoc">
-				<el-descriptions :column="1" border>
-					<el-descriptions-item label="文档标题">{{ currentDoc.title }}</el-descriptions-item>
-					<el-descriptions-item label="所属仓库">{{ currentDoc.repo }}</el-descriptions-item>
-					<el-descriptions-item label="状态">
-						<el-tag :type="statusEnumMap[currentDoc.status]?.type" size="small">
-							{{ statusEnumMap[currentDoc.status]?.label }}
-						</el-tag>
-					</el-descriptions-item>
-					<el-descriptions-item label="标签">
-						<el-tag v-for="tag in currentDoc.tags" :key="tag" size="small" class="doc-tag">
-							{{ tag }}
-						</el-tag>
-					</el-descriptions-item>
-					<el-descriptions-item label="创建时间">{{ currentDoc.createdAt }}</el-descriptions-item>
-					<el-descriptions-item label="最后更新">{{ currentDoc.updatedAt }}</el-descriptions-item>
-				</el-descriptions>
-				<div class="drawer-doc-content">
-					<h5>文档摘要</h5>
-					<p>{{ currentDoc.summary }}</p>
+					<span class="profile-title-name" :title="row.title">{{ row.title }}</span>
 				</div>
 			</template>
-			<template #footer>
-				<el-button @click="drawerVisible = false">关闭</el-button>
-				<el-button type="primary" @click="onDocEdit(currentDoc)">编辑文档</el-button>
+			<template #source="{ row }">
+				<span v-if="tab === 'all'" class="profile-source">
+					<span
+class="profile-source-badge"
+						:style="{ color: getItemSourceMeta(row.source).color, background: getItemSourceMeta(row.source).bg }">
+						{{ getItemSourceMeta(row.source).label }}
+					</span>
+					<span
+v-if="row.source === 'shared' && row.permissionLevel" class="profile-source-badge"
+						:style="{ color: getPermissionLevelMeta(row.permissionLevel).color, background: getPermissionLevelMeta(row.permissionLevel).bg }">
+						{{ getPermissionLevelMeta(row.permissionLevel).label }}
+					</span>
+				</span>
+				<span
+v-else-if="tab === 'shared' && row.permissionLevel" class="profile-source-badge"
+					:style="{ color: getPermissionLevelMeta(row.permissionLevel).color, background: getPermissionLevelMeta(row.permissionLevel).bg }">
+					{{ getPermissionLevelMeta(row.permissionLevel).label }}
+				</span>
+				<span v-else class="profile-muted">—</span>
 			</template>
-		</DetailDrawer>
-
-		<!-- ── 编辑资料弹窗 ── -->
-		<Modal v-model="editModalVisible" title="编辑个人资料" :confirm-loading="editLoading" @confirm="onEditConfirm">
-			<el-form :model="editForm" label-width="80px" label-position="right">
-				<el-form-item label="姓名">
-					<el-input v-model="editForm.name" placeholder="请输入姓名" />
-				</el-form-item>
-				<el-form-item label="邮箱">
-					<el-input v-model="editForm.email" placeholder="请输入邮箱" />
-				</el-form-item>
-				<el-form-item label="部门">
-					<el-select v-model="editForm.department" placeholder="选择部门" style="width: 100%;">
-						<el-option label="技术部" value="tech" />
-						<el-option label="产品部" value="product" />
-						<el-option label="运营部" value="ops" />
-						<el-option label="管理层" value="management" />
-					</el-select>
-				</el-form-item>
-				<el-form-item label="个人简介">
-					<el-input v-model="editForm.bio" type="textarea" :rows="3" placeholder="一句话介绍自己" />
-				</el-form-item>
-			</el-form>
-		</Modal>
-
-		<!-- ── 修改密码弹窗 ── -->
-		<Modal
-v-model="changePwdVisible" title="修改密码" width="440px" confirm-text="确认修改" :confirm-loading="pwdLoading"
-			@confirm="onChangePwd">
-			<el-form label-width="80px" label-position="right">
-				<el-form-item label="当前密码">
-					<el-input type="password" show-password placeholder="请输入当前密码" />
-				</el-form-item>
-				<el-form-item label="新密码">
-					<el-input type="password" show-password placeholder="请输入新密码" />
-				</el-form-item>
-				<el-form-item label="确认密码">
-					<el-input type="password" show-password placeholder="再次输入新密码" />
-				</el-form-item>
-			</el-form>
-		</Modal>
-	</section>
+			<template #status="{ row }">
+				<span
+class="profile-status-badge"
+					:style="{ color: getDocStatusMeta(row.status).color, background: getDocStatusMeta(row.status).bg }">
+					{{ getDocStatusMeta(row.status).label }}
+				</span>
+			</template>
+			<template #updatedAt="{ row }">
+				<span class="profile-time">{{ formatTime(row.updatedAt, 'YYYY-MM-DD HH:mm') }}</span>
+			</template>
+			<template #action="{ row }">
+				<template v-for="act in getRowActions(row)" :key="act.kind">
+					<el-button
+:type="act.type === 'default' ? '' : act.type" text size="small"
+						:loading="busyId === row.id && busyKind === act.kind" :disabled="busyId != null && busyId !== row.id"
+						@click="onActionClick(row, act.kind)">
+						{{ act.label }}
+					</el-button>
+				</template>
+			</template>
+		</DataTable>
+	</ListPageShell>
 </template>
 
-<script setup>
-import { Edit, Download } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+<script setup lang="ts">
+import { Search } from '@element-plus/icons-vue'
+import type { TableColumn } from '~/components/DataTable.vue'
+import { formatTime } from '~/utils/format'
+import { getFileTypeClass, getFileTypeLabel } from '~/utils/file-type'
+import {
+	getDocStatusMeta,
+	getItemSourceMeta,
+	getPermissionLevelMeta,
+} from '~/utils/doc-meta'
+import { getActions, type ActionKind } from '~/utils/personal-matrix'
+import { apiGetPersonalDocs, apiGetPersonalHandover, apiDeleteDraft } from '~/api/personal'
+import type {
+	PersonalDocItem,
+	HandoverGroup,
+	PersonalTab,
+	PersonalListQuery,
+} from '~/types/personal'
 
 definePageMeta({
-	layout: 'prototype'
+	layout: 'prototype',
+	fixedLayout: true,
 })
 useHead({ title: '个人中心 - DocFlow' })
 
-// ── 状态 ──
-const activeTab = ref('docs')
+const authStore = useAuthStore()
+const currentUserId = computed(() => authStore.user?.id ?? 0)
 
-const profileTabs = [
-	{ label: '我的文档', value: 'docs', count: 12 },
-	{ label: '操作日志', value: 'logs', count: 12 },
-	{ label: '安全设置', value: 'security' }
+// 「离职移交」Tab 严格按 PRD §6.5.2 「仅部门负责人可见」—— 非 dept_head 用户不展示
+const { hasRole } = useAuth()
+const canViewHandover = computed(() => hasRole('dept_head'))
+
+const allTabs: Array<{ value: PersonalTab; label: string }> = [
+	{ value: 'all', label: '全部' },
+	{ value: 'mine', label: '我创建的' },
+	{ value: 'shared', label: '分享给我的' },
+	{ value: 'favorite', label: '个人收藏' },
+	{ value: 'handover', label: '离职移交' },
+]
+const tabs = computed(() => allTabs.filter(t => t.value !== 'handover' || canViewHandover.value))
+
+const tab = ref<PersonalTab>('all')
+
+// 无权访问离职移交却当前选中 → 回退到"全部"
+watch(canViewHandover, (can) => {
+	if (!can && tab.value === 'handover') {
+		tab.value = 'all'
+		load()
+	}
+}, { immediate: true })
+const filterStatus = ref<1 | 2 | 3 | 4 | null>(null)
+const filterKeyword = ref('')
+
+// handover 特殊状态
+const handoverGroups = ref<HandoverGroup[]>([])
+const handoverForbidden = ref(false)
+
+// handover tab 下不显示状态筛选
+const statusFilterEnabled = computed(() => tab.value !== 'handover')
+
+const activeFilterCount = computed(() => {
+	let n = 0
+	if (filterStatus.value != null) n++
+	if (filterKeyword.value) n++
+	return n
+})
+
+const statusOptions: Array<{ label: string; value: 1 | 2 | 3 | 4 }> = [
+	{ value: 1, label: '草稿' },
+	{ value: 2, label: '编辑中' },
+	{ value: 3, label: '审批中' },
+	{ value: 4, label: '已发布' },
 ]
 
-// ── 文档表格 ──
-const docPage = ref(1)
-const docPageSize = ref(10)
-const docLoading = ref(false)
-const docSearchKey = ref('')
+const emptyPreset = computed(() => {
+	if (filterStatus.value != null || filterKeyword.value) return 'no-results'
+	if (tab.value === 'mine') return 'no-files'
+	if (tab.value === 'shared') return 'no-files'
+	if (tab.value === 'favorite') return 'no-files'
+	return 'no-content'
+})
 
-const statusEnum = [
-	{ value: 'published', label: '已发布', type: 'success' },
-	{ value: 'draft', label: '草稿', type: 'info' },
-	{ value: 'review', label: '审核中', type: 'warning' },
-	{ value: 'archived', label: '已归档', type: 'info' }
+const columns: TableColumn[] = [
+	{ label: '文件名', slot: 'title', minWidth: 280 },
+	{ label: '来源', slot: 'source', width: 160 },
+	{ prop: 'versionNo', label: '版本', width: 80, align: 'center' },
+	{ prop: 'ownerName', label: '创建人', width: 120 },
+	{ label: '状态', slot: 'status', width: 100, align: 'center' },
+	{ prop: 'groupName', label: '所属组', width: 160 },
+	{ label: '更新时间', slot: 'updatedAt', width: 160 },
 ]
 
-const statusEnumMap = {
-	published: { label: '已发布', type: 'success' },
-	draft: { label: '草稿', type: 'info' },
-	review: { label: '审核中', type: 'warning' },
-	archived: { label: '已归档', type: 'info' }
+// 加载操作态
+const busyId = ref<number | null>(null)
+const busyKind = ref<ActionKind | null>(null)
+
+// ── 非 handover tab：走 useListPage ──
+const {
+	page,
+	pageSize,
+	list,
+	total,
+	loading: listLoading,
+	refresh: refetchList,
+	onFilterChange: triggerListRefetch,
+	onPageChange,
+} = useListPage<PersonalDocItem, Omit<PersonalListQuery, 'tab'> & { tab: 'all' | 'mine' | 'shared' | 'favorite' }>({
+	fetchFn: apiGetPersonalDocs,
+	buildQuery: ({ page, pageSize }) => ({
+		tab: tab.value === 'handover' ? 'all' : tab.value,
+		status: statusFilterEnabled.value ? (filterStatus.value ?? undefined) : undefined,
+		keyword: filterKeyword.value || undefined,
+		page,
+		pageSize,
+	}),
+	resetFilters: () => {
+		filterStatus.value = null
+		filterKeyword.value = ''
+	},
+	immediate: false, // 首次加载由 onMounted 分发到对应分支
+})
+
+// ── handover tab：单独拉取 ──
+const handoverLoading = ref(false)
+async function refetchHandover() {
+	handoverLoading.value = true
+	handoverForbidden.value = false
+	try {
+		const res = await apiGetPersonalHandover({
+			keyword: filterKeyword.value || undefined,
+			page: 1,
+			pageSize: 100, // 离职人员数量有限，一次拿全
+		})
+		if (res.success) {
+			handoverGroups.value = res.data.list
+		} else if (res.code === 'HANDOVER_NOT_DEPT_HEAD') {
+			handoverForbidden.value = true
+			handoverGroups.value = []
+		} else {
+			msgError(res.message || '加载失败')
+			handoverGroups.value = []
+		}
+	} catch {
+		msgError('加载失败')
+		handoverGroups.value = []
+	} finally {
+		handoverLoading.value = false
+	}
 }
 
-const docColumns = [
-	{ prop: 'title', label: '文档标题', minWidth: 220, slot: 'title' },
-	{ prop: 'repo', label: '所属仓库', width: 140 },
-	{ prop: 'status', label: '状态', width: 100, enum: statusEnum },
-	{ prop: 'updatedAt', label: '最近更新', width: 170, dateFormat: 'datetime', sortable: true },
-	{ prop: 'createdAt', label: '创建时间', width: 170, dateFormat: 'datetime', sortable: true }
-]
+// 对外统一的 loading / refresh 入口
+const loading = computed(() => (tab.value === 'handover' ? handoverLoading.value : listLoading.value))
+function load() {
+	if (tab.value === 'handover') refetchHandover()
+	else refetchList()
+}
 
-const mockDocs = ref([
-	{ id: 1, title: 'DocFlow 系统架构设计文档', repo: '技术架构库', status: 'published', tags: ['架构', '系统设计'], createdAt: '2025-10-12T08:30:00', updatedAt: '2026-03-20T14:22:00', summary: '描述了 DocFlow 企业文档管理系统的整体架构设计，包括前端 Nuxt3 + Element Plus、后端 Nitro + Prisma 的技术栈选型与模块划分。' },
-	{ id: 2, title: 'API 接口规范 v2.0', repo: '技术架构库', status: 'published', tags: ['API', '规范'], createdAt: '2025-11-03T10:00:00', updatedAt: '2026-03-18T09:15:00', summary: 'RESTful API 设计规范，涵盖命名约定、错误码体系、分页参数和认证机制等。' },
-	{ id: 3, title: '2026 Q1 产品迭代计划', repo: '产品需求库', status: 'review', tags: ['计划', 'Q1'], createdAt: '2026-01-05T09:00:00', updatedAt: '2026-03-22T16:45:00', summary: '2026年第一季度产品迭代规划，包含文档协同编辑、版本对比、审批流程优化等核心需求。' },
-	{ id: 4, title: '用户权限模型说明', repo: '技术架构库', status: 'published', tags: ['权限', 'RBAC'], createdAt: '2025-09-20T14:00:00', updatedAt: '2026-02-28T11:30:00', summary: '基于 RBAC 的用户权限模型设计，支持角色继承、资源级细粒度授权。' },
-	{ id: 5, title: '飞书集成方案（草稿）', repo: '集成对接库', status: 'draft', tags: ['飞书', '集成'], createdAt: '2026-02-10T16:20:00', updatedAt: '2026-03-15T10:00:00', summary: '飞书开放平台 Webhook 通知集成方案，包括登录授权、消息推送和审批回调。' },
-	{ id: 6, title: '部署运维手册 v1.2', repo: '运维知识库', status: 'published', tags: ['运维', '部署'], createdAt: '2025-08-15T11:00:00', updatedAt: '2026-01-10T08:50:00', summary: '生产环境部署流程、Docker 编排配置、CI/CD 流水线及监控告警配置手册。' },
-	{ id: 7, title: '数据库设计文档', repo: '技术架构库', status: 'published', tags: ['数据库', 'Prisma'], createdAt: '2025-10-01T09:30:00', updatedAt: '2026-03-05T13:20:00', summary: 'Prisma Schema 设计说明，包含实体关系图、索引策略和数据迁移方案。' },
-	{ id: 8, title: '前端组件库使用指南', repo: '技术架构库', status: 'draft', tags: ['组件', '前端'], createdAt: '2026-03-10T15:00:00', updatedAt: '2026-03-24T17:30:00', summary: 'DataTable、Modal、DetailDrawer 等公共组件的 API 说明和使用示例。' },
-	{ id: 9, title: '审批流程配置说明', repo: '产品需求库', status: 'review', tags: ['审批', '流程'], createdAt: '2026-02-20T10:00:00', updatedAt: '2026-03-21T14:00:00', summary: '多级审批流的配置方式，支持串行、并行审批和条件分支。' },
-	{ id: 10, title: '历史归档策略', repo: '运维知识库', status: 'archived', tags: ['归档', '策略'], createdAt: '2025-06-01T08:00:00', updatedAt: '2025-12-31T18:00:00', summary: '文档超过保留期限后的自动归档策略和恢复机制。' },
-	{ id: 11, title: '安全审计报告 2025', repo: '合规审计库', status: 'published', tags: ['安全', '审计'], createdAt: '2026-01-15T09:00:00', updatedAt: '2026-02-20T10:30:00', summary: '2025年度信息安全审计报告，涵盖漏洞扫描、渗透测试、权限审计和数据合规四个维度。' },
-	{ id: 12, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
-	{ id: 13, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
-	{ id: 14, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
-	{ id: 15, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
-	{ id: 16, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
-	{ id: 17, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
-	{ id: 18, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
-	{ id: 19, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
-	{ id: 20, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
-	{ id: 21, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
-	{ id: 22, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
-	{ id: 23, title: '新员工入职指引', repo: '人力资源库', status: 'published', tags: ['入职', 'HR'], createdAt: '2025-07-10T14:00:00', updatedAt: '2026-03-01T09:00:00', summary: '新员工入职后系统账号开通、文档权限申请和常用工具使用指南。' },
-])
+function onFilterChange() {
+	if (tab.value === 'handover') refetchHandover()
+	else triggerListRefetch()
+}
 
-const filteredDocs = computed(() => {
-	if (!docSearchKey.value) return mockDocs.value
-	const key = docSearchKey.value.toLowerCase()
-	return mockDocs.value.filter(
-		(d) => d.title.toLowerCase().includes(key) || d.repo.toLowerCase().includes(key)
+function onResetFilter() {
+	filterStatus.value = null
+	filterKeyword.value = ''
+	if (tab.value === 'handover') refetchHandover()
+	else triggerListRefetch()
+}
+
+function onTabChange() {
+	filterStatus.value = null
+	filterKeyword.value = ''
+	handoverGroups.value = []
+	handoverForbidden.value = false
+	load()
+}
+
+onMounted(load)
+
+// ── 行操作 ──
+function getRowActions(doc: PersonalDocItem) {
+	return getActions(doc, currentUserId.value)
+}
+
+function onView(doc: PersonalDocItem) {
+	navigateTo(`/docs/file/${doc.id}`)
+}
+
+async function onActionClick(doc: PersonalDocItem, kind: ActionKind) {
+	if (kind === 'view') return onView(doc)
+	if (kind === 'withdraw') return onWithdraw(doc)
+	if (kind === 'delete') return onDelete(doc)
+}
+
+async function onWithdraw(doc: PersonalDocItem) {
+	// 个人中心"撤回"对应"审批中"文档 → 查 approval instance id
+	// 简化实现：直接把 doc.id 传 withdraw 接口是不对的，需先查 instance id
+	// 但本 A 阶段范围不含"通过 documentId 找 active instance"的新接口
+	// 权宜做法：提示用户去审批中心操作，保留 UI 入口但不直接调 API
+	const ok = await msgConfirm(
+		`请前往审批中心撤回「${doc.title}」的审批。`,
+		'撤回审批',
+		{ type: 'info', confirmText: '去审批中心' },
 	)
-})
-
-const pagedDocs = computed(() => {
-	const start = (docPage.value - 1) * docPageSize.value
-	return filteredDocs.value.slice(start, start + docPageSize.value)
-})
-
-const onDocSearch = (keyword) => {
-	docSearchKey.value = keyword
-	docPage.value = 1
+	if (ok) navigateTo('/approvals?tab=submitted')
 }
 
-// ── 文档详情抽屉 ──
-const drawerVisible = ref(false)
-const currentDoc = ref(null)
-
-const onDocRowClick = (row) => {
-	currentDoc.value = row
-	drawerVisible.value = true
-}
-
-const onDocEdit = (row) => {
-	ElMessage.info(`编辑文档：${row.title}`)
-}
-
-const onDocDelete = (row) => {
-	ElMessage.warning(`删除文档：${row.title}（模拟操作）`)
-}
-
-const onExportClick = () => {
-	ElMessage.success('导出列表（模拟操作）')
-}
-
-// ── 操作日志 ──
-const logPage = ref(1)
-const logPageSize = ref(10)
-
-const actionEnum = [
-	{ value: 'create', label: '创建', type: 'success' },
-	{ value: 'edit', label: '编辑', type: 'info' },
-	{ value: 'delete', label: '删除', type: 'danger' },
-	{ value: 'publish', label: '发布', type: 'success' },
-	{ value: 'review', label: '提交审核', type: 'warning' },
-	{ value: 'login', label: '登录', type: 'info' }
-]
-
-const logColumns = [
-	{ prop: 'action', label: '操作类型', width: 120, enum: actionEnum },
-	{ prop: 'target', label: '操作对象', minWidth: 200 },
-	{ prop: 'ip', label: 'IP 地址', width: 140 },
-	{ prop: 'time', label: '操作时间', width: 170, dateFormat: 'datetime', sortable: true }
-]
-
-const mockLogs = ref([
-	{ id: 1, action: 'edit', target: '前端组件库使用指南', ip: '192.168.1.101', time: '2026-03-24T17:30:00' },
-	{ id: 2, action: 'publish', target: 'API 接口规范 v2.0', ip: '192.168.1.101', time: '2026-03-24T15:10:00' },
-	{ id: 3, action: 'review', target: '2026 Q1 产品迭代计划', ip: '192.168.1.101', time: '2026-03-22T16:45:00' },
-	{ id: 4, action: 'create', target: '前端组件库使用指南', ip: '192.168.1.101', time: '2026-03-10T15:00:00' },
-	{ id: 5, action: 'edit', target: '数据库设计文档', ip: '10.0.0.55', time: '2026-03-05T13:20:00' },
-	{ id: 6, action: 'login', target: '系统登录', ip: '192.168.1.101', time: '2026-03-05T09:00:00' },
-	{ id: 7, action: 'edit', target: '用户权限模型说明', ip: '192.168.1.101', time: '2026-02-28T11:30:00' },
-	{ id: 8, action: 'review', target: '审批流程配置说明', ip: '10.0.0.55', time: '2026-02-20T10:00:00' },
-	{ id: 9, action: 'create', target: '飞书集成方案（草稿）', ip: '192.168.1.101', time: '2026-02-10T16:20:00' },
-	{ id: 10, action: 'delete', target: '废弃接口文档 v0.9', ip: '192.168.1.101', time: '2026-01-20T11:00:00' },
-	{ id: 11, action: 'login', target: '系统登录', ip: '10.0.0.55', time: '2026-01-15T08:30:00' },
-	{ id: 12, action: 'publish', target: '安全审计报告 2025', ip: '192.168.1.101', time: '2026-01-15T09:00:00' }
-])
-
-const pagedLogs = computed(() => {
-	const start = (logPage.value - 1) * logPageSize.value
-	return mockLogs.value.slice(start, start + logPageSize.value)
-})
-
-// ── 编辑资料弹窗 ──
-const editModalVisible = ref(false)
-const editLoading = ref(false)
-const editForm = reactive({
-	name: '刘思远',
-	email: 'liusy@co.com',
-	department: 'tech',
-	bio: '全栈工程师，负责 DocFlow 系统的架构设计与核心开发。'
-})
-
-const onEditConfirm = () => {
-	editLoading.value = true
-	setTimeout(() => {
-		editLoading.value = false
-		editModalVisible.value = false
-		ElMessage.success('资料已更新（模拟操作）')
-	}, 1000)
-}
-
-// ── 修改密码弹窗 ──
-const changePwdVisible = ref(false)
-const pwdLoading = ref(false)
-
-const onChangePwd = () => {
-	pwdLoading.value = true
-	setTimeout(() => {
-		pwdLoading.value = false
-		changePwdVisible.value = false
-		ElMessage.success('密码已修改（模拟操作）')
-	}, 1000)
+async function onDelete(doc: PersonalDocItem) {
+	const ok = await msgConfirm(
+		`确定删除「${doc.title}」？草稿将进入个人回收站，30 天内可恢复。`,
+		'删除草稿',
+		{ type: 'warning', confirmText: '删除', danger: true },
+	)
+	if (!ok) return
+	busyId.value = doc.id
+	busyKind.value = 'delete'
+	try {
+		const res = await apiDeleteDraft(doc.id)
+		if (res.success) {
+			msgSuccess(res.message || '已进入个人回收站，30天内可恢复')
+			load()
+		} else {
+			msgError(res.message || '删除失败')
+		}
+	} catch {
+		msgError('删除失败')
+	} finally {
+		busyId.value = null
+		busyKind.value = null
+	}
 }
 </script>
 
 <style lang="scss" scoped>
-.profile-head {
-	display: flex;
-	align-items: center;
-	gap: 20px;
-
-	&-info {
-		h4 {
-			margin: 0 0 4px;
-			font-size: 18px;
-			font-weight: 600;
-			color: var(--df-text);
-		}
-	}
-}
-
-.profile-stats {
-	display: flex;
-	align-items: center;
-	gap: 20px;
-	margin-top: 10px;
-	font-size: 13px;
-	color: var(--df-subtext);
-
-	strong {
-		font-size: 16px;
-		font-weight: 700;
-		color: var(--df-text);
-		margin-right: 2px;
-	}
-}
-
-.profile-join {
-	color: var(--df-subtext);
-	opacity: 0.7;
-}
-
-/* 文档标题链接样式 */
-.doc-title-link {
-	color: var(--df-primary);
-	cursor: pointer;
-	font-weight: 500;
-
-	&:hover {
-		text-decoration: underline;
-	}
-}
-
-/* 文档标签间距 */
-.doc-tag+.doc-tag {
-	margin-left: 4px;
-}
-
-/* 抽屉内文档内容区域 */
-.drawer-doc-content {
-	margin-top: 20px;
-
-	h5 {
-		font-size: 14px;
-		font-weight: 600;
-		color: var(--df-text);
-		margin: 0 0 8px;
-	}
-
-	p {
-		font-size: 13px;
-		color: var(--df-subtext);
-		line-height: 1.7;
-	}
-}
-
-/* 安全设置 */
-.profile-security {
+.profile-toolbar {
 	display: flex;
 	flex-direction: column;
-	gap: 0;
+	gap: 12px;
 }
 
-.security-item {
+.profile-handover-body {
+	flex: 1;
+	min-height: 0;
+}
+
+.profile-handover-inner {
+	padding: 4px 12px 4px 0;
+}
+
+.profile-title {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	padding: 16px 0;
-	border-bottom: 1px solid var(--df-border);
+	gap: 10px;
+	min-width: 0;
+}
 
-	&:last-child {
-		border-bottom: none;
+.profile-file-icon {
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	border-radius: 6px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 10px;
+	font-weight: 600;
+	color: #fff;
+	background: #94a3b8;
+
+	&.is-pdf {
+		background: #ef4444;
 	}
 
-	h5 {
-		margin: 0 0 4px;
-		font-size: 14px;
-		font-weight: 600;
-		color: var(--df-text);
+	&.is-word {
+		background: #2563eb;
 	}
+
+	&.is-excel {
+		background: #10b981;
+	}
+
+	&.is-md {
+		background: #8b5cf6;
+	}
+}
+
+.profile-title-name {
+	color: var(--df-text);
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	cursor: pointer;
+
+	&:hover {
+		color: var(--df-primary);
+	}
+}
+
+.profile-source {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+
+.profile-source-badge,
+.profile-status-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.5;
+}
+
+.profile-time {
+	color: var(--df-subtext);
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+}
+
+.profile-muted {
+	color: var(--df-border);
 }
 </style>

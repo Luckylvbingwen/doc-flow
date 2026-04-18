@@ -230,6 +230,33 @@
 - **范围**：A 阶段 = 读端三 Tab 列表 + 撤回；**不做** ApprovalDrawer 抽屉 / 通过 / 驳回 / 全屏预览 / 全屏对比 / 催办触发定时任务 —— 归后续"审批流运行时"
 - **测试**：9 条 Zod schema 单测 + 10 条 approval-meta 单测，全部通过
 
+### feat: 个人中心 A 阶段（5 Tab + 操作矩阵 + 离职交接）
+
+- **后端**
+  - 新增常量 `server/constants/personal.ts`（`PERSONAL_TABS` 5 Tab / `PERSONAL_FILTERABLE_STATUSES` 4 态 / `ITEM_SOURCE` 来源 / `PERMISSION_LEVEL`）
+  - 新增 Zod schema `server/schemas/personal.ts`（listQuery：tab 必填 + status/keyword/page/pageSize）
+  - 新增错误码 4 个：`DRAFT_NOT_FOUND` / `DRAFT_NOT_OWNER` / `DRAFT_NOT_DELETABLE` / `HANDOVER_NOT_DEPT_HEAD`
+  - 新增聚合接口 `GET /api/personal/documents` — 按 tab 五路：mine / shared / favorite / all(三路合并去重) / handover(特殊返回 HandoverGroup[])
+  - 新增接口 `DELETE /api/documents/:id/draft` — 仅 owner + status=1 可删，软删+写 `doc.draft_delete` 日志
+  - 离职移交部门负责人判定：`doc_departments.owner_user_id` / `sys_user_roles.dept_head` / `doc_department_admins` 三者任一
+- **前端**
+  - 扩展 `types/personal.ts`（PersonalTab / DocStatus / ItemSource / PermissionLevel / PersonalDocItem / HandoverGroup / PersonalListQuery）
+  - 新增 `api/personal.ts`（`apiGetPersonalDocs` 普通 tab / `apiGetPersonalHandover` 离职移交 / `apiDeleteDraft`）
+  - 新增 `utils/doc-meta.ts` — 文档状态色 + 来源徽章色 + 权限级别色（可跨页面复用）
+  - 新增 `utils/personal-matrix.ts` — 操作矩阵 `getActions(doc, userId)`，A 阶段只返回 `view` / `withdraw` / `delete`，其他 6 种按钮直接隐藏
+  - 新增 `utils/file-type.ts` — `getFileTypeClass` / `getFileTypeLabel` 抽公共（回收站/审批/离职交接均可复用，本轮替换了 HandoverAccordion、profile 两处内联实现）
+  - 新增组件 `components/HandoverAccordion.vue` — 离职交接手风琴（头像+姓名+部门+离职日期+文件数 badge；展开内嵌文档卡片）
+  - 重写 `pages/profile.vue`（449 行 mock → 新版）：ListPageShell + TabBar(5 Tab) + FilterBar(状态/关键词) + DataTable(普通 tab) + HandoverAccordion(离职移交 tab) + `useListPage` 编排（handover 单独走专用 fetch 规避联合类型）
+- **Seed（patch-005 + 同步 doc_seed.sql）**
+  - 10001 我创建的：补 8 条（草稿 2 + 编辑中 2 + 已发布 3 + 已驳回 1），叠加原有 5 条 → 13 条
+  - 10001 分享给我的：5 条（10002/10003 分享，混合可编辑/可阅读）
+  - 10001 收藏：5 条
+  - 10006 离职演示：`doc_users.status=0`，名下 4 份"待交接"文档（3 已发布 + 1 草稿），归属 `feishu_dept_qa`（质量保障部）；登录审批人 B（10005，该部门 dept_head）可在"离职移交"Tab 看到
+- **规格依据**：PRD §6.5（个人中心）全节 + §6.5.3（离职交接）
+- **范围**：A 阶段 = 5 Tab 读端 + 撤回提示跳转 + 删除草稿；**不做** 编辑 / 分享 / 下载 / 提交发布 / 转移归属人 / 申请编辑权限（全部依赖后续模块）
+- **注意事项**：当前页拆掉了原 mock 的"用户信息卡/编辑资料/修改密码/安全设置"—— PRD 没要求；若后续需要"账号设置"建议放到顶栏用户下拉而非个人中心内
+- **测试**：11 条 Zod schema 单测 + 12 条 personal-matrix 单测，全部通过
+
 ---
 
 ## 待开发（按优先级排序）

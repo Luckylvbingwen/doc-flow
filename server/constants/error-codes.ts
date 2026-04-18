@@ -102,6 +102,16 @@ export const APPROVAL_NOT_INITIATOR = 'APPROVAL_NOT_INITIATOR'
 /** 当前状态不可撤回（非"审批中"） (409) */
 export const APPROVAL_NOT_WITHDRAWABLE = 'APPROVAL_NOT_WITHDRAWABLE'
 
+// ─── 个人中心 ───
+/** 草稿不存在 (404) */
+export const DRAFT_NOT_FOUND = 'DRAFT_NOT_FOUND'
+/** 仅归属人可删除草稿 (403) */
+export const DRAFT_NOT_OWNER = 'DRAFT_NOT_OWNER'
+/** 非草稿状态不可删除（仅草稿可删） (409) */
+export const DRAFT_NOT_DELETABLE = 'DRAFT_NOT_DELETABLE'
+/** 非部门负责人不可访问离职移交 (403) */
+export const HANDOVER_NOT_DEPT_HEAD = 'HANDOVER_NOT_DEPT_HEAD'
+
 // ─── 回收站 ───
 /** 回收站项不存在或已被永久删除 (404) */
 export const RECYCLE_NOT_FOUND = 'RECYCLE_NOT_FOUND'

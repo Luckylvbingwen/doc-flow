@@ -401,6 +401,86 @@ ON DUPLICATE KEY UPDATE
   updated_at = NOW(3);
 
 -- =========================================================
+-- K.2 个人中心 seed 补充：10001 视角 + 离职演示（patch-005 同步）
+--     我创建的 额外 8 条 / 分享给我 5 条 / 收藏 5 条 / 10006 离职 + 4 份待交接
+-- =========================================================
+INSERT INTO doc_documents (
+  id, group_id, owner_user_id, title, ext, status, source_doc_id, current_version_id,
+  deleted_at_real, deleted_by_user_id,
+  created_by, updated_by, created_at, updated_at, deleted_at
+) VALUES
+  -- 10001 我创建的（8 条）
+  (50027, NULL,  10001, '草稿-季度述职报告',    'md',   1, NULL, NULL,  NULL, NULL, 10001, 10001, DATE_SUB(NOW(3), INTERVAL 2 HOUR), DATE_SUB(NOW(3), INTERVAL 30 MINUTE), NULL),
+  (50028, NULL,  10001, '草稿-系统架构v3 思路', 'md',   1, NULL, NULL,  NULL, NULL, 10001, 10001, DATE_SUB(NOW(3), INTERVAL 1 DAY),  DATE_SUB(NOW(3), INTERVAL 2 HOUR),   NULL),
+  (50029, 40001, 10001, '公司制度-编辑副本',     'md',   2, NULL, 51027, NULL, NULL, 10001, 10001, DATE_SUB(NOW(3), INTERVAL 6 HOUR), DATE_SUB(NOW(3), INTERVAL 1 HOUR),   NULL),
+  (50030, 40001, 10001, '年度战略-编辑副本',     'docx', 2, NULL, 51028, NULL, NULL, 10001, 10001, DATE_SUB(NOW(3), INTERVAL 1 DAY),  DATE_SUB(NOW(3), INTERVAL 3 HOUR),   NULL),
+  (50031, 40001, 10001, '董事会决议-202604',    'pdf',  4, NULL, 51029, NULL, NULL, 10001, 10001, DATE_SUB(NOW(3), INTERVAL 10 DAY), DATE_SUB(NOW(3), INTERVAL 8 DAY),    NULL),
+  (50032, 40001, 10001, '集团组织架构 v1.2',     'pdf',  4, NULL, 51030, NULL, NULL, 10001, 10001, DATE_SUB(NOW(3), INTERVAL 15 DAY), DATE_SUB(NOW(3), INTERVAL 12 DAY),   NULL),
+  (50033, 40001, 10001, '员工股权激励办法',      'docx', 4, NULL, 51031, NULL, NULL, 10001, 10001, DATE_SUB(NOW(3), INTERVAL 30 DAY), DATE_SUB(NOW(3), INTERVAL 25 DAY),   NULL),
+  (50034, 40001, 10001, '海外办公点方案',        'docx', 5, NULL, 51032, NULL, NULL, 10001, 10001, DATE_SUB(NOW(3), INTERVAL 20 DAY), DATE_SUB(NOW(3), INTERVAL 18 DAY),   NULL),
+  -- 10006 离职待交接（4 条）
+  (50035, 40002, 10006, '[离职待交接] QA 自动化脚本库', 'md',   4, NULL, 51033, NULL, NULL, 10006, 10006, DATE_SUB(NOW(3), INTERVAL 60 DAY), DATE_SUB(NOW(3), INTERVAL 5 DAY), NULL),
+  (50036, 40002, 10006, '[离职待交接] 测试计划-Q1',      'docx', 4, NULL, 51034, NULL, NULL, 10006, 10006, DATE_SUB(NOW(3), INTERVAL 50 DAY), DATE_SUB(NOW(3), INTERVAL 5 DAY), NULL),
+  (50037, 40002, 10006, '[离职待交接] 缺陷分析报告',     'xlsx', 4, NULL, 51035, NULL, NULL, 10006, 10006, DATE_SUB(NOW(3), INTERVAL 40 DAY), DATE_SUB(NOW(3), INTERVAL 5 DAY), NULL),
+  (50038, NULL,  10006, '[离职待交接] 个人技术笔记',     'md',   1, NULL, NULL,  NULL, NULL, 10006, 10006, DATE_SUB(NOW(3), INTERVAL 30 DAY), DATE_SUB(NOW(3), INTERVAL 5 DAY), NULL)
+ON DUPLICATE KEY UPDATE
+  status = VALUES(status), owner_user_id = VALUES(owner_user_id), current_version_id = VALUES(current_version_id), updated_at = VALUES(updated_at);
+
+INSERT INTO doc_document_versions (
+  id, document_id, version_no, storage_key, storage_bucket, file_size, mime_type,
+  checksum, source_type, source_meta, change_note, uploaded_by, published_at,
+  created_at, updated_at, deleted_at
+) VALUES
+  (51027, 50029, 'v1.0', 'docs/profile/policy-v1.md',       'docflow-local',  24576, 'text/markdown',
+   'sha256_profile_50029_v1', 1, JSON_OBJECT('channel', 'web'), '公司制度初版', 10001, DATE_SUB(NOW(3), INTERVAL 30 DAY), DATE_SUB(NOW(3), INTERVAL 30 DAY), DATE_SUB(NOW(3), INTERVAL 30 DAY), NULL),
+  (51028, 50030, 'v2.0', 'docs/profile/strategy-v2.docx',   'docflow-local', 450000,
+   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+   'sha256_profile_50030_v1', 1, JSON_OBJECT('channel', 'web'), '战略迭代', 10001, DATE_SUB(NOW(3), INTERVAL 40 DAY), DATE_SUB(NOW(3), INTERVAL 40 DAY), DATE_SUB(NOW(3), INTERVAL 40 DAY), NULL),
+  (51029, 50031, 'v1.0', 'docs/profile/board-202604.pdf',   'docflow-local', 890000, 'application/pdf',
+   'sha256_profile_50031_v1', 1, JSON_OBJECT('channel', 'web'), '董事会决议', 10001, DATE_SUB(NOW(3), INTERVAL 8 DAY),  DATE_SUB(NOW(3), INTERVAL 10 DAY), DATE_SUB(NOW(3), INTERVAL 8 DAY),  NULL),
+  (51030, 50032, 'v1.2', 'docs/profile/org-chart-v12.pdf',  'docflow-local', 614400, 'application/pdf',
+   'sha256_profile_50032_v1', 1, JSON_OBJECT('channel', 'web'), '组织架构更新', 10001, DATE_SUB(NOW(3), INTERVAL 12 DAY), DATE_SUB(NOW(3), INTERVAL 15 DAY), DATE_SUB(NOW(3), INTERVAL 12 DAY), NULL),
+  (51031, 50033, 'v1.0', 'docs/profile/equity-plan.docx',   'docflow-local', 358400,
+   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+   'sha256_profile_50033_v1', 1, JSON_OBJECT('channel', 'web'), '股权激励', 10001, DATE_SUB(NOW(3), INTERVAL 25 DAY), DATE_SUB(NOW(3), INTERVAL 30 DAY), DATE_SUB(NOW(3), INTERVAL 25 DAY), NULL),
+  (51032, 50034, 'v1.0', 'docs/profile/overseas-plan.docx', 'docflow-local', 270000,
+   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+   'sha256_profile_50034_v1', 1, JSON_OBJECT('channel', 'web'), '海外拓展', 10001, NULL, DATE_SUB(NOW(3), INTERVAL 20 DAY), DATE_SUB(NOW(3), INTERVAL 20 DAY), NULL),
+  (51033, 50035, 'v1.0', 'docs/handover/qa-scripts.md',     'docflow-local',  32768, 'text/markdown',
+   'sha256_handover_50035_v1', 1, JSON_OBJECT('channel', 'web'), '自动化脚本', 10006, DATE_SUB(NOW(3), INTERVAL 55 DAY), DATE_SUB(NOW(3), INTERVAL 60 DAY), DATE_SUB(NOW(3), INTERVAL 55 DAY), NULL),
+  (51034, 50036, 'v1.0', 'docs/handover/test-plan-q1.docx', 'docflow-local', 260000,
+   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+   'sha256_handover_50036_v1', 1, JSON_OBJECT('channel', 'web'), 'Q1 测试计划', 10006, DATE_SUB(NOW(3), INTERVAL 45 DAY), DATE_SUB(NOW(3), INTERVAL 50 DAY), DATE_SUB(NOW(3), INTERVAL 45 DAY), NULL),
+  (51035, 50037, 'v1.0', 'docs/handover/defects.xlsx',      'docflow-local', 180000,
+   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+   'sha256_handover_50037_v1', 1, JSON_OBJECT('channel', 'web'), '缺陷分析', 10006, DATE_SUB(NOW(3), INTERVAL 35 DAY), DATE_SUB(NOW(3), INTERVAL 40 DAY), DATE_SUB(NOW(3), INTERVAL 35 DAY), NULL)
+ON DUPLICATE KEY UPDATE version_no = VALUES(version_no), file_size = VALUES(file_size), updated_at = VALUES(updated_at);
+
+-- 分享给 10001 的文档权限（5 条）
+INSERT INTO doc_document_permissions (
+  id, document_id, user_id, permission, granted_by, expires_at, created_at, updated_at, deleted_at
+) VALUES
+  (52010, 50014, 10001, 2, 10002, NULL, DATE_SUB(NOW(3), INTERVAL 2 DAY),  DATE_SUB(NOW(3), INTERVAL 2 DAY),  NULL),
+  (52011, 50015, 10001, 1, 10003, NULL, DATE_SUB(NOW(3), INTERVAL 3 DAY),  DATE_SUB(NOW(3), INTERVAL 3 DAY),  NULL),
+  (52012, 50018, 10001, 2, 10002, NULL, DATE_SUB(NOW(3), INTERVAL 5 DAY),  DATE_SUB(NOW(3), INTERVAL 5 DAY),  NULL),
+  (52013, 50019, 10001, 1, 10003, NULL, DATE_SUB(NOW(3), INTERVAL 7 DAY),  DATE_SUB(NOW(3), INTERVAL 7 DAY),  NULL),
+  (52014, 50022, 10001, 2, 10002, NULL, DATE_SUB(NOW(3), INTERVAL 1 DAY),  DATE_SUB(NOW(3), INTERVAL 1 DAY),  NULL)
+ON DUPLICATE KEY UPDATE permission = VALUES(permission), updated_at = VALUES(updated_at);
+
+-- 10001 收藏的共享文档（5 条）
+INSERT INTO doc_document_favorites (id, document_id, user_id, created_at) VALUES
+  (53010, 50001, 10001, DATE_SUB(NOW(3), INTERVAL 2 DAY)),
+  (53011, 50002, 10001, DATE_SUB(NOW(3), INTERVAL 4 DAY)),
+  (53012, 50014, 10001, DATE_SUB(NOW(3), INTERVAL 6 DAY)),
+  (53013, 50019, 10001, DATE_SUB(NOW(3), INTERVAL 8 DAY)),
+  (53014, 50025, 10001, DATE_SUB(NOW(3), INTERVAL 10 DAY))
+ON DUPLICATE KEY UPDATE document_id = VALUES(document_id);
+
+-- 10006 离职（status=0，演示离职交接给部门负责人 10005）
+UPDATE doc_users SET status = 0, updated_at = DATE_SUB(NOW(3), INTERVAL 3 DAY)
+WHERE id = 10006;
+
+-- =========================================================
 -- L. 站内通知样例（§6.8 / M1-M24 每种 ≥1 条，共 45 条）
 --    user_id: 10001-10006（见 A 节）
 --    biz_id:  document=50001..50004 / group=40001..40004

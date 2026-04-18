@@ -171,6 +171,13 @@
 | GET | /api/approvals | 是 | 仅操作自己相关 | 审批列表（按 tab 分三路：待我审批/我发起的/我已处理；分页，支持状态筛选） |
 | POST | /api/approvals/:id/withdraw | 是 | 仅发起人 + reviewing | 撤回审批（status=5） |
 
+### 个人中心 (personal)
+
+| 方法 | 路径 | 鉴权 | 权限/条件 | 说明 |
+| --- | --- | --- | --- | --- |
+| GET | /api/personal/documents | 是 | 仅操作自己相关 | 聚合列表（tab: all/mine/shared/favorite/handover；分页 + 状态/关键词筛选） |
+| DELETE | /api/documents/:id/draft | 是 | 仅 owner + 草稿 | 删除草稿（软删 status=6 + 进回收站） |
+
 ### 定时任务
 
 | 任务名 | cron | 说明 |
@@ -1245,6 +1252,79 @@
 - 404 `APPROVAL_NOT_FOUND` — 审批实例不存在
 - 403 `APPROVAL_NOT_INITIATOR` — 非发起人
 - 409 `APPROVAL_NOT_WITHDRAWABLE` — 当前状态不可撤回
+
+---
+
+### 3.56 GET /api/personal/documents
+
+**路径**：`GET /api/personal/documents`
+**鉴权**：JWT 登录即可；不挂 `requirePermission`，均以 `event.context.user.id` 过滤
+
+**Query**：
+- `tab` 必填，`all` / `mine` / `shared` / `favorite` / `handover`
+- `status` 可选 `1` 草稿 / `2` 编辑中 / `3` 审批中 / `4` 已发布（handover tab 忽略）
+- `keyword` 可选，文件名模糊（≤100 字符）
+- `page` 默认 1，`pageSize` 默认 10，范围 [1, 100]
+
+**数据范围**（五路）：
+- `mine`：`doc_documents.owner_user_id = self`
+- `shared`：`doc_document_permissions.user_id = self AND d.owner <> self`（附带 `permissionLevel` 1 可编辑 / 2 可阅读）
+- `favorite`：`doc_document_favorites.user_id = self`
+- `all`：上述三路 UNION，按 id 去重，优先级 `mine > shared > favorite`（内存合并 + 分页）
+- `handover`：**仅部门负责人**可访问（`doc_departments.owner_user_id = self` / `sys_user_roles.code=dept_head` / `doc_department_admins.user_id = self` 三者之一）。返回该负责人管辖部门下**已停用员工（`doc_users.status=0`）**名下的文档，按**员工分组**。非部门负责人 → 403 `HANDOVER_NOT_DEPT_HEAD`。
+
+**「新增/迭代」判定**：由列表项 `changeType` 承担（同审批中心一致，此处沿用）。
+
+**普通 tab 响应**：
+```json
+{
+  "success": true, "code": "OK", "message": "OK",
+  "data": {
+    "list": [{
+      "id": 50027, "title": "草稿-季度述职报告", "ext": "md",
+      "status": 1, "groupId": null, "groupName": "-",
+      "ownerUserId": 10001, "ownerName": "系统管理员",
+      "versionNo": "-", "fileSize": 0, "updatedAt": 1744858800000,
+      "source": "mine", "permissionLevel": null
+    }],
+    "total": 13, "page": 1, "pageSize": 10
+  }
+}
+```
+
+**handover 响应**：
+```json
+{
+  "success": true, "code": "OK",
+  "data": {
+    "list": [{
+      "userId": 10006, "userName": "普通成员", "avatarUrl": "...",
+      "departmentId": 20002, "departmentName": "质量保障部",
+      "leftAt": 1744858800000,
+      "documents": [ /* PersonalDocItem[] */ ]
+    }],
+    "total": 1, "page": 1, "pageSize": 100
+  }
+}
+```
+
+---
+
+### 3.57 DELETE /api/documents/:id/draft
+
+**路径**：`DELETE /api/documents/:id/draft`
+**鉴权**：JWT 登录即可
+
+**规则**：
+- 仅 `owner_user_id = self` 可删（否则 403 `DRAFT_NOT_OWNER`）
+- 仅 `status=1`（草稿）可删（否则 409 `DRAFT_NOT_DELETABLE`）
+- 软删：`status=6 / deleted_at_real=NOW() / deleted_by_user_id=self`
+- 写 `doc.draft_delete` 操作日志
+
+**响应**：
+```json
+{ "success": true, "code": "OK", "message": "已进入个人回收站，30天内可恢复", "data": { "id": 50027 } }
+```
 
 ---
 
