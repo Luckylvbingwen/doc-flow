@@ -130,8 +130,9 @@
   }
 
   /* 填高模式取消 Pagination 的 sticky 与投影 —— 由 shell 的 flex 保证它位于末尾 */
+  /* 用 relative 而非 static，保留定位上下文给 .df-pagination-scrollbar（absolute 吸附） */
   .df-pagination {
-    position: static;
+    position: relative;
     box-shadow: none;
     border-top: 1px solid var(--df-border);
     border-radius: 12px;

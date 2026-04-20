@@ -49,7 +49,7 @@ v-model="filterRoles" multiple collapse-tags collapse-tags-tooltip placeholder="
 		<DataTable
 v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list" :columns="columns"
 			:total="total" :loading="loading" :page-sizes="[20, 50, 100]" :row-class-name="rowClassName" row-key="id"
-			fill-height empty-text="暂无用户" @page-change="onPageChange">
+			:action-width="160" fill-height empty-text="暂无用户" @page-change="onPageChange">
 
 			<!-- 姓名 + 头像 -->
 			<template #name="{ row }">
