@@ -1,107 +1,111 @@
+<!--
+  通用 RBAC 角色管理页面（framework 层）
+
+  — DocFlow 业务不暴露此菜单入口（见 layouts/prototype.vue 菜单注释）
+  — 抽离为 nuxt-fullstack-starter 模板时启用对应侧栏菜单即可
+  — 页面逻辑保持与原 components/admin/RoleManager.vue 一致
+-->
 <template>
-	<div class="role-manager">
-		<!-- ── 工具栏 ── -->
-		<DataTable
-:data="roleList" :columns="columns" :loading="loading" :total="total" :page="page" :page-size="pageSize"
-			:action-width="150" show-search search-placeholder="搜索角色名称或标识…" @update:page="page = $event"
-			@update:page-size="pageSize = $event" @search="onSearch">
-			<template #toolbar>
-				<el-button v-auth="'role:create'" type="primary" @click="openCreateDialog">
-					<el-icon class="mr-1">
-						<Plus />
-					</el-icon>
-					新增角色
-				</el-button>
-			</template>
+	<section class="pf-page-stack">
+		<PageTitle title="RBAC 角色管理" subtitle="通用 RBAC 底座 — 角色 CRUD + 权限矩阵" :refreshing="loading" @refresh="loadRoles" />
 
-			<!-- 系统标记 -->
-			<template #isSystem="{ row }">
-				<el-tag v-if="row.isSystem" type="warning" size="small" disable-transitions>内置</el-tag>
-				<el-tag v-else type="info" size="small" disable-transitions>自定义</el-tag>
-			</template>
+		<div class="role-manager">
+			<DataTable
+:data="roleList" :columns="columns" :loading="loading" :total="total" :page="page"
+				:page-size="pageSize" :action-width="150" show-search search-placeholder="搜索角色名称或标识…"
+				@update:page="page = $event" @update:page-size="pageSize = $event" @search="onSearch">
+				<template #toolbar>
+					<el-button v-auth="'role:create'" type="primary" @click="openCreateDialog">
+						<el-icon class="mr-1">
+							<Plus />
+						</el-icon>
+						新增角色
+					</el-button>
+				</template>
 
-			<!-- 状态 -->
-			<template #status="{ row }">
-				<el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small" disable-transitions>
-					{{ row.status === 1 ? '启用' : '停用' }}
-				</el-tag>
-			</template>
+				<template #isSystem="{ row }">
+					<el-tag v-if="row.isSystem" type="warning" size="small" disable-transitions>内置</el-tag>
+					<el-tag v-else type="info" size="small" disable-transitions>自定义</el-tag>
+				</template>
 
-			<!-- 权限数 -->
-			<template #permissionCount="{ row }">
-				<el-button link type="primary" size="small" @click="openPermissionDialog(row)">
-					{{ row.permissionCount }} 项
-				</el-button>
-			</template>
+				<template #status="{ row }">
+					<el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small" disable-transitions>
+						{{ row.status === 1 ? '启用' : '停用' }}
+					</el-tag>
+				</template>
 
-			<!-- 操作 -->
-			<template #action="{ row }">
-				<el-button v-auth="'role:update'" link type="primary" size="small" @click="openEditDialog(row)">
-					编辑
-				</el-button>
-				<el-button v-auth="'role:update'" link type="primary" size="small" @click="openPermissionDialog(row)">
-					权限
-				</el-button>
-				<el-button
+				<template #permissionCount="{ row }">
+					<el-button link type="primary" size="small" @click="openPermissionDialog(row)">
+						{{ row.permissionCount }} 项
+					</el-button>
+				</template>
+
+				<template #action="{ row }">
+					<el-button v-auth="'role:update'" link type="primary" size="small" @click="openEditDialog(row)">
+						编辑
+					</el-button>
+					<el-button v-auth="'role:update'" link type="primary" size="small" @click="openPermissionDialog(row)">
+						权限
+					</el-button>
+					<el-button
 v-if="!row.isSystem" v-auth="'role:delete'" link type="danger" size="small"
-					:loading="deletingId === row.id" @click="handleDelete(row)">
-					删除
-				</el-button>
-			</template>
-		</DataTable>
+						:loading="deletingId === row.id" @click="handleDelete(row)">
+						删除
+					</el-button>
+				</template>
+			</DataTable>
 
-		<!-- ── 新建/编辑角色弹窗 ── -->
-		<Modal
+			<Modal
 v-model="roleDialogVisible" :title="isEditing ? '编辑角色' : '新增角色'" :confirm-loading="saving"
-			@confirm="handleSaveRole" @close="resetRoleForm">
-			<el-form ref="roleFormRef" :model="roleForm" :rules="roleRules" label-width="80px">
-				<el-form-item label="角色标识" prop="code">
-					<el-input v-model="roleForm.code" :disabled="isEditing" placeholder="如 editor、reviewer（仅小写字母/数字/下划线）" />
-				</el-form-item>
-				<el-form-item label="角色名称" prop="name">
-					<el-input v-model="roleForm.name" placeholder="如 编辑者、审核员" />
-				</el-form-item>
-				<el-form-item label="描述" prop="description">
-					<el-input v-model="roleForm.description" type="textarea" :rows="2" placeholder="可选" />
-				</el-form-item>
-				<el-form-item label="状态" prop="status">
-					<el-switch
+				@confirm="handleSaveRole" @close="resetRoleForm">
+				<el-form ref="roleFormRef" :model="roleForm" :rules="roleRules" label-width="80px">
+					<el-form-item label="角色标识" prop="code">
+						<el-input v-model="roleForm.code" :disabled="isEditing" placeholder="如 editor、reviewer（仅小写字母/数字/下划线）" />
+					</el-form-item>
+					<el-form-item label="角色名称" prop="name">
+						<el-input v-model="roleForm.name" placeholder="如 编辑者、审核员" />
+					</el-form-item>
+					<el-form-item label="描述" prop="description">
+						<el-input v-model="roleForm.description" type="textarea" :rows="2" placeholder="可选" />
+					</el-form-item>
+					<el-form-item label="状态" prop="status">
+						<el-switch
 v-model="roleForm.status" :active-value="1" :inactive-value="0" active-text="启用"
-						inactive-text="停用" />
-				</el-form-item>
-			</el-form>
-		</Modal>
+							inactive-text="停用" />
+					</el-form-item>
+				</el-form>
+			</Modal>
 
-		<!-- ── 权限分配弹窗 ── -->
-		<Modal
+			<Modal
 v-model="permDialogVisible" title="分配权限" width="680px" :confirm-loading="savingPerms"
-			@confirm="handleSavePermissions">
-			<div v-if="currentRole" class="perm-dialog-header">
-				<span>角色：<strong>{{ currentRole.name }}</strong>（{{ currentRole.code }}）</span>
-			</div>
-			<el-scrollbar max-height="420px">
-				<div v-loading="loadingPerms" class="perm-groups">
-					<div v-for="group in permissionGroups" :key="group.module" class="perm-group">
-						<div class="perm-group-header">
-							<el-checkbox
+				@confirm="handleSavePermissions">
+				<div v-if="currentRole" class="perm-dialog-header">
+					<span>角色：<strong>{{ currentRole.name }}</strong>（{{ currentRole.code }}）</span>
+				</div>
+				<el-scrollbar max-height="420px">
+					<div v-loading="loadingPerms" class="perm-groups">
+						<div v-for="group in permissionGroups" :key="group.module" class="perm-group">
+							<div class="perm-group-header">
+								<el-checkbox
 :model-value="isModuleAllChecked(group)" :indeterminate="isModuleIndeterminate(group)"
-								@change="toggleModule(group, $event as boolean)">
-								<strong>{{ moduleLabels[group.module] || group.module }}</strong>
-							</el-checkbox>
-						</div>
-						<div class="perm-group-body">
-							<el-checkbox
+									@change="toggleModule(group, $event as boolean)">
+									<strong>{{ moduleLabels[group.module] || group.module }}</strong>
+								</el-checkbox>
+							</div>
+							<div class="perm-group-body">
+								<el-checkbox
 v-for="perm in group.permissions" :key="perm.id"
-								:model-value="selectedPermIds.includes(perm.id)" @change="togglePerm(perm.id, $event as boolean)">
-								{{ perm.name }}
-								<span v-if="perm.description" class="perm-desc">{{ perm.description }}</span>
-							</el-checkbox>
+									:model-value="selectedPermIds.includes(perm.id)" @change="togglePerm(perm.id, $event as boolean)">
+									{{ perm.name }}
+									<span v-if="perm.description" class="perm-desc">{{ perm.description }}</span>
+								</el-checkbox>
+							</div>
 						</div>
 					</div>
-				</div>
-			</el-scrollbar>
-		</Modal>
-	</div>
+				</el-scrollbar>
+			</Modal>
+		</div>
+	</section>
 </template>
 
 <script setup lang="ts">
@@ -113,7 +117,17 @@ import {
 	apiGetPermissions, apiGetRole, apiSetRolePermissions,
 } from '~/api/rbac'
 
-// ── 表格列定义 ──
+definePageMeta({
+	layout: 'prototype',
+	middleware: defineNuxtRouteMiddleware(() => {
+		const { can } = useAuth()
+		if (!can('role:read')) {
+			return navigateTo('/docs')
+		}
+	}),
+})
+useHead({ title: 'RBAC 角色管理 - DocFlow' })
+
 const columns = [
 	{ prop: 'name', label: '角色名称', minWidth: 120 },
 	{ prop: 'code', label: '角色标识', minWidth: 120 },
@@ -124,17 +138,14 @@ const columns = [
 	{ prop: 'createdAt', label: '创建时间', width: 170, dateFormat: 'datetime' },
 ]
 
-// ── 数据状态 ──
 const loading = ref(false)
 const roleList = ref<RoleListItem[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(20)
 const keyword = ref('')
-
 const deletingId = ref<number | null>(null)
 
-// ── 新建/编辑 ──
 const roleDialogVisible = ref(false)
 const isEditing = ref(false)
 const editingId = ref<number | null>(null)
@@ -154,7 +165,6 @@ const roleRules: FormRules = {
 	name: [{ required: true, message: '请输入角色名称', trigger: 'blur' }]
 }
 
-// ── 权限分配 ──
 const permDialogVisible = ref(false)
 const currentRole = ref<RoleListItem | null>(null)
 const loadingPerms = ref(false)
@@ -170,7 +180,9 @@ const moduleLabels: Record<string, string> = {
 	approval: '审批管理',
 	log: '日志管理',
 	notification: '通知管理',
-	system: '系统配置'
+	system: '系统配置',
+	admin: '系统管理',
+	recycle: '回收站',
 }
 
 const permissionGroups = computed<PermissionGroup[]>(() => {
@@ -182,7 +194,6 @@ const permissionGroups = computed<PermissionGroup[]>(() => {
 	return Array.from(map.entries()).map(([module, permissions]) => ({ module, permissions }))
 })
 
-// ── 加载角色列表 ──
 async function loadRoles() {
 	loading.value = true
 	try {
@@ -212,7 +223,6 @@ function onSearch(kw: string) {
 	}
 }
 
-// 分页变更——跳过 hydration 阶段的虚假触发
 let _mounted = false
 watch([() => page.value, () => pageSize.value], () => {
 	if (_mounted) loadRoles()
@@ -223,7 +233,6 @@ onMounted(() => {
 	loadRoles()
 })
 
-// ── 新建 ──
 function openCreateDialog() {
 	isEditing.value = false
 	editingId.value = null
@@ -234,7 +243,6 @@ function openCreateDialog() {
 	roleDialogVisible.value = true
 }
 
-// ── 编辑 ──
 function openEditDialog(row: RoleListItem) {
 	isEditing.value = true
 	editingId.value = row.id
@@ -249,7 +257,6 @@ function resetRoleForm() {
 	roleFormRef.value?.resetFields()
 }
 
-// ── 保存角色 ──
 async function handleSaveRole() {
 	if (!roleFormRef.value) return
 	const valid = await roleFormRef.value.validate().catch(() => false)
@@ -287,7 +294,6 @@ async function handleSaveRole() {
 	}
 }
 
-// ── 删除角色 ──
 async function handleDelete(row: RoleListItem) {
 	const confirmed = await msgConfirm(
 		`确定删除角色「${row.name}」？关联的用户将失去该角色的权限。`,
@@ -312,14 +318,12 @@ async function handleDelete(row: RoleListItem) {
 	}
 }
 
-// ── 权限分配 ──
 async function openPermissionDialog(row: RoleListItem) {
 	currentRole.value = row
 	permDialogVisible.value = true
 	loadingPerms.value = true
 
 	try {
-		// 并行加载全部权限 + 角色已有权限
 		const [allRes, roleRes] = await Promise.all([
 			apiGetPermissions(),
 			apiGetRole(row.id),
@@ -385,9 +389,6 @@ async function handleSavePermissions() {
 		savingPerms.value = false
 	}
 }
-
-// ── 暴露给父组件 ──
-defineExpose({ refresh: loadRoles, loading })
 </script>
 
 <style lang="scss" scoped>

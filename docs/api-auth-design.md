@@ -1328,6 +1328,65 @@
 
 ---
 
+### 3.58 GET /api/admin/users
+
+**路径**：`GET /api/admin/users`
+**鉴权**：`admin:user_read`（仅 super_admin）
+
+**Query 参数**：
+- `keyword`：姓名 / 邮箱关键词
+- `roles`：逗号分隔，支持 `super_admin` / `company_admin` / `pl_head` / `dept_head` / `none`（无任何系统角色）
+- `status`：`all` / `active` / `deactivated`（默认 `all`）
+- `page` / `pageSize`（默认 1 / 20，最大 100）
+
+**返回**：每行多角色聚合 + 管理范围聚合，按"系统管理员→公司层→产品线→部门→无角色"权重排序。
+
+```json
+{
+  "success": true, "code": "OK", "data": {
+    "list": [{
+      "id": 10001, "name": "系统管理员", "email": "admin@docflow.local",
+      "avatarUrl": "https://...", "status": 1,
+      "roles": [{ "code": "super_admin", "name": "系统管理员", "feishuSynced": false }],
+      "scopes": {
+        "companyAdmin": false,
+        "productLines": [],
+        "departments": []
+      },
+      "createdAt": 1744858800000, "deactivatedAt": null
+    }],
+    "total": 10, "page": 1, "pageSize": 20
+  }
+}
+```
+
+---
+
+### 3.59 PUT /api/admin/users/:id/roles
+
+**路径**：`PUT /api/admin/users/:id/roles`
+**鉴权**：`admin:role_assign`（仅 super_admin）
+
+**Body**：
+```json
+{ "companyAdmin": true, "plHead": false }
+```
+
+**规则**：
+- 目标用户是 super_admin → 403 `ADMIN_SUPER_ADMIN_PROTECTED`（系统预设受保护）
+- 取消 `plHead` 时若用户仍是任何产品线的 `owner_user_id` → 409 `ADMIN_PL_HEAD_HAS_OWNERSHIP`
+- 不处理 `dept_head`（飞书同步只读）
+- 事务内 INSERT / DELETE `sys_user_roles`；`company_admin` 全局 scope，`pl_head` 授予时 `scope_type=NULL`（候选身份），具体产品线归属由「创建/编辑产品线」入口建立
+- 写 `admin.role_assign` 操作日志
+
+**响应**：
+```json
+{ "success": true, "code": "OK", "message": "角色已更新",
+  "data": { "changed": true, "changes": ["授予公司层管理员"] } }
+```
+
+---
+
 ## 4. 数据与安全说明
 
 1. 登录用户来源：doc_users（status=1 且 deleted_at IS NULL）。

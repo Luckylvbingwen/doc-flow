@@ -38,6 +38,8 @@ export interface FeishuDept {
 	open_department_id: string
 	department_id?: string
 	name?: string
+	/** 部门主管的 user_id（飞书开放平台字段） */
+	leader_user_id?: string
 }
 
 /** 飞书通讯录用户 */
@@ -87,9 +89,24 @@ export interface FeishuUserInfoResponse {
 
 /** 通讯录同步结果 */
 export interface FeishuSyncResult {
+	/** 飞书拉取到的用户总数 */
 	total: number
+	/** 飞书拉取到的部门数 */
 	departments: number
+	/** doc_feishu_users 新建 */
 	created: number
+	/** doc_feishu_users 更新 */
 	updated: number
+	/** doc_feishu_users 因飞书侧已不存在被标记 hidden */
 	hidden: number
+	/** doc_departments 新建 */
+	deptCreated: number
+	/** doc_departments 更新 */
+	deptUpdated: number
+	/** doc_users 新建（§327 全员预落地） */
+	docUserCreated: number
+	/** doc_users 更新 */
+	docUserUpdated: number
+	/** 指派 dept_head 角色数 */
+	deptHeadAssigned: number
 }

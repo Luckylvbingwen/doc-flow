@@ -1,56 +1,64 @@
+<!--
+  通用 RBAC 用户-角色分配页面（framework 层）
+
+  — DocFlow 业务不暴露此菜单入口（见 layouts/prototype.vue 菜单注释）
+  — 抽离为 nuxt-fullstack-starter 模板时启用对应侧栏菜单即可
+  — 页面逻辑保持与原 components/admin/UserRoleManager.vue 一致
+-->
 <template>
-	<div class="user-role-manager">
-		<DataTable
+	<section class="pf-page-stack">
+		<PageTitle title="RBAC 用户授权" subtitle="通用 RBAC 底座 — 用户 × 角色分配" :refreshing="loading" @refresh="loadList" />
+
+		<div class="user-role-manager">
+			<DataTable
 :data="list" :columns="columns" :loading="loading" :total="total" :page="page" :page-size="pageSize"
-			show-search search-placeholder="搜索用户名或邮箱…" @update:page="page = $event" @update:page-size="pageSize = $event"
-			@search="onSearch">
-			<template #toolbar>
-				<el-select v-model="filterRoleId" placeholder="按角色筛选" clearable style="width: 160px" @change="onFilterChange">
-					<el-option v-for="r in roleOptions" :key="r.id" :label="r.name" :value="r.id" />
-				</el-select>
-				<el-button v-auth="'role:assign'" type="primary" @click="openAssignDialog">
-					<el-icon class="mr-1">
-						<Plus />
-					</el-icon>
-					分配角色
-				</el-button>
-			</template>
-
-			<!-- 角色标签 -->
-			<template #roleName="{ row }">
-				<el-tag size="small" disable-transitions>{{ row.roleName }}</el-tag>
-			</template>
-
-			<!-- 操作 -->
-			<template #action="{ row }">
-				<el-button
-v-auth="'role:assign'" link type="danger" size="small" :loading="revokingId === row.id"
-					@click="handleRevoke(row)">
-					撤销
-				</el-button>
-			</template>
-		</DataTable>
-
-		<!-- ── 分配角色弹窗 ── -->
-		<Modal v-model="assignDialogVisible" title="分配角色" :confirm-loading="assigning" @confirm="handleAssign">
-			<el-form label-width="80px">
-				<el-form-item label="用户">
-					<el-select
-v-model="assignForm.userId" filterable remote :remote-method="searchUsers"
-						:loading="searchingUsers" placeholder="输入用户名或邮箱搜索" style="width: 100%">
-						<el-option
-v-for="u in userOptions" :key="u.id" :label="`${u.name}${u.email ? ' (' + u.email + ')' : ''}`"
-							:value="u.id" />
-					</el-select>
-				</el-form-item>
-				<el-form-item label="角色">
-					<el-select v-model="assignForm.roleId" placeholder="选择角色" style="width: 100%">
+				show-search search-placeholder="搜索用户名或邮箱…" @update:page="page = $event" @update:page-size="pageSize = $event"
+				@search="onSearch">
+				<template #toolbar>
+					<el-select v-model="filterRoleId" placeholder="按角色筛选" clearable style="width: 160px" @change="onFilterChange">
 						<el-option v-for="r in roleOptions" :key="r.id" :label="r.name" :value="r.id" />
 					</el-select>
-				</el-form-item>
-			</el-form>
-		</Modal>
-	</div>
+					<el-button v-auth="'role:assign'" type="primary" @click="openAssignDialog">
+						<el-icon class="mr-1">
+							<Plus />
+						</el-icon>
+						分配角色
+					</el-button>
+				</template>
+
+				<template #roleName="{ row }">
+					<el-tag size="small" disable-transitions>{{ row.roleName }}</el-tag>
+				</template>
+
+				<template #action="{ row }">
+					<el-button
+v-auth="'role:assign'" link type="danger" size="small" :loading="revokingId === row.id"
+						@click="handleRevoke(row)">
+						撤销
+					</el-button>
+				</template>
+			</DataTable>
+
+			<Modal v-model="assignDialogVisible" title="分配角色" :confirm-loading="assigning" @confirm="handleAssign">
+				<el-form label-width="80px">
+					<el-form-item label="用户">
+						<el-select
+v-model="assignForm.userId" filterable remote :remote-method="searchUsers"
+							:loading="searchingUsers" placeholder="输入用户名或邮箱搜索" style="width: 100%">
+							<el-option
+v-for="u in userOptions" :key="u.id" :label="`${u.name}${u.email ? ' (' + u.email + ')' : ''}`"
+								:value="u.id" />
+						</el-select>
+					</el-form-item>
+					<el-form-item label="角色">
+						<el-select v-model="assignForm.roleId" placeholder="选择角色" style="width: 100%">
+							<el-option v-for="r in roleOptions" :key="r.id" :label="r.name" :value="r.id" />
+						</el-select>
+					</el-form-item>
+				</el-form>
+			</Modal>
+		</div>
+	</section>
 </template>
 
 <script setup lang="ts">
@@ -61,7 +69,17 @@ import {
 	apiRevokeUserRole, apiSearchUsers,
 } from '~/api/rbac'
 
-// ── 表格列 ──
+definePageMeta({
+	layout: 'prototype',
+	middleware: defineNuxtRouteMiddleware(() => {
+		const { can } = useAuth()
+		if (!can('role:assign')) {
+			return navigateTo('/docs')
+		}
+	}),
+})
+useHead({ title: 'RBAC 用户授权 - DocFlow' })
+
 const columns = [
 	{ prop: 'userName', label: '用户名', minWidth: 120 },
 	{ prop: 'userEmail', label: '邮箱', minWidth: 160 },
@@ -69,7 +87,6 @@ const columns = [
 	{ prop: 'createdAt', label: '分配时间', width: 170, dateFormat: 'datetime' }
 ]
 
-// ── 数据状态 ──
 const loading = ref(false)
 const list = ref<UserRoleItem[]>([])
 const total = ref(0)
@@ -79,17 +96,14 @@ const keyword = ref('')
 const filterRoleId = ref<number | ''>('')
 const revokingId = ref<number | null>(null)
 
-// ── 角色选项（用于筛选和分配） ──
 const roleOptions = ref<Array<{ id: number; name: string; code: string }>>([])
 
-// ── 分配弹窗 ──
 const assignDialogVisible = ref(false)
 const assigning = ref(false)
 const assignForm = reactive({ userId: null as number | null, roleId: null as number | null })
 const userOptions = ref<Array<{ id: number; name: string; email: string | null }>>([])
 const searchingUsers = ref(false)
 
-// ── 加载列表 ──
 async function loadList() {
 	loading.value = true
 	try {
@@ -114,13 +128,12 @@ async function loadList() {
 function onSearch(kw: string) {
 	keyword.value = kw
 	if (page.value !== 1) {
-		page.value = 1 // watch 会触发 loadList
+		page.value = 1
 	} else {
 		loadList()
 	}
 }
 
-// 分页变更——跳过 hydration 阶段的虚假触发
 let _mounted = false
 watch([() => page.value, () => pageSize.value], () => {
 	if (_mounted) loadList()
@@ -129,6 +142,7 @@ watch([() => page.value, () => pageSize.value], () => {
 onMounted(() => {
 	_mounted = true
 	loadList()
+	loadRoleOptions()
 })
 
 function onFilterChange() {
@@ -136,7 +150,6 @@ function onFilterChange() {
 	loadList()
 }
 
-// ── 加载角色选项 ──
 async function loadRoleOptions() {
 	try {
 		const res = await apiGetRoles({ pageSize: 100 })
@@ -153,7 +166,6 @@ async function loadRoleOptions() {
 	}
 }
 
-// ── 搜索用户 ──
 async function searchUsers(query: string) {
 	if (!query) {
 		userOptions.value = []
@@ -173,7 +185,6 @@ async function searchUsers(query: string) {
 	}
 }
 
-// ── 打开分配弹窗 ──
 function openAssignDialog() {
 	assignForm.userId = null
 	assignForm.roleId = null
@@ -181,7 +192,6 @@ function openAssignDialog() {
 	assignDialogVisible.value = true
 }
 
-// ── 执行分配 ──
 async function handleAssign() {
 	if (!assignForm.userId || !assignForm.roleId) {
 		msgWarning('请选择用户和角色')
@@ -205,7 +215,6 @@ async function handleAssign() {
 	}
 }
 
-// ── 撤销角色 ──
 async function handleRevoke(row: UserRoleItem) {
 	const confirmed = await msgConfirm(
 		`确定撤销用户「${row.userName}」的「${row.roleName}」角色？`,
@@ -229,14 +238,6 @@ async function handleRevoke(row: UserRoleItem) {
 		revokingId.value = null
 	}
 }
-
-// ── 初始化 ──
-onMounted(() => {
-	loadRoleOptions()
-})
-
-// ── 暴露给父组件 ──
-defineExpose({ refresh: loadList, loading })
 </script>
 
 <style lang="scss" scoped>

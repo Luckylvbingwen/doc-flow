@@ -336,28 +336,58 @@ export type { FeishuSyncResult } from '~/server/types/feishu'
 
 /**
  * 执行飞书通讯录同步（供 API 接口和定时任务共用）
- * 流程：验证 token → 拉取部门树 → 遍历拉取用户 → upsert → 标记已离职
+ *
+ * 对标 PRD §327：飞书同步员工账号策略 = 全部建 DocFlow 账号（含未加入任何组的人）
+ *
+ * 流程：
+ *   1. 验证 token
+ *   2. 拉取部门树 + 拉取全部用户
+ *   3. upsert doc_feishu_users（通讯录镜像）
+ *   4. upsert doc_departments（按 feishu_department_id 幂等）
+ *   5. upsert doc_users（§327 全员预落地；id 用雪花，按 feishu_open_id 关联）
+ *   6. 处理部门主管：写 doc_departments.owner_user_id + 指派 dept_head 角色
+ *   7. 飞书侧已不存在的用户标记 hidden
  */
 export async function feishuSyncContacts(): Promise<FeishuSyncResult> {
 	const { prisma } = await import('./prisma')
+	const { generateId } = await import('./snowflake')
+
+	const emptyResult: FeishuSyncResult = {
+		total: 0, departments: 0,
+		created: 0, updated: 0, hidden: 0,
+		deptCreated: 0, deptUpdated: 0,
+		docUserCreated: 0, docUserUpdated: 0,
+		deptHeadAssigned: 0,
+	}
 
 	// 1. 验证 token
 	await getFeishuTenantToken()
 
-	// 2. 拉取部门树
+	// 2. 拉取部门树 + 用户
 	const departments = await fetchAllDepartments('0')
-
-	// 3. 拉取全部用户
 	const userMap = await fetchAllUsers(departments)
 
 	if (userMap.size === 0) {
-		return { total: 0, departments: departments.length, created: 0, updated: 0, hidden: 0 }
+		return { ...emptyResult, departments: departments.length }
 	}
 
-	// 4. upsert 到 doc_feishu_users
+	// ──────────────────────────────────────────────────────────────
+	// 3. upsert doc_feishu_users（通讯录镜像）
+	// ──────────────────────────────────────────────────────────────
 	let created = 0
 	let updated = 0
 	const syncedUserIds = new Set<string>()
+	// 记录 open_id → 飞书 user_id 等关键映射，供后续步骤复用
+	const userRecords: Array<{
+		feishuUserId: string
+		openId: string
+		unionId: string
+		name: string
+		email: string | null
+		mobile: string | null
+		avatar: string | null
+		localStatus: 'normal' | 'hidden'
+	}> = []
 
 	for (const [feishuUserId, fu] of userMap) {
 		syncedUserIds.add(feishuUserId)
@@ -375,7 +405,7 @@ export async function feishuSyncContacts(): Promise<FeishuSyncResult> {
 		const isActive = fsStatus.is_activated !== false
 		const isResigned = fsStatus.is_resigned === true
 		const isFrozen = fsStatus.is_frozen === true
-		const localStatus = (isActive && !isResigned && !isFrozen) ? 'normal' : 'hidden'
+		const localStatus: 'normal' | 'hidden' = (isActive && !isResigned && !isFrozen) ? 'normal' : 'hidden'
 		const username = enName || name
 
 		const existing = await prisma.$queryRawUnsafe<{ id: number }[]>(
@@ -390,8 +420,8 @@ export async function feishuSyncContacts(): Promise<FeishuSyncResult> {
 					avatar = ?, status = ?, feishu_open_id = ?,
 					feishu_union_id = ?, feishu_department_ids = ?
 				WHERE feishu_user_id = ?`,
-				username, name, email, mobile,
-				avatar, localStatus, openId,
+				username, name, email || null, mobile || null,
+				avatar || null, localStatus, openId,
 				unionId, deptIds, feishuUserId,
 			)
 			updated++
@@ -401,14 +431,153 @@ export async function feishuSyncContacts(): Promise<FeishuSyncResult> {
 					(username, nickname, email, mobile, avatar, status,
 					 feishu_open_id, feishu_union_id, feishu_user_id, feishu_department_ids)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				username, name, email, mobile, avatar, localStatus,
+				username, name, email || null, mobile || null, avatar || null, localStatus,
 				openId, unionId, feishuUserId, deptIds,
 			)
 			created++
 		}
+
+		userRecords.push({
+			feishuUserId, openId, unionId, name,
+			email: email || null,
+			mobile: mobile || null,
+			avatar: avatar || null,
+			localStatus,
+		})
 	}
 
-	// 5. 将飞书侧已不存在的用户标记为 hidden
+	// ──────────────────────────────────────────────────────────────
+	// 4. upsert doc_departments（按 feishu_department_id 幂等）
+	// ──────────────────────────────────────────────────────────────
+	let deptCreated = 0
+	let deptUpdated = 0
+	// open_department_id → doc_departments.id 映射，供后续步骤 6 复用
+	const deptIdMap = new Map<string, bigint>()
+
+	for (const dept of departments) {
+		const openDeptId = dept.open_department_id || dept.department_id || ''
+		const deptName = dept.name || ''
+		if (!openDeptId || !deptName) continue
+
+		const existing = await prisma.$queryRawUnsafe<{ id: bigint }[]>(
+			'SELECT id FROM doc_departments WHERE feishu_department_id = ? LIMIT 1',
+			openDeptId,
+		)
+
+		if (existing.length > 0) {
+			await prisma.$executeRawUnsafe(
+				`UPDATE doc_departments SET name = ?, updated_at = NOW(3)
+				 WHERE id = ?`,
+				deptName, existing[0].id,
+			)
+			deptIdMap.set(openDeptId, existing[0].id)
+			deptUpdated++
+		} else {
+			const newId = generateId()
+			await prisma.$executeRawUnsafe(
+				`INSERT INTO doc_departments (id, feishu_department_id, name, status, created_by)
+				 VALUES (?, ?, ?, 1, 0)`,
+				newId, openDeptId, deptName,
+			)
+			deptIdMap.set(openDeptId, newId)
+			deptCreated++
+		}
+	}
+
+	// ──────────────────────────────────────────────────────────────
+	// 5. upsert doc_users（§327 全员预落地）
+	// ──────────────────────────────────────────────────────────────
+	let docUserCreated = 0
+	let docUserUpdated = 0
+	// open_id → doc_users.id 映射，供第 6 步主管识别复用
+	const docUserIdMap = new Map<string, bigint>()
+
+	for (const u of userRecords) {
+		if (!u.openId) continue
+
+		const status = u.localStatus === 'normal' ? 1 : 0
+
+		const existing = await prisma.$queryRawUnsafe<{ id: bigint }[]>(
+			'SELECT id FROM doc_users WHERE feishu_open_id = ? LIMIT 1',
+			u.openId,
+		)
+
+		if (existing.length > 0) {
+			await prisma.$executeRawUnsafe(
+				`UPDATE doc_users SET
+					name = ?, email = ?, mobile = ?, avatar_url = ?,
+					feishu_union_id = ?, status = ?, updated_at = NOW(3)
+				 WHERE id = ?`,
+				u.name, u.email, u.mobile, u.avatar,
+				u.unionId, status, existing[0].id,
+			)
+			docUserIdMap.set(u.openId, existing[0].id)
+			docUserUpdated++
+		} else {
+			const newId = generateId()
+			await prisma.$executeRawUnsafe(
+				`INSERT INTO doc_users
+					(id, feishu_open_id, feishu_union_id, name, email, mobile, avatar_url, status)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				newId, u.openId, u.unionId, u.name, u.email, u.mobile, u.avatar, status,
+			)
+			docUserIdMap.set(u.openId, newId)
+			docUserCreated++
+		}
+	}
+
+	// ──────────────────────────────────────────────────────────────
+	// 6. 部门主管 → 写 owner_user_id + 指派 dept_head 角色
+	// ──────────────────────────────────────────────────────────────
+	let deptHeadAssigned = 0
+	const deptHeadRole = await prisma.$queryRawUnsafe<{ id: bigint }[]>(
+		`SELECT id FROM sys_roles WHERE code = 'dept_head' LIMIT 1`,
+	)
+	const deptHeadRoleId = deptHeadRole[0]?.id
+
+	if (deptHeadRoleId) {
+		// feishu user_id → open_id 快查
+		const feishuUserIdToOpenId = new Map<string, string>()
+		for (const u of userRecords) {
+			feishuUserIdToOpenId.set(u.feishuUserId, u.openId)
+		}
+
+		for (const dept of departments) {
+			const openDeptId = dept.open_department_id || dept.department_id || ''
+			const leaderUserId = dept.leader_user_id || ''
+			if (!openDeptId || !leaderUserId) continue
+
+			const deptDbId = deptIdMap.get(openDeptId)
+			if (!deptDbId) continue
+
+			const leaderOpenId = feishuUserIdToOpenId.get(leaderUserId)
+			if (!leaderOpenId) continue
+
+			const leaderDocUserId = docUserIdMap.get(leaderOpenId)
+			if (!leaderDocUserId) continue
+
+			// 6.1 更新部门 owner
+			await prisma.$executeRawUnsafe(
+				`UPDATE doc_departments SET owner_user_id = ? WHERE id = ?`,
+				leaderDocUserId, deptDbId,
+			)
+
+			// 6.2 指派 dept_head 角色（scope_type=1 部门, scope_ref_id=部门id）
+			//     唯一键 uk_user_role_scope (user_id, role_id, scope_type, scope_ref_id) 保证幂等
+			await prisma.$executeRawUnsafe(
+				`INSERT INTO sys_user_roles (user_id, role_id, scope_type, scope_ref_id, created_by)
+				 VALUES (?, ?, 1, ?, 0)
+				 ON DUPLICATE KEY UPDATE id = id`,
+				leaderDocUserId, deptHeadRoleId, deptDbId,
+			)
+
+			deptHeadAssigned++
+		}
+	}
+
+	// ──────────────────────────────────────────────────────────────
+	// 7. 飞书侧已不存在的用户标记 hidden
+	// ──────────────────────────────────────────────────────────────
 	let hidden = 0
 	if (syncedUserIds.size > 0) {
 		const placeholders = Array.from(syncedUserIds).map(() => '?').join(',')
@@ -420,5 +589,12 @@ export async function feishuSyncContacts(): Promise<FeishuSyncResult> {
 		hidden = result
 	}
 
-	return { total: userMap.size, departments: departments.length, created, updated, hidden }
+	return {
+		total: userMap.size,
+		departments: departments.length,
+		created, updated, hidden,
+		deptCreated, deptUpdated,
+		docUserCreated, docUserUpdated,
+		deptHeadAssigned,
+	}
 }

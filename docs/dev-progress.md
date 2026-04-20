@@ -259,6 +259,52 @@
 
 ---
 
+## 2026-04-20
+
+### feat: 系统管理页面 A 阶段（§6.9）+ 飞书同步扩展
+
+- **飞书同步扩展**（对齐 PRD §327 全员预落地）
+  - `server/utils/feishu.ts` `feishuSyncContacts` 扩展 3 步：upsert `doc_departments`（按 `feishu_department_id` 幂等）/ upsert `doc_users`（按 `feishu_open_id` 幂等，§327）/ 部门主管 `leader_user_id` 识别后写 `doc_departments.owner_user_id` + 幂等授予 `dept_head` 角色（`sys_user_roles` scope=部门 id）
+  - `server/types/feishu.ts` 扩展 `FeishuDept.leader_user_id` + `FeishuSyncResult` 新增 `deptCreated / deptUpdated / docUserCreated / docUserUpdated / deptHeadAssigned` 5 个统计字段
+  - `server/api/auth/feishu/callback.post.ts` 修复历史 bug：doc_users 表没有 `feishu_user_id` 字段（doc.sql 重构时删了），callback 的 SQL 引用该字段会报错导致飞书登录一路挂；改为按 `feishu_open_id` 单字段关联；兜底建档的 `Date.now()` 改用雪花 ID
+
+- **业务层系统管理页面**（对齐 PRD §6.9.2）
+  - 后端 `GET /api/admin/users` — 多角色聚合（GROUP_CONCAT）+ 产品线/部门归属批量反查 + 权重排序（CASE WHEN MIN）+ keyword / roles[]（支持 `none`）/ status 筛选
+  - 后端 `PUT /api/admin/users/:id/roles` — 整包指派 `companyAdmin` / `plHead`；super_admin 受保护；取消 `pl_head` 时若仍是任何产品线 owner → 409 `ADMIN_PL_HEAD_HAS_OWNERSHIP`；事务内增删；埋点 `admin.role_assign`
+  - 后端 `POST/PUT /api/product-lines` 事务内自动补 owner 的 `pl_head` 角色（与 `owner_user_id` 保持一致）
+  - 新增 `server/utils/system-role.ts` helper — `grantRole` / `revokeRole` / `hasRole` / `countProductLinesOwnedBy`，`UNIQUE (user_id, role_id, scope_type, scope_ref_id)` 保证幂等
+  - 新增错误码 3 个：`ADMIN_SUPER_ADMIN_PROTECTED` / `ADMIN_PL_HEAD_HAS_OWNERSHIP` / `ADMIN_DEPT_HEAD_SYNC_ONLY`
+  - 新增 log action `admin.role_assign`（归入 `permission` 类）
+  - 新增权限码 `admin:user_read` / `admin:role_assign` 授给 super_admin
+
+- **前端**
+  - 重写 `pages/admin.vue` — 去 TabBar，改纯用户列表（ListPageShell + FilterBar + DataTable + 底部蓝色说明条 + 页面级 `admin:user_read` 守卫跳 `/docs`）；系统管理员行显示"系统预设"、已停用行显示"停用时间"并行级降透明度、`admin:role_assign` 下显示「角色管理」按钮；停用按钮显示但点击 toast `功能开发中`（B 阶段做离职交接）
+  - 新增 `components/admin/AdminRoleAssignModal.vue` — 双卡片 checkbox（公司层管理员 / 产品线负责人）；产品线负责人卡片展开只读 tag 列表（反查 `doc_product_lines.owner_user_id`）；取消 pl_head 前 `msgConfirm` 二次确认
+  - 新增 `utils/system-role-meta.ts` — 角色 badge 色值对齐原型 v21（红/黄/靛蓝/蓝+飞书小标签）
+  - 新增 `types/admin.ts` + `api/admin.ts`
+
+- **框架层 RBAC 页面拆分（为抽离 starter 准备）**
+  - 新建 `pages/system/roles.vue` + `pages/system/user-roles.vue`（原 `components/admin/RoleManager.vue` / `UserRoleManager.vue` 的逻辑搬进 page）
+  - 删除 `components/admin/RoleManager.vue` / `components/admin/UserRoleManager.vue`
+  - `layouts/prototype.vue` 两条 `/system/*` 菜单项保留**注释态**，标注"抽离 starter 时启用"；DocFlow 业务不暴露此入口，页面仍可通过直接访问 URL 或抽离后启用菜单看到
+
+- **数据**
+  - `docs/patch-006-admin-system-management.sql` — 权限码 + super_admin 关联 + 新增演示用户 10010 张晓明（company_admin + pl_head）+ 10013 李已停（status=0）+ 新增产品线 30003（10010 为 owner）+ 对应角色分配
+  - 四地同步：`rbac.sql` 权限段 / `doc_seed.sql` A / A.1 / C / O 四个段落
+  - `doc_seed.sql` 的 `doc_users` / `doc_feishu_users` 的 `ON DUPLICATE KEY UPDATE` 子句补上 `feishu_open_id` / `feishu_union_id`，保证开发期 seed 可重入地"治愈"旧 open_id
+
+- **规格依据**：PRD §6.9（系统管理 / 角色权限）§327（全员预落地）§357（产品线负责人由系统管理员指派）§4.1（角色定义表）
+
+- **范围**：A 阶段 = 用户列表读端 + 角色指派（公司层管理员 / 产品线负责人）；**不做** 停用按钮功能 / 离职文档交接 / 重新启用 — 归 B 阶段
+
+- **延迟项**
+  1. 停用用户 + 离职文档交接流程（PRD §325 / §6.5.3） — 依赖"离职交接运行时"整体设计
+  2. 飞书人员移除的自动清空组成员 + 组负责人自动交接（PRD §325）
+
+- **测试**：Zod schema + utils 相关单元测试由下一轮补齐（见遗留项）
+
+---
+
 ## 待开发（按优先级排序）
 
 | 优先级 | 模块 | 状态 |

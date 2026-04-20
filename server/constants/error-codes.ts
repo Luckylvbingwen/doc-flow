@@ -121,3 +121,11 @@ export const RECYCLE_NOT_DELETED = 'RECYCLE_NOT_DELETED'
 export const RECYCLE_GROUP_MISSING = 'RECYCLE_GROUP_MISSING'
 /** 恢复操作已过期（超 30 天） (400) */
 export const RECYCLE_EXPIRED = 'RECYCLE_EXPIRED'
+
+// ─── 系统管理（§6.9） ───
+/** 系统管理员角色受保护，不可通过此接口变更 (403) */
+export const ADMIN_SUPER_ADMIN_PROTECTED = 'ADMIN_SUPER_ADMIN_PROTECTED'
+/** 取消产品线负责人前需先移除其名下产品线归属 (409) */
+export const ADMIN_PL_HEAD_HAS_OWNERSHIP = 'ADMIN_PL_HEAD_HAS_OWNERSHIP'
+/** 部门负责人由飞书同步，不可在此指派 (400) */
+export const ADMIN_DEPT_HEAD_SYNC_ONLY = 'ADMIN_DEPT_HEAD_SYNC_ONLY'

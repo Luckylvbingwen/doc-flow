@@ -4,16 +4,18 @@
  *
  * Body: { code: string, state: string }
  *
- * 流程（对标 task-platform）：
+ * 流程：
  * 1. 校验 state 防 CSRF
  * 2. code → app_access_token → user_access_token → user_info
- * 3. 通过 open_id 查 doc_feishu_users → 关联的 doc_users
- * 4. 如果 doc_feishu_users 没有记录则自动写入（首次登录）
- * 5. 如果没有关联的 doc_users 则自动创建系统用户
- * 6. 签发 JWT，返回与密码登录相同的 session 结构
+ * 3. 按 feishu_open_id upsert doc_feishu_users
+ * 4. 按 feishu_open_id 查 doc_users（通常已由 feishuSyncContacts 预落地），无则兜底建档
+ * 5. 签发 JWT，返回与密码登录相同的 session 结构
+ *
+ * 关联字段：doc_users.feishu_open_id ↔ doc_feishu_users.feishu_open_id（天然一致）
  */
 import { prisma } from '~/server/utils/prisma'
 import { signToken, signRefreshToken, parseExpiresIn } from '~/server/utils/jwt'
+import { generateId } from '~/server/utils/snowflake'
 import { stateCache } from './auth-url.get'
 import { feishuCallbackBodySchema } from '~/server/schemas/auth'
 import type { DocUserRow } from '~/server/types/auth'
@@ -39,25 +41,21 @@ export default defineEventHandler(async (event) => {
 			return fail(event, 400, FEISHU_USER_EMPTY, '飞书用户标识为空，无法完成登录')
 		}
 
-		// ── Step 1: 查/写 doc_feishu_users ──
-		let feishuRows = await prisma.$queryRawUnsafe<{ id: number | bigint }[]>(
+		// ── Step 1: upsert doc_feishu_users（按 feishu_open_id 幂等） ──
+		const feishuRows = await prisma.$queryRawUnsafe<{ id: number | bigint }[]>(
 			'SELECT id FROM doc_feishu_users WHERE feishu_open_id = ? LIMIT 1',
 			feishuUser.openId,
 		)
 
-		let feishuDbId: number
-
 		if (feishuRows.length > 0) {
-			feishuDbId = Number(feishuRows[0].id)
-			// 更新最新信息
 			await prisma.$executeRawUnsafe(
 				`UPDATE doc_feishu_users SET nickname = ?, email = ?, avatar = ?,
 					feishu_union_id = ?, feishu_user_id = ? WHERE id = ?`,
 				feishuUser.name, feishuUser.email || null, feishuUser.avatarUrl || null,
-				feishuUser.unionId, feishuUser.userId, feishuDbId,
+				feishuUser.unionId, feishuUser.userId, Number(feishuRows[0].id),
 			)
 		} else {
-			// 首次登录，自动写入 doc_feishu_users
+			// 首次登录兜底：通常已由 feishuSyncContacts 预落地
 			await prisma.$executeRawUnsafe(
 				`INSERT INTO doc_feishu_users
 					(username, nickname, email, avatar, status,
@@ -67,48 +65,27 @@ export default defineEventHandler(async (event) => {
 				feishuUser.email || null, feishuUser.avatarUrl || null,
 				feishuUser.openId, feishuUser.unionId, feishuUser.userId,
 			)
-			feishuRows = await prisma.$queryRawUnsafe<{ id: number | bigint }[]>(
-				'SELECT id FROM doc_feishu_users WHERE feishu_open_id = ? LIMIT 1',
-				feishuUser.openId,
-			)
-			feishuDbId = Number(feishuRows[0].id)
 		}
 
-		// ── Step 2: 查关联的 doc_users ──
-		let users = await prisma.$queryRawUnsafe<DocUserRow[]>(
+		// ── Step 2: 按 feishu_open_id 查 doc_users ──
+		const users = await prisma.$queryRawUnsafe<DocUserRow[]>(
 			`SELECT id, name, email, feishu_open_id, avatar_url FROM doc_users
-			 WHERE deleted_at IS NULL AND status = 1 AND feishu_user_id = ? LIMIT 1`,
-			feishuDbId,
+			 WHERE deleted_at IS NULL AND status = 1 AND feishu_open_id = ? LIMIT 1`,
+			feishuUser.openId,
 		)
-
-		// 兼容：也查 feishu_open_id 直接匹配（兼容旧数据）
-		if (users.length === 0) {
-			users = await prisma.$queryRawUnsafe<DocUserRow[]>(
-				`SELECT id, name, email, feishu_open_id, avatar_url FROM doc_users
-				 WHERE deleted_at IS NULL AND status = 1 AND feishu_open_id = ? LIMIT 1`,
-				feishuUser.openId,
-			)
-			// 如果通过 open_id 匹配到了，补上 feishu_user_id 关联
-			if (users.length > 0) {
-				await prisma.$executeRawUnsafe(
-					'UPDATE doc_users SET feishu_user_id = ? WHERE id = ?',
-					feishuDbId, Number(users[0].id),
-				)
-			}
-		}
 
 		let user: DocUserRow
 
 		if (users.length > 0) {
 			user = users[0]
 		} else {
-			// ── Step 3: 自动创建系统用户 ──
-			const newId = Date.now()
+			// ── Step 3: 兜底建档（通常已由 feishuSyncContacts 预落地，此处防御首次登录前未跑同步） ──
+			const newId = generateId()
 			await prisma.$executeRawUnsafe(
-				`INSERT INTO doc_users (id, feishu_open_id, feishu_union_id, feishu_user_id,
+				`INSERT INTO doc_users (id, feishu_open_id, feishu_union_id,
 					name, email, avatar_url, status)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
-				newId, feishuUser.openId, feishuUser.unionId, feishuDbId,
+				 VALUES (?, ?, ?, ?, ?, ?, 1)`,
+				newId, feishuUser.openId, feishuUser.unionId,
 				feishuUser.name, feishuUser.email || null, feishuUser.avatarUrl || null,
 			)
 			user = {

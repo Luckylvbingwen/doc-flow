@@ -128,7 +128,10 @@ INSERT INTO sys_permissions (code, name, module, description, sort_order) VALUES
 -- 回收站
 ('recycle:read',    '查看回收站', 'recycle', '查看回收站列表',       1000),
 ('recycle:restore', '恢复文件',   'recycle', '从回收站恢复文件',     1001),
-('recycle:delete',  '永久删除',   'recycle', '从回收站永久删除文件', 1002);
+('recycle:delete',  '永久删除',   'recycle', '从回收站永久删除文件', 1002),
+-- 系统管理（§6.9 — 系统管理员指派公司层管理员/产品线负责人）
+('admin:user_read',   '查看系统用户', 'admin', '系统管理页面 — 用户列表查询',               1100),
+('admin:role_assign', '指派系统角色', 'admin', '系统管理页面 — 指派公司层管理员/产品线负责人', 1101);
 
 -- ── 角色种子（§4.1 / §6.9）──
 INSERT INTO sys_roles (code, name, description, is_system) VALUES

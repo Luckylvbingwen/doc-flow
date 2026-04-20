@@ -214,7 +214,14 @@ const menuGroupsRaw = [
 		title: '系统',
 		items: [
 			{ to: '/logs', label: '操作日志', icon: Document, activeMode: 'exact', perm: 'log:read' },
-			{ to: '/admin', label: '系统管理', icon: Setting, activeMode: 'exact' }
+			{ to: '/admin', label: '系统管理', icon: Setting, activeMode: 'exact', perm: 'admin:user_read' },
+			// ──────────────────────────────────────────────────────────────
+			// 以下两项为 nuxt-fullstack-starter 模板的通用 RBAC 管理入口。
+			// DocFlow 业务不暴露该入口（见 docs/dev-progress.md 说明），
+			// 页面 pages/system/roles.vue / pages/system/user-roles.vue 仍在代码中可供直接访问。
+			// 抽离 starter 时取消下两行注释即可。
+			// { to: '/system/roles',      label: 'RBAC 角色管理', icon: Setting, activeMode: 'exact', perm: 'role:read' },
+			// { to: '/system/user-roles', label: 'RBAC 用户授权', icon: Setting, activeMode: 'exact', perm: 'role:assign' },
 		]
 	}
 ]

@@ -1,6 +1,8 @@
 /**
  * PUT /api/product-lines/:id
  * 编辑产品线 — 仅 super_admin
+ *
+ * 事务内对当前 owner 做一次幂等的 pl_head 授予（治愈历史数据可能的不一致）
  */
 import { prisma } from '~/server/utils/prisma'
 import { productLineUpdateSchema } from '~/server/schemas/product-line'
@@ -10,6 +12,8 @@ import {
 	PRODUCT_LINE_NAME_EXISTS,
 	INVALID_PARAMS,
 } from '~/server/constants/error-codes'
+import { grantRole } from '~/server/utils/system-role'
+import { SYSTEM_ROLE_CODES } from '~/server/constants/system-roles'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'super_admin')
@@ -23,10 +27,10 @@ export default defineEventHandler(async (event) => {
 		return fail(event, 400, INVALID_PARAMS, '至少提供一个修改字段')
 	}
 
-	// 校验存在
+	// 校验存在 + 取当前 owner
 	const existing = await prisma.doc_product_lines.findFirst({
 		where: { id: BigInt(id), deleted_at: null },
-		select: { id: true },
+		select: { id: true, owner_user_id: true },
 	})
 	if (!existing) return fail(event, 404, PRODUCT_LINE_NOT_FOUND, '产品线不存在')
 
@@ -35,10 +39,21 @@ export default defineEventHandler(async (event) => {
 	if (body.name) data.name = body.name.trim()
 	if (body.description !== undefined) data.description = body.description?.trim() || null
 
+	const operatorId = event.context.user!.id
+
 	try {
-		await prisma.doc_product_lines.update({
-			where: { id: BigInt(id) },
-			data,
+		await prisma.$transaction(async (tx) => {
+			await tx.doc_product_lines.update({
+				where: { id: BigInt(id) },
+				data,
+			})
+
+			// 幂等治愈：确保当前 owner 具备 pl_head 角色
+			if (existing.owner_user_id) {
+				await grantRole(existing.owner_user_id, SYSTEM_ROLE_CODES.PL_HEAD, {
+					scopeType: 2, scopeRefId: id, createdBy: operatorId, tx,
+				})
+			}
 		})
 	} catch (error) {
 		if (isDuplicateKeyError(error)) {

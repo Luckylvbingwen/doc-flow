@@ -16,13 +16,17 @@ INSERT INTO doc_users (
   last_login_at, created_at, updated_at, deleted_at
 ) VALUES
   (    0, 'fs_open_system',    NULL,                 '系统',       NULL,                       NULL,          NULL,                                         NULL, 1, NULL,    NOW(3), NOW(3), NULL),
-  (10001, 'fs_open_admin',     'fs_union_admin',     '系统管理员', 'admin@docflow.local',      '13800000001', 'https://example.com/avatar/admin.png',      NULL, 1, NOW(3), NOW(3), NOW(3), NULL),
+  (10001, 'ou_651958938a1acf3b9dd4f077fd7eb234', 'fs_union_admin',     '系统管理员', 'admin@docflow.local',      '13800000001', 'https://example.com/avatar/admin.png',      NULL, 1, NOW(3), NOW(3), NOW(3), NULL),
   (10002, 'fs_open_owner',     'fs_union_owner',     '文档负责人', 'owner@docflow.local',      '13800000002', 'https://example.com/avatar/owner.png',      NULL, 1, NOW(3), NOW(3), NOW(3), NULL),
   (10003, 'fs_open_editor',    'fs_union_editor',    '文档编辑',   'editor@docflow.local',     '13800000003', 'https://example.com/avatar/editor.png',     NULL, 1, NOW(3), NOW(3), NOW(3), NULL),
   (10004, 'fs_open_reviewer1', 'fs_union_reviewer1', '审批人A',    'reviewer.a@docflow.local', '13800000004', 'https://example.com/avatar/reviewer-a.png', NULL, 1, NOW(3), NOW(3), NOW(3), NULL),
   (10005, 'fs_open_reviewer2', 'fs_union_reviewer2', '审批人B',    'reviewer.b@docflow.local', '13800000005', 'https://example.com/avatar/reviewer-b.png', NULL, 1, NOW(3), NOW(3), NOW(3), NULL),
-  (10006, 'fs_open_reader',    'fs_union_reader',    '普通成员',   'reader@docflow.local',     '13800000006', 'https://example.com/avatar/reader.png',     NULL, 1, NOW(3), NOW(3), NOW(3), NULL)
+  (10006, 'fs_open_reader',    'fs_union_reader',    '普通成员',   'reader@docflow.local',     '13800000006', 'https://example.com/avatar/reader.png',     NULL, 1, NOW(3), NOW(3), NOW(3), NULL),
+  (10010, 'fs_open_zhangxm',   'fs_union_zhangxm',   '张晓明',     'zhangxm@docflow.local',    '13800000010', 'https://example.com/avatar/zhangxm.png',    NULL, 1, NOW(3), NOW(3), NOW(3), NULL),
+  (10013, 'fs_open_lizt',      'fs_union_lizt',      '李已停',     'lizt@docflow.local',       '13800000013', 'https://example.com/avatar/lizt.png',       NULL, 0, NULL,    NOW(3), NOW(3), NULL)
 ON DUPLICATE KEY UPDATE
+  feishu_open_id  = VALUES(feishu_open_id),
+  feishu_union_id = VALUES(feishu_union_id),
   name = VALUES(name), email = VALUES(email), status = VALUES(status), updated_at = NOW(3);
 
 -- =========================================================
@@ -35,7 +39,7 @@ INSERT INTO doc_feishu_users (
   created_at, updated_at
 ) VALUES
   (11001, 'admin',     '系统管理员', 'admin@docflow.local',      '13800000001', 'https://example.com/avatar/admin.png',      'normal',
-   'fs_open_admin',     'fs_union_admin',     'fs_user_admin',     JSON_ARRAY('feishu_dept_rd', 'feishu_dept_qa'),
+   'ou_651958938a1acf3b9dd4f077fd7eb234', 'fs_union_admin',     'fs_user_admin',     JSON_ARRAY('feishu_dept_rd', 'feishu_dept_qa'),
    NOW(3), NOW(3)),
   (11002, 'owner',     '文档负责人', 'owner@docflow.local',      '13800000002', 'https://example.com/avatar/owner.png',      'normal',
    'fs_open_owner',     'fs_union_owner',     'fs_user_owner',     JSON_ARRAY('feishu_dept_rd'),
@@ -51,8 +55,15 @@ INSERT INTO doc_feishu_users (
    NOW(3), NOW(3)),
   (11006, 'reader',    '普通成员',   'reader@docflow.local',     '13800000006', 'https://example.com/avatar/reader.png',     'normal',
    'fs_open_reader',    'fs_union_reader',    'fs_user_reader',    JSON_ARRAY('feishu_dept_qa'),
+   NOW(3), NOW(3)),
+  (11010, 'zhangxm',   '张晓明',     'zhangxm@docflow.local',    '13800000010', 'https://example.com/avatar/zhangxm.png',    'normal',
+   'fs_open_zhangxm',   'fs_union_zhangxm',   'fs_user_zhangxm',   JSON_ARRAY(),
+   NOW(3), NOW(3)),
+  (11013, 'lizt',      '李已停',     'lizt@docflow.local',       '13800000013', 'https://example.com/avatar/lizt.png',       'hidden',
+   'fs_open_lizt',      'fs_union_lizt',      'fs_user_lizt',      JSON_ARRAY(),
    NOW(3), NOW(3))
 ON DUPLICATE KEY UPDATE
+  feishu_open_id = VALUES(feishu_open_id),
   nickname = VALUES(nickname), email = VALUES(email),
   feishu_department_ids = VALUES(feishu_department_ids), status = VALUES(status), updated_at = NOW(3);
 
@@ -81,7 +92,8 @@ INSERT INTO doc_product_lines (
   created_at, updated_at, deleted_at
 ) VALUES
   (30001, 'DocFlow产品线', '企业文档管理系统产品线', 10002, 1, 10001, NOW(3), NOW(3), NULL),
-  (30002, 'AI协同产品线',  '智能知识协同方向',       10004, 1, 10001, NOW(3), NOW(3), NULL)
+  (30002, 'AI协同产品线',  '智能知识协同方向',       10004, 1, 10001, NOW(3), NOW(3), NULL),
+  (30003, '运维产品线',    '平台运维与基础设施方向', 10010, 1, 10001, NOW(3), NOW(3), NULL)
 ON DUPLICATE KEY UPDATE
   name = VALUES(name), owner_user_id = VALUES(owner_user_id), updated_at = NOW(3);
 
@@ -682,10 +694,13 @@ INSERT INTO sys_user_roles (user_id, role_id, scope_type, scope_ref_id, created_
 -- 文档负责人 → dept_head（研发中心）+ pl_head（DocFlow产品线）
 (10002, (SELECT id FROM sys_roles WHERE code = 'dept_head'), 1, 20001, 10001),
 (10002, (SELECT id FROM sys_roles WHERE code = 'pl_head'),   2, 30001, 10001),
--- 审批人A → dept_head（AI协同产品线的产品线负责人）
+-- 审批人A → pl_head（AI协同产品线的产品线负责人）
 (10004, (SELECT id FROM sys_roles WHERE code = 'pl_head'),   2, 30002, 10001),
 -- 审批人B → dept_head（质量保障部）
-(10005, (SELECT id FROM sys_roles WHERE code = 'dept_head'), 1, 20002, 10001)
+(10005, (SELECT id FROM sys_roles WHERE code = 'dept_head'), 1, 20002, 10001),
+-- 张晓明 → company_admin（全局）+ pl_head（运维产品线 30003）
+(10010, (SELECT id FROM sys_roles WHERE code = 'company_admin'), NULL, NULL, 10001),
+(10010, (SELECT id FROM sys_roles WHERE code = 'pl_head'),       2,    30003, 10001)
 ON DUPLICATE KEY UPDATE role_id = VALUES(role_id);
 
 SET FOREIGN_KEY_CHECKS = 1;
