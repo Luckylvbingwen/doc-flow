@@ -32,11 +32,11 @@
 - [x] ~~变更类型徽章（新增/迭代）~~ ✅ 2026-04-18（SQL 按 version 位置判定）
 - [x] ~~撤回操作~~ ✅ 2026-04-18（仅发起人 + reviewing 状态）
 - [x] ~~超时催办状态~~ ✅ 2026-04-18（remind_count > 0 红底徽章展示）
-- [ ] 审批抽屉（ApprovalDrawer 集成） — B 阶段"审批流运行时"
-- [ ] 审批链可视化（ApprovalChain 集成） — B 阶段
-- [ ] 驳回必填校验（驳回时意见为必填项） — B 阶段
-- [ ] 变更摘要展示（文件版本变更内容概要） — B 阶段
-- [ ] 催办触发逻辑（定时任务扫描超时节点） — B 阶段
+- [x] ~~审批抽屉（ApprovalDrawer 集成）~~ ✅ 2026-04-24（文档核心 A 阶段一并落地）
+- [x] ~~审批链可视化（ApprovalChain 集成）~~ ✅ 2026-04-24（抽屉内渲染）
+- [x] ~~驳回必填校验（驳回时意见为必填项）~~ ✅ 2026-04-24（Zod min(1) + 抽屉红字提示）
+- [x] ~~变更摘要展示（文件版本变更内容概要）~~ ✅ 2026-04-24（抽屉调 `/api/version/compare`）
+- [x] ~~催办触发逻辑（定时任务扫描超时节点）~~ ✅ 2026-04-24（`approval:remind-timeout` cron 每整点扫，M5/M6 触发）
 
 ### 2.2 操作日志 (`pages/logs.vue`)
 
@@ -169,15 +169,15 @@
 
 | 消息 | 归属模块 | 触发点 | 状态 |
 |---|---|---|---|
-| M1 | approval-runtime | 文件提交审批 — 通知当前审批人 | ⏳ 待接入 |
-| M2 | approval-runtime | 审批流转下一级 — 通知下一级 | ⏳ 待接入 |
-| M3 | approval-runtime | 最后一级通过 — 通知提交人 | ⏳ 待接入 |
-| M4 | approval-runtime | 任一级驳回 — 通知提交人 | ⏳ 待接入 |
-| M5 | approval-runtime | 超时 24h 催办 — 通知该步审批人 | ⏳ 待接入 |
-| M6 | approval-runtime | 催办达上限 — 通知提交人 | ⏳ 待接入 |
-| M7 | approval-runtime | 提交人撤回 — 通知已参与审批人 | ⏳ 待接入 |
-| M8 | document-lifecycle | 新版本发布 — 通知归属人+编辑成员+管理员 | ⏳ 待接入 |
-| M9 | document-lifecycle | 管理员从组移除文件 — 通知归属人 | ⏳ 待接入 |
+| M1 | approval-runtime | 文件提交审批 — 通知当前审批人 | ✅ 2026-04-24（`document-upload.ts` executeUpload） |
+| M2 | approval-runtime | 审批流转下一级 — 通知下一级 | ✅ 2026-04-24（`approvals/[id]/approve.post.ts`） |
+| M3 | approval-runtime | 最后一级通过 — 通知提交人 | ✅ 2026-04-24（同上） |
+| M4 | approval-runtime | 任一级驳回 — 通知提交人 | ✅ 2026-04-24（`approvals/[id]/reject.post.ts`） |
+| M5 | approval-runtime | 超时 24h 催办 — 通知该步审批人 | ✅ 2026-04-24（cron `approval:remind-timeout`） |
+| M6 | approval-runtime | 催办达上限 — 通知提交人 | ✅ 2026-04-24（同上） |
+| M7 | approval-runtime | 提交人撤回 — 通知已参与审批人 | ✅ 2026-04-24（`approvals/[id]/withdraw.post.ts`） |
+| M8 | document-lifecycle | 新版本发布 — 通知归属人+编辑成员+管理员 | ✅ 2026-04-24（`document-upload.ts` notifyPublishToGroupMembers） |
+| M9 | document-lifecycle | 管理员从组移除文件 — 通知归属人 | ✅ 2026-04-24（`documents/[id]/remove.put.ts`） |
 | M10 | ownership-transfer | 发起归属人转移 — 通知新归属人 | ⏳ 待接入 |
 | M11 | ownership-transfer | 转移同意/拒绝/过期 — 通知发起人 | ⏳ 待接入 |
 | M12 | cross-move | 发起跨组移动 — 通知目标组负责人 | ⏳ 待接入 |

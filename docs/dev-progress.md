@@ -305,14 +305,50 @@
 
 ---
 
+## 2026-04-24
+
+### feat: 文档核心 A 阶段（MinIO + storage 管线 + 上传/版本/详情/下载/预览/移除 + 审批运行时起审批/通过/驳回 + 前端接入）
+
+见提交 `81229ca`。同日 A 阶段一并落地：M1/M2/M3/M4/M7/M8/M9 通知触发点接入、APPROVAL_SUBMIT/PASS/REJECT/WITHDRAW + DOC_PUBLISH 日志埋点、驳回意见必填（Zod + 前端红字提示）、ApprovalDrawer 变更摘要 `/api/version/compare` 调用。
+
+### feat: 审批超时催办 B 阶段（M5/M6 + cron）
+
+- **数据 / 工具层**
+  - `server/constants/log-actions.ts` 追加 `approval.remind` / `approval.remind_limit`，归 `approval` 类（14 大类映射表同步）
+  - `server/utils/system-config.ts` 新增 — `getSystemConfig` / `getSystemConfigNumber` / `invalidateSystemConfigCache`，进程内 5 分钟缓存，DB 异常时回退 default + pino warn
+  - `docs/patch-007-approval-timeout-reminder.sql` 新增 — 2 条 cron 演示 seed（可重入，ON DUPLICATE KEY UPDATE 会刷新 started_at / last_reminded_at / remind_count 回初始态）：
+    - 50032 `Cron 演示·刚超时 25h`：owner 10002 / 审批人 10004，remind_count=0，first M5 场景
+    - 50033 `Cron 演示·达催办上限`：owner 10002 / 审批人 10005，remind_count=3 且 last_reminded_at=25h 前，M6 场景
+  - 四地同步：`docs/doc_seed.sql` 补 K.3 段
+- **cron 主体**
+  - `server/tasks/approval/remind-timeout.ts` — Nitro task，每整点扫描超时 pending 节点
+  - `nuxt.config.ts` scheduledTasks 追加 `'0 * * * *': ['approval:remind-timeout']`
+  - 扫描 SQL 一次性 JOIN `instance + doc + template + prev-node`，无 N+1
+  - **节点起算口径**：`node_order=1` 用 `inst.started_at`；`>1` 用前级 `action_at`。每个审批人从"球踢到自己这儿"开始有完整 `timeout_hours`，避免多级审批后级被挤压
+  - **通用判定**：`COALESCE(last_reminded_at, <node_start>) + timeout_hours <= NOW(3)`。`timeout_hours` 从 `doc_approval_templates` 取，模板不存在走 `COALESCE(24)` 兜底
+  - **状态机**：
+    - `remind_count < max` → 发 M5 给当前审批人，`count++`
+    - `remind_count === max` → 发 M6 给提交人，`count++`（哨兵态）
+    - `remind_count > max` → SQL WHERE 已过滤，不再处理
+  - **乐观锁**：`updateMany({ where: { id, remind_count: 旧值 } })`，并发下多进程同扫只有一个成功，另一方 `count !== 1` 静默 skip
+  - 单节点 try/catch 独立失败，批次继续；task 返回 `{ scanned, m5, m6, skipped }` 写 Nitro 日志
+- **规格依据**：PRD §6.4（审批中心）+ `doc_system_config.remind_max_count=3` / `approval_timeout_hours=24`
+- **范围**：B 阶段 = M5/M6 超时催办；**不做** 超时后自动撤回（PRD "您可撤回重新提交"由提交人主动）/ M24 审批链成员因离职调岗移除（依赖"离职交接运行时"整体设计，归后续）
+- **文档同步**
+  - `docs/feature-gap-checklist.md` §2.1 审批管理 5 项打 ✅（抽屉 / 审批链 / 驳回必填 / 变更摘要 / 催办 cron）；§七、通知触发清单 M1-M9 全部打 ✅ 2026-04-24
+  - `docs/superpowers/specs/2026-04-24-approval-timeout-reminder-design.md` / `docs/superpowers/plans/2026-04-24-approval-timeout-reminder.md` 新增
+
+---
+
 ## 待开发（按优先级排序）
 
 | 优先级 | 模块 | 状态 |
 |--------|------|------|
-| P0 | 文档管理核心 — 上传/元数据/版本/状态流转 | ⏳ 待排期 |
+| P0 | 文档管理核心 — 上传/元数据/版本/状态流转 | ✅ A 阶段完成于 2026-04-24（见提交 `81229ca`） |
 | P1 | 组成员管理 B 阶段 — 继承机制 / 负责人移交 | 🕓 待产品讨论 |
-| P1 | 审批流运行时 — 实例起审批 / 通过驳回 / 超时催办 | ⏳ 待排期（模板配置 2026-04-17 完成；审批中心 A 阶段列表 + 撤回 2026-04-18 完成） |
-| P1 | 站内通知 — 三类通知 + 已读未读 | ✅ A 阶段完成于 2026-04-18（触发点接入随各业务补） |
+| P1 | 审批流运行时 — 实例起审批 / 通过驳回 / 超时催办 | ✅ A+B 阶段完成于 2026-04-24（起审批/通过/驳回/撤回 + M1-M7 通知 + cron 催办）|
+| P1 | 站内通知 — 三类通知 + 已读未读 | ✅ A 阶段完成于 2026-04-18（触发点接入随各业务补；M1-M9 已接入 2026-04-24） |
 | P2 | 操作日志 | ✅ A 阶段完成于 2026-04-17（埋点随各业务补） |
 | P2 | 回收站 | ✅ A 阶段完成于 2026-04-18（30 天自动清理 cron 后续排期） |
 | P2 | 评论/批注、收藏/置顶、文档引用、搜索、分享 | ⏳ 待排期 |
+| P3 | M24 审批链成员因离职/调岗移除 | 🕓 待产品讨论（归"离职交接运行时"整体设计）|
