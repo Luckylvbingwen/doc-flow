@@ -1,114 +1,103 @@
-import { versionCompareSchema } from '~/server/schemas/version'
-import { computeLineDiff, mergeAdjacentDiffs, buildDiffSummary, renderDiffHtml } from '~/server/utils/diff'
-import { isSupportedFormat } from '~/server/utils/extract'
-import type { CompareResult } from '~/types/version'
-
 /**
  * POST /api/version/compare
- * 版本对比接口：接收两个版本 ID，返回差异对比结果
+ * 版本对比（接入真实存储）
  *
- * 未来接入存储后流程：
- * 1. 从 DB 查版本记录 → 获取 storage_key + ext
- * 2. 从对象存储下载两个版本文件 Buffer
- * 3. extractText(buffer, ext) 提取文本
- * 4. computeLineDiff → mergeAdjacentDiffs → buildDiffSummary → renderDiffHtml
+ * 入参：{ documentId, fromVersionId, toVersionId }
+ *   - fromVersionId = 当前版本 / 新版本
+ *   - toVersionId   = 被对比的历史版本 / 旧版本
+ *
+ * 流程：查 DB → storage.getObject 两份 Buffer → extractText → computeLineDiff → mergeAdjacentDiffs → buildDiffSummary → renderDiffHtml
  */
+import { prisma } from '~/server/utils/prisma'
+import { storage } from '~/server/utils/storage'
+import { versionCompareSchema } from '~/server/schemas/version'
+import {
+	computeLineDiff,
+	mergeAdjacentDiffs,
+	buildDiffSummary,
+	renderDiffHtml,
+} from '~/server/utils/diff'
+import { extractText, isSupportedFormat } from '~/server/utils/extract'
+import {
+	DOCUMENT_NOT_FOUND,
+	VERSION_NOT_FOUND,
+	FILE_FORMAT_UNSUPPORTED,
+	STORAGE_GET_FAILED,
+} from '~/server/constants/error-codes'
+import type { CompareResult } from '~/types/version'
+
 export default defineEventHandler(async (event) => {
+	const permErr = await requirePermission(event, 'doc:read')
+	if (permErr) return permErr
+
 	const body = await readValidatedBody(event, versionCompareSchema.parse)
+	const docId = BigInt(body.documentId)
+	const fromId = BigInt(body.fromVersionId)
+	const toId = BigInt(body.toVersionId)
 
-	// TODO: 接入真实存储
-	// const [fromVer, toVer] = await Promise.all([
-	//   prisma.doc_document_versions.findUnique({ where: { id: body.fromVersionId } }),
-	//   prisma.doc_document_versions.findUnique({ where: { id: body.toVersionId } }),
-	// ])
-	// if (!fromVer || !toVer) return fail(event, 404, 'NOT_FOUND', '版本不存在')
-	// const ext = fromVer.mime_type?.split('/').pop() || 'txt'
-	// if (!isSupportedFormat(ext)) return fail(event, 400, 'UNSUPPORTED_FORMAT', `不支持的文件格式: ${ext}`)
-	// const [fromBuf, toBuf] = await Promise.all([
-	//   storage.getObject(fromVer.storage_bucket, fromVer.storage_key),
-	//   storage.getObject(toVer.storage_bucket, toVer.storage_key),
-	// ])
-	// const [newText, oldText] = await Promise.all([
-	//   extractText(fromBuf, ext),
-	//   extractText(toBuf, ext),
-	// ])
+	const doc = await prisma.doc_documents.findUnique({
+		where: { id: docId },
+		select: { id: true, title: true, ext: true, deleted_at: true },
+	})
+	if (!doc || doc.deleted_at) return fail(event, 404, DOCUMENT_NOT_FOUND, '文档不存在')
 
-	// Mock 阶段 — 使用内置示例内容
-	const mockData = getMockContent(body.documentId)
-	const fileType = mockData.fileType
+	const [fromVer, toVer] = await Promise.all([
+		prisma.doc_document_versions.findFirst({
+			where: { id: fromId, document_id: docId, deleted_at: null },
+			select: { id: true, version_no: true, storage_key: true, file_size: true, mime_type: true },
+		}),
+		prisma.doc_document_versions.findFirst({
+			where: { id: toId, document_id: docId, deleted_at: null },
+			select: { id: true, version_no: true, storage_key: true, file_size: true, mime_type: true },
+		}),
+	])
+	if (!fromVer || !toVer) return fail(event, 404, VERSION_NOT_FOUND, '版本不存在')
 
-	// 执行 diff 计算
-	const rawChunks = computeLineDiff(mockData.oldText, mockData.newText)
+	const ext = (doc.ext ?? 'md').toLowerCase()
+	if (!isSupportedFormat(ext)) {
+		return fail(event, 400, FILE_FORMAT_UNSUPPORTED, `暂不支持对比 .${ext} 格式`)
+	}
+
+	let fromBuf: Buffer
+	let toBuf: Buffer
+	try {
+		const [a, b] = await Promise.all([
+			storage.getObject(fromVer.storage_key),
+			storage.getObject(toVer.storage_key),
+		])
+		fromBuf = a
+		toBuf = b
+	} catch (e) {
+		console.error('[compare] storage.getObject failed', e)
+		return fail(event, 500, STORAGE_GET_FAILED, '读取对比文件失败')
+	}
+
+	const [newText, oldText] = await Promise.all([
+		extractText(fromBuf, ext),
+		extractText(toBuf, ext),
+	])
+
+	const rawChunks = computeLineDiff(oldText, newText)
 	const chunks = mergeAdjacentDiffs(rawChunks)
-	const summary = buildDiffSummary(chunks, mockData.oldSize, mockData.newSize)
-	const { newHtml, oldHtml } = renderDiffHtml(chunks, fileType)
+	const summary = buildDiffSummary(chunks, Number(toVer.file_size), Number(fromVer.file_size))
+	const { newHtml, oldHtml } = renderDiffHtml(chunks, ext)
 
 	const result: CompareResult = {
 		documentId: body.documentId,
-		fileName: mockData.fileName,
-		fileType,
+		fileName: doc.title,
+		fileType: ext,
 		newVersion: {
-			versionId: body.fromVersionId,
-			versionNo: mockData.newVersionNo,
+			versionId: Number(fromVer.id),
+			versionNo: fromVer.version_no,
 			html: newHtml,
 		},
 		oldVersion: {
-			versionId: body.toVersionId,
-			versionNo: mockData.oldVersionNo,
+			versionId: Number(toVer.id),
+			versionNo: toVer.version_no,
 			html: oldHtml,
 		},
 		summary,
 		chunks,
 	}
-
 	return ok(result)
 })
-
-/** Mock 内容生成（开发阶段使用，接入存储后移除） */
-function getMockContent(_documentId: number) {
-	return {
-		fileName: '数据库优化方案.docx',
-		fileType: 'docx',
-		newVersionNo: 'v1.0',
-		oldVersionNo: 'v0.5',
-		newSize: 1_126_400,
-		oldSize: 921_600,
-		newText: [
-			'数据库优化方案',
-			'',
-			'一、项目背景',
-			'随着企业协同办公市场的快速发展，主流协同办公平台在文档管理、即时通讯、项目管理等领域不断迭代升级。',
-			'',
-			'二、竞品概览',
-			'| 产品 | 核心定位 | 用户规模 |',
-			'| 飞书 | 一站式协作 | 500万+ |',
-			'| 钉钉 | 数字化工作 | 6亿+ |',
-			'',
-			'三、优化方案',
-			'根据评审反馈，补充了详细的实施方案。针对文档协作场景，建议从实时协作能力、版本管理机制和审批流程集成三个维度进行优化。',
-			'',
-			'四、实施时间表',
-			'第一阶段（3月）：完成基础架构搭建；第二阶段（4月）：核心功能开发；第三阶段（5月）：灰度测试与优化。',
-			'',
-			'五、现有内容',
-			'更新了数据指标和预期目标。当前文档管理功能覆盖率已达到 85%，预计 Q2 可达 95%。',
-		].join('\n'),
-		oldText: [
-			'数据库优化方案',
-			'',
-			'一、项目背景',
-			'主流协同办公平台在文档管理、即时通讯、项目管理等领域不断迭代升级。',
-			'',
-			'二、竞品概览',
-			'| 产品 | 核心定位 | 用户规模 |',
-			'| 飞书 | 一站式协作 | 500万+ |',
-			'| 钉钉 | 数字化工作 | 6亿+ |',
-			'',
-			'三、待补充章节',
-			'（此章节内容待补充）',
-			'',
-			'四、现有内容',
-			'数据指标待确认。当前文档管理功能覆盖率已达到 85%，预计 Q2 可达 95%。',
-		].join('\n'),
-	}
-}

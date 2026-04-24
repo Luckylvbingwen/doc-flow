@@ -103,10 +103,11 @@ v-show="avatarReady" class="pf-user-entry-avatar" :src="authStore.user.avatar"
 
 			<!-- 固定布局页（fixedLayout meta = true）：纯 flex 容器，不要外层滚动条，内部自行高度分配 -->
 			<!-- 普通页：外层 el-scrollbar 支持页面整体滚动 -->
-			<component
-:is="isFixedLayout ? 'div' : ElScrollbar"
-				:class="isFixedLayout ? 'pf-content-area pf-content-area--fixed' : 'pf-content-scrollbar'">
-				<main class="pf-content" :class="{ 'pf-content--fixed': isFixedLayout }">
+			<!-- 两分支独立渲染（不用 <component :is> 动态切换）：ElScrollbar 内部有
+			     ResizeObserver + 多层 DOM + ref，Vue 原地 patch 到 'div' 时会访问
+			     已销毁节点的 type/parentNode 报错 —— 拆分后走完整 unmount/mount 路径 -->
+			<div v-if="isFixedLayout" class="pf-content-area pf-content-area--fixed">
+				<main class="pf-content pf-content--fixed">
 					<div v-show="pageLoading" class="df-page-skeleton">
 						<div
 class="df-skeleton-block"
@@ -140,7 +141,43 @@ class="df-skeleton-block"
 						</NuxtErrorBoundary>
 					</div>
 				</main>
-			</component>
+			</div>
+			<el-scrollbar v-else class="pf-content-scrollbar">
+				<main class="pf-content">
+					<div v-show="pageLoading" class="df-page-skeleton">
+						<div
+class="df-skeleton-block"
+							style="width: 180px; height: 22px; border-radius: 4px; margin-bottom: 8px;" />
+						<div
+class="df-skeleton-block"
+							style="width: 280px; height: 14px; border-radius: 4px; margin-bottom: 24px;" />
+						<div class="df-page-skeleton-cards">
+							<div v-for="i in 4" :key="i" class="df-page-skeleton-card">
+								<div
+class="df-skeleton-block"
+									style="width: 60%; height: 12px; border-radius: 4px; margin-bottom: 12px;" />
+								<div class="df-skeleton-block" style="width: 40%; height: 28px; border-radius: 4px;" />
+							</div>
+						</div>
+						<div class="df-skeleton-block" style="width: 100%; height: 240px; border-radius: 12px; margin-top: 20px;" />
+					</div>
+					<div v-show="!pageLoading" style="height: 100%;">
+						<NuxtErrorBoundary>
+							<slot />
+							<template #error="{ error, clearError }">
+								<div class="df-error-boundary">
+									<el-result icon="warning" title="页面加载异常" :sub-title="error?.message || '发生了未知错误'">
+										<template #extra>
+											<el-button type="primary" @click="clearError">重试</el-button>
+											<el-button @click="navigateTo('/docs')">返回首页</el-button>
+										</template>
+									</el-result>
+								</div>
+							</template>
+						</NuxtErrorBoundary>
+					</div>
+				</main>
+			</el-scrollbar>
 
 			<el-backtop v-if="!isFixedLayout" target=".pf-content-scrollbar .el-scrollbar__wrap" :right="28" :bottom="28" />
 		</section>
@@ -162,7 +199,6 @@ import {
 	User,
 	WarningFilled
 } from '@element-plus/icons-vue'
-import { ElScrollbar } from 'element-plus'
 import { storeToRefs } from 'pinia'
 
 import { useAppStore } from '~/stores/app'

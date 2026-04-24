@@ -1,5 +1,5 @@
 <template>
-	<div class="df-approval-card" :class="`is-${tab}`">
+	<div class="df-approval-card" :class="`is-${tab}`" @click="$emit('open', item.id)">
 		<!-- 左：文件类型图标 -->
 		<div class="df-approval-card__icon" :class="fileTypeClass">
 			{{ fileTypeLabel }}
@@ -9,13 +9,13 @@
 		<div class="df-approval-card__main">
 			<div class="df-approval-card__title-row">
 				<span class="df-approval-card__title" :title="item.title">{{ item.title }}</span>
-				<span
-					class="df-approval-card__change-badge"
-					:style="{ color: changeMeta.color, background: changeMeta.bg }">
+				<span class="df-approval-card__change-badge" :style="{ color: changeMeta.color, background: changeMeta.bg }">
 					{{ changeMeta.label }}
 				</span>
 				<span v-if="item.remindCount > 0" class="df-approval-card__remind-badge" :title="`已催办 ${item.remindCount} 次`">
-					<el-icon><BellFilled /></el-icon>
+					<el-icon>
+						<BellFilled />
+					</el-icon>
 					已催办 {{ item.remindCount }} 次
 				</span>
 			</div>
@@ -50,25 +50,21 @@
 			</div>
 
 			<div v-if="item.rejectReason" class="df-approval-card__reject-reason">
-				<el-icon><CircleCloseFilled /></el-icon>
+				<el-icon>
+					<CircleCloseFilled />
+				</el-icon>
 				<span>驳回原因：{{ item.rejectReason }}</span>
 			</div>
 		</div>
 
 		<!-- 右：状态 + 操作 -->
 		<div class="df-approval-card__actions">
-			<span
-				class="df-approval-card__status"
-				:style="{ color: statusMeta.color, background: statusMeta.bg }">
+			<span class="df-approval-card__status" :style="{ color: statusMeta.color, background: statusMeta.bg }">
 				{{ statusMeta.label }}
 			</span>
 			<el-button
-				v-if="item.canWithdraw"
-				type="danger"
-				text
-				size="small"
-				:loading="withdrawing"
-				@click="$emit('withdraw', item.id)">
+v-if="item.canWithdraw" type="danger" text size="small" :loading="withdrawing"
+				@click.stop="$emit('withdraw', item.id)">
 				撤回
 			</el-button>
 		</div>
@@ -89,6 +85,7 @@ const props = defineProps<{
 
 defineEmits<{
 	withdraw: [id: number]
+	open: [id: number]
 }>()
 
 const statusMeta = computed(() => getStatusMeta(props.item.status))
@@ -123,6 +120,7 @@ const timeLabel = computed(() => {
 	background: var(--df-panel);
 	border: 1px solid var(--df-border);
 	border-radius: 10px;
+	cursor: pointer;
 	transition: box-shadow 0.2s, border-color 0.2s;
 
 	&:hover {
@@ -143,10 +141,21 @@ const timeLabel = computed(() => {
 		color: #fff;
 		background: #94a3b8;
 
-		&.is-pdf { background: #ef4444; }
-		&.is-word { background: #2563eb; }
-		&.is-excel { background: #10b981; }
-		&.is-md { background: #8b5cf6; }
+		&.is-pdf {
+			background: #ef4444;
+		}
+
+		&.is-word {
+			background: #2563eb;
+		}
+
+		&.is-excel {
+			background: #10b981;
+		}
+
+		&.is-md {
+			background: #8b5cf6;
+		}
 	}
 
 	&__main {

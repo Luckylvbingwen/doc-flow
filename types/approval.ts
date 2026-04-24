@@ -1,4 +1,20 @@
-import type { ChainNode } from '~/components/ApprovalChain.vue'
+// ==========================================================
+// ApprovalChain 组件节点类型（组件与调用方共用，统一定义在 types/）
+// ==========================================================
+
+/** 审批链节点（ApprovalChain.vue 的数据单元） */
+export interface ChainNode {
+	/** 审批人姓名 */
+	name: string
+	/** 头像文字（默认取 name 首字） */
+	avatar?: string
+	/** 头像背景色 */
+	color?: string
+	/** 节点状态 */
+	status?: 'approved' | 'current' | 'rejected' | 'waiting'
+	/** 状态辅助文字（如"审批中"） */
+	statusText?: string
+}
 
 // ==========================================================
 // 审批中心列表项（PRD §6.4）— 用于 /api/approvals 接口
@@ -73,7 +89,7 @@ export interface ChangeSummaryItem {
 	text: string
 }
 
-/** 审批详情数据 */
+/** 审批详情数据（ApprovalDrawer 消费的视图模型） */
 export interface ApprovalDetail {
 	id: number | string
 	/** 文件名 */
@@ -98,4 +114,43 @@ export interface ApprovalDetail {
 	chain: ChainNode[]
 	/** 审批状态 */
 	status: 'pending' | 'approved' | 'rejected'
+	/** 额外：文档 id（审批完成后用于跳转文件详情页） */
+	documentId?: number
+}
+
+/**
+ * 审批详情 API 原始数据（GET /api/approvals/:id 响应体）
+ * 由 approvals.vue 转成 ApprovalDetail 后传给抽屉
+ */
+export interface ApprovalFullDetailData {
+	id:                number
+	status:            ApprovalStatus
+	documentId:        number
+	title:             string
+	ext:               string
+	groupId:           number | null
+	groupName:         string
+	initiatorId:       number
+	initiatorName:     string
+	versionId:         number | null
+	versionNo:         string
+	fileSize:          number | null
+	uploadedAt:        number | null
+	currentNodeOrder:  number | null
+	startedAt:         number
+	finishedAt:        number | null
+	prevVersion: {
+		id:        number
+		versionNo: string
+		fileSize:  number
+	} | null
+	nodes: Array<{
+		id:             number
+		order:          number
+		approverId:     number
+		approverName:   string
+		actionStatus:   1 | 2 | 3   // 1 待处理 / 2 通过 / 3 驳回
+		actionComment:  string | null
+		actionAt:       number | null
+	}>
 }

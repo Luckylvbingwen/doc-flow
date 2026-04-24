@@ -1,7 +1,8 @@
 <template>
 	<div class="df-empty-state" :class="{ 'df-empty-state--compact': compact }">
-		<img v-if="resolvedImage" :src="resolvedImage" :alt="resolvedTitle" class="df-empty-state__image"
-			:style="{ width: imageWidth + 'px', height: imageWidth + 'px' }" />
+		<img
+v-if="resolvedImage" :src="resolvedImage" :alt="resolvedTitle" class="df-empty-state__image"
+			:style="{ width: imageWidth + 'px', height: imageWidth + 'px' }">
 		<div class="df-empty-state__text">
 			<p class="df-empty-state__title">{{ resolvedTitle }}</p>
 			<p v-if="resolvedDescription" class="df-empty-state__desc">

@@ -129,3 +129,37 @@ export const ADMIN_SUPER_ADMIN_PROTECTED = 'ADMIN_SUPER_ADMIN_PROTECTED'
 export const ADMIN_PL_HEAD_HAS_OWNERSHIP = 'ADMIN_PL_HEAD_HAS_OWNERSHIP'
 /** 部门负责人由飞书同步，不可在此指派 (400) */
 export const ADMIN_DEPT_HEAD_SYNC_ONLY = 'ADMIN_DEPT_HEAD_SYNC_ONLY'
+
+// ─── 文档（document-core A 阶段） ───
+/** 文档不存在 (404) */
+export const DOCUMENT_NOT_FOUND = 'DOCUMENT_NOT_FOUND'
+/** 文档当前状态不允许此操作 (409) */
+export const DOCUMENT_STATUS_INVALID = 'DOCUMENT_STATUS_INVALID'
+/** 组内已存在同名文档 (409) */
+export const DOCUMENT_DUPLICATE_NAME = 'DOCUMENT_DUPLICATE_NAME'
+/** 文档版本不存在 (404) */
+export const VERSION_NOT_FOUND = 'VERSION_NOT_FOUND'
+
+// ─── 文件上传 ───
+/** 文件超出大小限制 (413) */
+export const FILE_TOO_LARGE = 'FILE_TOO_LARGE'
+/** 文件格式暂不支持（当前仅支持 .md，转换器尚未就绪） (400) */
+export const FILE_FORMAT_UNSUPPORTED = 'FILE_FORMAT_UNSUPPORTED'
+/** 文件转换失败（外部转换器异常） (500) */
+export const FILE_CONVERT_FAILED = 'FILE_CONVERT_FAILED'
+
+// ─── 对象存储 ───
+/** 对象存储写入失败 (500) */
+export const STORAGE_PUT_FAILED = 'STORAGE_PUT_FAILED'
+/** 对象存储读取失败 (500) */
+export const STORAGE_GET_FAILED = 'STORAGE_GET_FAILED'
+
+// ─── 审批运行时 ───
+/** 当前用户不是本节点的待处理审批人 (403) */
+export const APPROVAL_NOT_APPROVER = 'APPROVAL_NOT_APPROVER'
+/** 本节点已被处理，不可重复处理 (409) */
+export const APPROVAL_ALREADY_ACTED = 'APPROVAL_ALREADY_ACTED'
+/** 驳回意见为必填 (400) */
+export const APPROVAL_REASON_REQUIRED = 'APPROVAL_REASON_REQUIRED'
+/** 组未配置审批模板（但起审批接口要求有模板） (409) */
+export const APPROVAL_NO_TEMPLATE = 'APPROVAL_NO_TEMPLATE'

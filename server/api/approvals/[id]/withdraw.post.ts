@@ -6,11 +6,12 @@
  *   - 仅发起人（inst.initiator_user_id = self）可撤回
  *   - 仅 status=2（审批中）可撤回，其他状态拒绝
  *   - 事务：UPDATE status=5 / finished_at=NOW() + 写 approval.withdraw 操作日志
+ *   - 通知：M7 通知已处理过（action_status ∈ 2,3）的审批人（去重、不含提交人）
  *
  * 鉴权：登录即可（仅操作自己发起的审批）
  */
 import { prisma } from '~/server/utils/prisma'
-import { APPROVAL_STATUS } from '~/server/constants/approval'
+import { APPROVAL_STATUS, NODE_ACTION } from '~/server/constants/approval'
 import {
 	AUTH_REQUIRED,
 	APPROVAL_NOT_FOUND,
@@ -20,6 +21,8 @@ import {
 } from '~/server/constants/error-codes'
 import { writeLog } from '~/server/utils/operation-log'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
+import { createNotifications } from '~/server/utils/notify'
+import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 
 export default defineEventHandler(async (event) => {
 	const user = event.context.user
@@ -67,6 +70,25 @@ export default defineEventHandler(async (event) => {
 		documentId: Number(inst.document_id),
 		detail: { desc: `撤回审批「${inst.doc_documents?.title ?? ''}」` },
 	})
+
+	// M7 通知已处理过的审批人（去重、不含提交人本人）
+	const handled = await prisma.doc_approval_instance_nodes.findMany({
+		where: {
+			instance_id: instanceId,
+			action_status: { in: [NODE_ACTION.APPROVED, NODE_ACTION.REJECTED] },
+			approver_user_id: { not: inst.initiator_user_id },
+		},
+		distinct: ['approver_user_id'],
+		select: { approver_user_id: true },
+	})
+	if (handled.length > 0) {
+		await createNotifications(handled.map(n => NOTIFICATION_TEMPLATES.M7.build({
+			toUserId: n.approver_user_id,
+			submitter: user.name ?? '',
+			fileName: inst.doc_documents?.title ?? '',
+			fileId: inst.document_id,
+		})))
+	}
 
 	return ok({ id: Number(inst.id) }, '已撤回审批')
 })

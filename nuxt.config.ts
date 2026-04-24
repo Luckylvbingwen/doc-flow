@@ -102,6 +102,12 @@ export default defineNuxtConfig({
       websocket: true,
       tasks: true,
     },
+    // server/utils/extract.ts 通过 createRequire 按需加载这三个 CJS 包，
+    // Rollup 静态分析看不到 require 调用，nft 默认不会把它们追加到 .output。
+    // 显式 traceInclude 确保生产构建把依赖复制进 .output/server/node_modules。
+    externals: {
+      traceInclude: ['xlsx', 'mammoth', 'pdf-parse'],
+    },
     scheduledTasks: {
       // 每天凌晨 2:00 自动同步飞书通讯录
       '0 2 * * *': ['feishu:sync-contacts'],

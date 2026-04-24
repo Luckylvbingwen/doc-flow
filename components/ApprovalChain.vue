@@ -1,5 +1,6 @@
 <template>
-	<div class="df-approval-chain" :class="{
+	<div
+class="df-approval-chain" :class="{
 		'df-approval-chain--compact': compact,
 		'df-approval-chain--vertical': direction === 'vertical',
 	}" role="list" :aria-label="ariaLabel">
@@ -21,7 +22,8 @@
 
 		<!-- 审批人节点 -->
 		<template v-for="(node, index) in nodes" :key="index">
-			<div class="df-chain-node" :class="nodeClass(node)" role="listitem"
+			<div
+class="df-chain-node" :class="nodeClass(node)" role="listitem"
 				:aria-current="node.status === 'current' ? 'step' : undefined">
 				<div class="df-chain-node__avatar" :style="avatarStyle(node)">
 					<template v-if="node.status === 'approved'">
@@ -46,7 +48,8 @@
 				</div>
 			</div>
 
-			<span v-if="index < nodes.length - 1 || showEndpoints" class="df-chain-arrow"
+			<span
+v-if="index < nodes.length - 1 || showEndpoints" class="df-chain-arrow"
 				:class="{ 'df-chain-arrow--done': node.status === 'approved' }">
 				<el-icon>
 					<ArrowRight />
@@ -55,7 +58,8 @@
 		</template>
 
 		<!-- 结束节点 -->
-		<div v-if="showEndpoints" class="df-chain-node df-chain-node--endpoint df-chain-node--end"
+		<div
+v-if="showEndpoints" class="df-chain-node df-chain-node--endpoint df-chain-node--end"
 			:class="{ 'df-chain-node--completed': allApproved }" role="listitem">
 			<div class="df-chain-node__icon df-chain-node__icon--end">
 				<el-icon :size="compact ? 14 : 16">
@@ -77,19 +81,9 @@ import {
 	SuccessFilled,
 	Flag,
 } from '@element-plus/icons-vue'
+import type { ChainNode } from '~/types/approval'
 
-export interface ChainNode {
-	/** 审批人姓名 */
-	name: string
-	/** 头像文字（默认取 name 首字） */
-	avatar?: string
-	/** 头像背景色 */
-	color?: string
-	/** 节点状态 */
-	status?: 'approved' | 'current' | 'rejected' | 'waiting'
-	/** 状态辅助文字（如"审批中"） */
-	statusText?: string
-}
+export type { ChainNode }
 
 const props = withDefaults(
 	defineProps<{
