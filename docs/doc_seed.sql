@@ -413,6 +413,66 @@ ON DUPLICATE KEY UPDATE
   updated_at = NOW(3);
 
 -- =========================================================
+-- K.3 审批超时催办 seed 补充（patch-007 同步）
+--     2 条专供 approval:remind-timeout cron 观察 M5/M6 落库：
+--       50032 刚超 25h 未催办 / 50033 达上限 3 次且最近一次 25h 前
+-- =========================================================
+INSERT INTO doc_documents (
+  id, group_id, owner_user_id, title, ext, status, source_doc_id, current_version_id,
+  deleted_at_real, deleted_by_user_id,
+  created_by, updated_by, created_at, updated_at, deleted_at
+) VALUES
+  (50032, 40001, 10002, 'Cron 演示·刚超时 25h',  'md', 3, NULL, 51030, NULL, NULL, 10002, 10002,
+   DATE_SUB(NOW(3), INTERVAL 25 HOUR), DATE_SUB(NOW(3), INTERVAL 25 HOUR), NULL),
+  (50033, 40001, 10002, 'Cron 演示·达催办上限', 'md', 3, NULL, 51031, NULL, NULL, 10002, 10002,
+   DATE_SUB(NOW(3), INTERVAL 96 HOUR), DATE_SUB(NOW(3), INTERVAL 25 HOUR), NULL)
+ON DUPLICATE KEY UPDATE
+  group_id = VALUES(group_id), owner_user_id = VALUES(owner_user_id), status = VALUES(status),
+  current_version_id = VALUES(current_version_id),
+  created_at = VALUES(created_at), updated_at = VALUES(updated_at);
+
+INSERT INTO doc_document_versions (
+  id, document_id, version_no, storage_key, storage_bucket, file_size, mime_type,
+  checksum, source_type, source_meta, change_note, uploaded_by, published_at,
+  created_at, updated_at, deleted_at
+) VALUES
+  (51030, 50032, 'v1.0', 'docs/cron-demo/overdue-25h.md',   'docflow-local', 2048, 'text/markdown',
+   'sha256_cron_demo_25h_v1',   1, JSON_OBJECT('channel', 'web'), 'cron demo', 10002, NULL,
+   DATE_SUB(NOW(3), INTERVAL 25 HOUR), DATE_SUB(NOW(3), INTERVAL 25 HOUR), NULL),
+  (51031, 50033, 'v1.0', 'docs/cron-demo/reached-limit.md', 'docflow-local', 2048, 'text/markdown',
+   'sha256_cron_demo_limit_v1', 1, JSON_OBJECT('channel', 'web'), 'cron demo', 10002, NULL,
+   DATE_SUB(NOW(3), INTERVAL 96 HOUR), DATE_SUB(NOW(3), INTERVAL 96 HOUR), NULL)
+ON DUPLICATE KEY UPDATE
+  version_no = VALUES(version_no), file_size = VALUES(file_size),
+  created_at = VALUES(created_at), updated_at = VALUES(updated_at);
+
+INSERT INTO doc_approval_instances (
+  id, biz_type, biz_id, document_id, template_id, mode, status, initiator_user_id,
+  current_node_order, started_at, finished_at, created_at, updated_at
+) VALUES
+  (62020, 1, 51030, 50032, NULL, 1, 2, 10002, 1,
+   DATE_SUB(NOW(3), INTERVAL 25 HOUR), NULL, DATE_SUB(NOW(3), INTERVAL 25 HOUR), DATE_SUB(NOW(3), INTERVAL 25 HOUR)),
+  (62021, 1, 51031, 50033, NULL, 1, 2, 10002, 1,
+   DATE_SUB(NOW(3), INTERVAL 96 HOUR), NULL, DATE_SUB(NOW(3), INTERVAL 96 HOUR), DATE_SUB(NOW(3), INTERVAL 96 HOUR))
+ON DUPLICATE KEY UPDATE
+  status = VALUES(status), current_node_order = VALUES(current_node_order),
+  started_at = VALUES(started_at), finished_at = VALUES(finished_at), updated_at = VALUES(updated_at);
+
+INSERT INTO doc_approval_instance_nodes (
+  id, instance_id, node_order, approver_user_id, action_status, action_comment,
+  action_at, remind_count, last_reminded_at, created_at, updated_at
+) VALUES
+  (63022, 62020, 1, 10004, 1, NULL, NULL, 0, NULL,
+   DATE_SUB(NOW(3), INTERVAL 25 HOUR), DATE_SUB(NOW(3), INTERVAL 25 HOUR)),
+  (63023, 62021, 1, 10005, 1, NULL, NULL, 3, DATE_SUB(NOW(3), INTERVAL 25 HOUR),
+   DATE_SUB(NOW(3), INTERVAL 96 HOUR), DATE_SUB(NOW(3), INTERVAL 25 HOUR))
+ON DUPLICATE KEY UPDATE
+  action_status = VALUES(action_status), action_comment = VALUES(action_comment),
+  action_at = VALUES(action_at),
+  remind_count = VALUES(remind_count), last_reminded_at = VALUES(last_reminded_at),
+  created_at = VALUES(created_at), updated_at = VALUES(updated_at);
+
+-- =========================================================
 -- K.2 个人中心 seed 补充：10001 视角 + 离职演示（patch-005 同步）
 --     我创建的 额外 8 条 / 分享给我 5 条 / 收藏 5 条 / 10006 离职 + 4 份待交接
 -- =========================================================

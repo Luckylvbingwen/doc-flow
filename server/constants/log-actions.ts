@@ -37,6 +37,8 @@ export const LOG_ACTIONS = {
 	APPROVAL_PASS: 'approval.pass',
 	APPROVAL_REJECT: 'approval.reject',
 	APPROVAL_WITHDRAW: 'approval.withdraw',
+	APPROVAL_REMIND: 'approval.remind',
+	APPROVAL_REMIND_LIMIT: 'approval.remind_limit',
 
 	// ── 文件发布 ──
 	DOC_PUBLISH: 'doc.publish',
@@ -147,6 +149,8 @@ export const LOG_ACTION_TO_TYPE: Record<LogActionCode, LogTypeCode> = {
 	[LOG_ACTIONS.APPROVAL_PASS]: 'approval',
 	[LOG_ACTIONS.APPROVAL_REJECT]: 'approval',
 	[LOG_ACTIONS.APPROVAL_WITHDRAW]: 'approval',
+	[LOG_ACTIONS.APPROVAL_REMIND]: 'approval',
+	[LOG_ACTIONS.APPROVAL_REMIND_LIMIT]: 'approval',
 
 	[LOG_ACTIONS.DOC_PUBLISH]: 'file_publish',
 
