@@ -178,11 +178,23 @@
 | GET | /api/personal/documents | 是 | 仅操作自己相关 | 聚合列表（tab: all/mine/shared/favorite/handover；分页 + 状态/关键词筛选） |
 | DELETE | /api/documents/:id/draft | 是 | 仅 owner + 草稿 | 删除草稿（软删 status=6 + 进回收站） |
 
+### 收藏 / 置顶 (documents favorite & pin)
+
+| 方法 | 路径 | 鉴权 | 权限/条件 | 说明 |
+| --- | --- | --- | --- | --- |
+| POST | /api/documents/:id/favorite | 是 | 登录即可（幂等） | 收藏文档，返回 `{ isFavorited: true }` |
+| DELETE | /api/documents/:id/favorite | 是 | 登录即可（幂等） | 取消收藏，返回 `{ isFavorited: false }` |
+| POST | /api/documents/:id/pin | 是 | 组管理员 / 上游管理员（requireMemberPermission） | 置顶文档，返回 `{ isPinned: true }` |
+| DELETE | /api/documents/:id/pin | 是 | 同上 | 取消置顶，返回 `{ isPinned: false }` |
+
+> 读端 `GET /api/documents` 与 `GET /api/documents/:id` 响应中已含 `isFavorited` / `isPinned` / `canPin` 字段供前端按钮显示。
+
 ### 定时任务
 
 | 任务名 | cron | 说明 |
 | --- | --- | --- |
 | feishu:sync-contacts | 0 2 * * *（每天凌晨 2:00） | 自动同步飞书通讯录 |
+| approval:remind-timeout | 0 * * * *（每整点） | 审批超时催办扫描（M5 / M6 通知 + remind_count 状态机） |
 
 ---
 
@@ -1383,6 +1395,66 @@
 ```json
 { "success": true, "code": "OK", "message": "角色已更新",
   "data": { "changed": true, "changes": ["授予公司层管理员"] } }
+```
+
+---
+
+### 3.60 POST /api/documents/:id/favorite
+
+**鉴权**：登录即可（无专用权限码；任何员工可收藏自己能访问到的文档）
+
+**规则**：
+- 文档不存在 / `deleted_at` 或 `deleted_at_real` 任一非空 → 404 `DOCUMENT_NOT_FOUND`
+- 幂等：已收藏 → 直接返回 ok，**不重写日志**；未收藏 → 新建 `doc_document_favorites` 行 + 写 `favorite.add` 操作日志
+
+**响应**：
+```json
+{ "success": true, "code": "OK", "message": "已收藏", "data": { "isFavorited": true } }
+```
+
+---
+
+### 3.61 DELETE /api/documents/:id/favorite
+
+**鉴权**：登录即可
+
+**规则**：
+- 不强制校验文档是否存在（用户仍可清理自己历史的孤儿收藏记录）
+- 幂等：已收藏 → 删除记录 + 写 `favorite.remove` 日志；未收藏 → 直接 ok
+
+**响应**：
+```json
+{ "success": true, "code": "OK", "message": "已取消收藏", "data": { "isFavorited": false } }
+```
+
+---
+
+### 3.62 POST /api/documents/:id/pin
+
+**鉴权**：登录 + `requireMemberPermission`（组内 `role=1` 管理员、组负责人、或上游 `super_admin` / `company_admin` / `dept_head`（当组 scope=部门层）/ `pl_head`（当组 scope=产品线层））
+
+**规则**：
+- 文档不存在 / 已删除 → 404 `DOCUMENT_NOT_FOUND`
+- 文档未归组（`group_id` 为空，个人草稿） → 409 `DOCUMENT_STATUS_INVALID`
+- 幂等：已置顶 → 直接 ok；未置顶 → 新建 `doc_document_pins` 行（`pinned_by=self`、`group_id=doc.group_id`）+ 写 `pin.add` 日志
+
+**响应**：
+```json
+{ "success": true, "code": "OK", "message": "已置顶", "data": { "isPinned": true } }
+```
+
+---
+
+### 3.63 DELETE /api/documents/:id/pin
+
+**鉴权**：同 3.62
+
+**规则**：
+- 幂等：已置顶 → 删除记录 + 写 `pin.remove` 日志；未置顶 → 直接 ok
+
+**响应**：
+```json
+{ "success": true, "code": "OK", "message": "已取消置顶", "data": { "isPinned": false } }
 ```
 
 ---

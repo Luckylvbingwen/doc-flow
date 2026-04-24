@@ -13,6 +13,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '~/server/utils/prisma'
 import { documentListQuerySchema } from '~/server/schemas/document'
+import { canUserPinInGroup } from '~/server/utils/group-permission'
 import type { DocumentListItem, DocumentListResponse, DocumentStatus } from '~/types/document'
 
 interface Row {
@@ -98,12 +99,15 @@ export default defineEventHandler(async (event) => {
 		isFavorited:   Number(r.is_favorited) === 1,
 	}))
 
+	const canPin = await canUserPinInGroup(user.id, groupId)
+
 	const resp: DocumentListResponse = {
 		list,
 		total:          Number(totalBig),
 		page,
 		pageSize,
 		reviewingCount: Number(reviewingBig),
+		canPin,
 	}
 	return ok(resp)
 })

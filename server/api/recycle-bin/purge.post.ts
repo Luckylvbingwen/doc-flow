@@ -65,15 +65,23 @@ export default defineEventHandler(async (event) => {
 
 	if (purgeIds.length > 0) {
 		const now = new Date()
+		const purgeBigIds = purgeIds.map(BigInt)
 		await prisma.$transaction(async (tx) => {
 			// 文档 + 所有版本标记 deleted_at
 			await tx.doc_documents.updateMany({
-				where: { id: { in: purgeIds.map(BigInt) } },
+				where: { id: { in: purgeBigIds } },
 				data: { deleted_at: now, updated_by: BigInt(user.id) },
 			})
 			await tx.doc_document_versions.updateMany({
-				where: { document_id: { in: purgeIds.map(BigInt) } },
+				where: { document_id: { in: purgeBigIds } },
 				data: { deleted_at: now },
+			})
+			// 级联清理收藏 / 置顶（这两张表无 deleted_at 列，硬删以防孤儿记录）
+			await tx.doc_document_favorites.deleteMany({
+				where: { document_id: { in: purgeBigIds } },
+			})
+			await tx.doc_document_pins.deleteMany({
+				where: { document_id: { in: purgeBigIds } },
 			})
 		})
 		await writeLogs(purgeIds.map((id) => {

@@ -5,6 +5,7 @@
  * 单次 JOIN 出文档 + 当前版本 + 组名 + owner 名，含当前用户动作权限标志
  */
 import { prisma } from '~/server/utils/prisma'
+import { canUserPinInGroup } from '~/server/utils/group-permission'
 import {
 	INVALID_PARAMS,
 	DOCUMENT_NOT_FOUND,
@@ -86,6 +87,11 @@ export default defineEventHandler(async (event) => {
 	const isGroupAdmin = memberRole === 1
 	const canEditInGroup = memberRole === 1 || memberRole === 2
 
+	const canPin = await canUserPinInGroup(
+		user.id,
+		row.group_id != null ? Number(row.group_id) : null,
+	)
+
 	const detail: DocumentDetail = {
 		id:        Number(row.id),
 		title:     row.title,
@@ -113,6 +119,7 @@ export default defineEventHandler(async (event) => {
 		canRemove:         isGroupAdmin && status === 4,
 		canSubmitApproval: isOwner && (status === 1 || status === 5),
 		canUploadVersion:  canEditInGroup && (status === 4 || status === 5),
+		canPin,
 	}
 
 	return ok(detail)

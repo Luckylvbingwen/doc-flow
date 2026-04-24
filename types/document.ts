@@ -51,6 +51,7 @@ export interface DocumentDetail {
 	canRemove:          boolean
 	canSubmitApproval:  boolean
 	canUploadVersion:   boolean
+	canPin:             boolean
 }
 
 /** 上传 / 更新版本 返回结构 */
@@ -61,13 +62,15 @@ export interface UploadResult {
 	approvalInstanceId:  number | null
 }
 
-/** 仓库列表分页包装（比标准 PaginatedData 多一个 reviewingCount） */
+/** 仓库列表分页包装（比标准 PaginatedData 多 reviewingCount + canPin） */
 export interface DocumentListResponse {
 	list:            DocumentListItem[]
 	total:           number
 	page:            number
 	pageSize:        number
 	reviewingCount:  number
+	/** 当前用户在此组是否有置顶权限（组管理员及上游） */
+	canPin:          boolean
 }
 
 /** 预览响应 */
