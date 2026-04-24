@@ -73,6 +73,7 @@
 - [x] ~~组设置 — 基础设置 tab~~ ✅ 2026-04-17（`GroupSettingsModal` 基本设置 Tab）
 - [x] ~~组设置 — 成员管理 tab~~ ✅ 2026-04-17（`GroupSettingsModal` 成员管理 Tab）
 - [x] ~~组设置 — 审批流配置 tab~~ ✅ 2026-04-17（`GroupApprovalPanel`，整包 PUT + 组创建时初始化默认模板）
+- [x] ~~行 actions 收藏 / 置顶下拉（置顶仅管理员可见）~~ ✅ 2026-04-24
 - [ ] 飞书导入入口
 
 ### 2.6 文档主页 (`pages/docs/index.vue`)
@@ -93,6 +94,7 @@
 - [ ] 跨组移动弹窗（MoveTargetPicker 集成）
 - [ ] 上传新版本完整流程
 - [ ] 全屏文件预览器
+- [x] ~~收藏 / 置顶图标按钮（PageTitle 圆形按钮，状态切换 + 乐观更新）~~ ✅ 2026-04-24
 - [ ] 文件级操作菜单（下载/分享/删除等）
 
 ### 2.8 系统管理 (`pages/admin.vue`) — 对齐 PRD §6.9
@@ -157,6 +159,7 @@
 - [ ] 审批流 CRUD API
 - [ ] 文档 CRUD API
 - [x] ~~通知 API~~ ✅ 2026-04-18（4 接口已完成，见「七、通知触发点接入清单」）
+- [x] ~~收藏 / 置顶 API~~ ✅ 2026-04-24（POST/DELETE favorite + POST/DELETE pin + canPin 读端扩展 + purge 级联清理）
 - [ ] 日志查询 API
 
 ---

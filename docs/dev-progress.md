@@ -338,6 +338,36 @@
   - `docs/feature-gap-checklist.md` §2.1 审批管理 5 项打 ✅（抽屉 / 审批链 / 驳回必填 / 变更摘要 / 催办 cron）；§七、通知触发清单 M1-M9 全部打 ✅ 2026-04-24
   - `docs/superpowers/specs/2026-04-24-approval-timeout-reminder-design.md` / `docs/superpowers/plans/2026-04-24-approval-timeout-reminder.md` 新增
 
+### feat: 收藏 / 置顶 B 阶段（写端闭环 + UI + 级联清理）
+
+A 阶段已就绪：表 `doc_document_favorites` / `doc_document_pins`、4 个 log action 常量、读端 JOIN 返回 `isFavorited`/`isPinned`、仓库列表 `ORDER BY is_pinned DESC`、行首角标、个人中心 `favorite` tab 接通。本次补齐写端 + UI + 级联清理，形成端到端闭环。
+
+- **后端（4 接口 + 读端扩展 + 级联）**
+  - `server/api/documents/[id]/favorite.post.ts` / `.delete.ts` — 任何员工可收藏（登录即可），幂等：已/未收藏直接返回 ok 不重写日志；仅真正落地变更时写 `favorite.add` / `favorite.remove`
+  - `server/api/documents/[id]/pin.post.ts` / `.delete.ts` — 置顶权限走 `requireMemberPermission`（组内 role=1 管理员 / 组负责人 / super / company_admin / dept_head / pl_head 中匹配 scope 的）；未归组文档（`group_id=null`）→ 409 `DOCUMENT_STATUS_INVALID`；同样幂等，写 `pin.add` / `pin.remove`
+  - `server/utils/group-permission.ts` 追加 `canUserPinInGroup(userId, groupId)` — 布尔版权限判定，读端回填 `canPin` 用（避免 fail 响应语义）
+  - `server/api/documents/index.get.ts` / `[id]/index.get.ts` 响应追加 `canPin`，前端按钮可见性**由后端统一判定**，前端零重复逻辑
+  - `server/api/recycle-bin/purge.post.ts` 事务内级联 `deleteMany doc_document_favorites / doc_document_pins`，防孤儿记录（这两张表无 `deleted_at` 列，硬删）
+- **前端（API + 2 处 UI）**
+  - `api/documents.ts` 补 4 个 API 函数
+  - `types/document.ts` `DocumentDetail` / `DocumentListResponse` 追加 `canPin` 字段
+  - `pages/docs/repo/[id].vue` 行 actions 下拉追加：
+    - 收藏 / 取消收藏（所有成员，根据 `row.isFavorited` 切文案 + 命令字）
+    - 置顶 / 取消置顶（`v-if="canPin"` 管理员可见）
+    - `favPendingIds` / `pinPendingIds` Set 防连点（不需响应式）
+    - 乐观更新 → API → 失败回滚 + 服务端 `isFavorited`/`isPinned` 对账
+    - 置顶后 `refresh()` 重排（保持 `ORDER BY is_pinned DESC` 一致性）
+  - `pages/docs/file/[id].vue` PageTitle 追加 2 个圆形图标按钮：
+    - ⭐ 收藏（`StarFilled` / `Star` 切换，`warning` / `default` 色）
+    - 📌 置顶（`v-if="detail.canPin"`，`primary` / `default` 色）
+    - `favoritePending` / `pinPending` ref，`:loading` 态防抖
+- **规格依据**：PRD §4.1（权限矩阵 — 管理员可置顶、可编辑可收藏）、§6.3.8 / §6.5（个人中心收藏 tab）、§1235-1237（引用文档置顶仅本组生效）
+- **范围**：B 阶段 = 收藏/置顶写端闭环 + UI；**不涉及**文档引用的跨组置顶（依赖后续"文档引用"模块；schema UK `(document_id, group_id)` 已支持多组独立置顶）
+- **文档同步**
+  - `docs/api-auth-design.md` §3.60-3.63 新增 4 个接口详情、接口总览新增"收藏/置顶"段、定时任务表补 `approval:remind-timeout`
+  - `docs/feature-gap-checklist.md` §2.5 仓库详情 / §2.7 文件详情 / §六 数据层对应条目打 ✅ 2026-04-24
+  - `docs/superpowers/specs/2026-04-24-favorite-pin-design.md` / `docs/superpowers/plans/2026-04-24-favorite-pin.md` 新增
+
 ---
 
 ## 待开发（按优先级排序）
@@ -350,5 +380,6 @@
 | P1 | 站内通知 — 三类通知 + 已读未读 | ✅ A 阶段完成于 2026-04-18（触发点接入随各业务补；M1-M9 已接入 2026-04-24） |
 | P2 | 操作日志 | ✅ A 阶段完成于 2026-04-17（埋点随各业务补） |
 | P2 | 回收站 | ✅ A 阶段完成于 2026-04-18（30 天自动清理 cron 后续排期） |
-| P2 | 评论/批注、收藏/置顶、文档引用、搜索、分享 | ⏳ 待排期 |
+| P2 | 收藏 / 置顶 | ✅ B 阶段完成于 2026-04-24（读端 A 阶段 + 写端 B 阶段 + UI + 级联清理）|
+| P2 | 评论 / 批注、文档引用、搜索、分享 | ⏳ 待排期 |
 | P3 | M24 审批链成员因离职/调岗移除 | 🕓 待产品讨论（归"离职交接运行时"整体设计）|
