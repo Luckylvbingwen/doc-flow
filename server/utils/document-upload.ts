@@ -70,7 +70,27 @@ export async function executeUpload(ctx: UploadContext): Promise<UploadResult> {
 	})
 
 	const inTx = await prisma.$transaction(async (tx) => {
-		// ─── 落 doc_document_versions（first / update 走 INSERT；resubmit 复用既有版本，若直发要补 published_at） ───
+		// 顺序纪律：doc_document_versions.document_id 有 FK → doc_documents(id)，MySQL InnoDB 默认立即校验。
+		// first 模式必须先 INSERT doc（current_version_id=null）再 INSERT version，最后回填 current_version_id。
+
+		// ─── Step 1: 先落 doc_documents（first=INSERT；其他模式留到 Step 3 处理） ───
+		if (ctx.mode === 'first') {
+			await tx.doc_documents.create({
+				data: {
+					id: ctx.documentId,
+					group_id: BigInt(ctx.groupId),
+					owner_user_id: BigInt(ctx.submitterId),
+					title: ctx.title,
+					ext: ctx.ext,
+					status: routing.path === 'direct_publish' ? 4 : 3,
+					current_version_id: null,  // 先留空，Step 3 若直发回填
+					created_by: BigInt(ctx.submitterId),
+					updated_by: BigInt(ctx.submitterId),
+				},
+			})
+		}
+
+		// ─── Step 2: 落 doc_document_versions（first/update 走 INSERT；resubmit 复用既有版本） ───
 		if (ctx.mode === 'first' || ctx.mode === 'update') {
 			await tx.doc_document_versions.create({
 				data: {
@@ -96,21 +116,14 @@ export async function executeUpload(ctx: UploadContext): Promise<UploadResult> {
 			})
 		}
 
-		// ─── 落 doc_documents（first=INSERT / update+resubmit=UPDATE） ───
+		// ─── Step 3: 回填 doc_documents（first 模式 UPDATE current_version_id；其他模式 status + current_version_id） ───
 		if (ctx.mode === 'first') {
-			await tx.doc_documents.create({
-				data: {
-					id: ctx.documentId,
-					group_id: BigInt(ctx.groupId),
-					owner_user_id: BigInt(ctx.submitterId),
-					title: ctx.title,
-					ext: ctx.ext,
-					status: routing.path === 'direct_publish' ? 4 : 3,
-					current_version_id: routing.path === 'direct_publish' ? ctx.versionId : null,
-					created_by: BigInt(ctx.submitterId),
-					updated_by: BigInt(ctx.submitterId),
-				},
-			})
+			if (routing.path === 'direct_publish') {
+				await tx.doc_documents.update({
+					where: { id: ctx.documentId },
+					data: { current_version_id: ctx.versionId },
+				})
+			}
 		} else {
 			await tx.doc_documents.update({
 				where: { id: ctx.documentId },

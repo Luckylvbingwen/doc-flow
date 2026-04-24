@@ -57,8 +57,8 @@ services:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"    # S3 API
-      - "9001:9001"    # Web 控制台
+      - "9100:9000"    # S3 API（主机 9100 → 容器 9000；避开 phpStudy 的 9000 占用）
+      - "9101:9001"    # Web 控制台（主机 9101 → 容器 9001）
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}

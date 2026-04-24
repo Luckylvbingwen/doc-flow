@@ -78,7 +78,13 @@
       "Bash(head -3 echo \"\" echo \"--- compare.post.mjs 是否还有 'D:\\\\\\\\' 裸路径 import ---\" grep -c \"from 'D:\\\\\\\\\\\\\\\\\" .output/server/chunks/routes/api/version/compare.post.mjs echo \"--- compare.post.mjs 如何 require xlsx/mammoth/pdf-parse ---\" grep -E \"xlsx|mammoth|pdf-parse|createRequire\" .output/server/chunks/routes/api/version/compare.post.mjs)",
       "Bash(PORT=4001 node .output/server/index.mjs)",
       "Bash(pkill -f \".output/server/index.mjs\")",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell(Get-CimInstance *)",
+      "PowerShell(Stop-Process *)",
+      "Bash(mysql -u root -proot -h 127.0.0.1 -P 3306 docflow -N -B -e \"SELECT id, name, feishu_department_id FROM doc_departments WHERE deleted_at IS NULL LIMIT 10;\")",
+      "Bash(\"D:/phpstudy_pro/Extensions/MySQL8.0.12/bin/mysql.exe\" -u root -proot -h 127.0.0.1 -P 3306 docflow -N -B -e \"SELECT id, name, feishu_department_id FROM doc_departments WHERE deleted_at IS NULL;\")",
+      "Bash(\"D:/phpstudy_pro/Extensions/MySQL8.0.12/bin/mysql.exe\" -u root -proot -h 127.0.0.1 -P 3306 docflow -N -B -e \"SELECT u.id, u.name, u.status, fu.feishu_department_ids FROM doc_users u LEFT JOIN doc_feishu_users fu ON fu.feishu_open_id = u.feishu_open_id WHERE u.deleted_at IS NULL AND u.status=1 ORDER BY u.id LIMIT 15;\")"
     ]
   }
 }

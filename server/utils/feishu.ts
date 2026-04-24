@@ -311,10 +311,28 @@ async function fetchUsersByDepartment(departmentId: string): Promise<FeishuConta
 	return users
 }
 
-/** 遍历所有部门拉取全部用户（去重） */
+/**
+ * 遍历所有部门拉取全部用户（去重 + 反推部门归属）
+ *
+ * 注意：飞书 `/contact/v3/users/find_by_department` 返回的 user 对象**可能不带**
+ * `department_ids` 字段，因此这里不依赖该字段，而是从"我们按 dept_id 查询得到了
+ * 这批用户"的调用路径反推每个用户的部门归属，最后用反向映射覆写 user.department_ids。
+ * 这样做不受飞书响应字段变化影响，且天然支持一人多部门。
+ */
 async function fetchAllUsers(departments: FeishuDept[]): Promise<Map<string, FeishuContactUser>> {
 	const userMap = new Map<string, FeishuContactUser>()
+	const userDeptIds = new Map<string, Set<string>>()
 
+	const recordDept = (userId: string, deptId: string) => {
+		let set = userDeptIds.get(userId)
+		if (!set) {
+			set = new Set()
+			userDeptIds.set(userId, set)
+		}
+		set.add(deptId)
+	}
+
+	// "0" 是虚拟根部门，返回的用户可能没有具体业务部门（比如公司级顶层角色），不记录部门归属
 	const rootUsers = await fetchUsersByDepartment('0')
 	for (const u of rootUsers) {
 		if (u.user_id && !userMap.has(u.user_id)) userMap.set(u.user_id, u)
@@ -325,8 +343,16 @@ async function fetchAllUsers(departments: FeishuDept[]): Promise<Map<string, Fei
 		if (!deptId) continue
 		const users = await fetchUsersByDepartment(deptId)
 		for (const u of users) {
-			if (u.user_id && !userMap.has(u.user_id)) userMap.set(u.user_id, u)
+			if (!u.user_id) continue
+			if (!userMap.has(u.user_id)) userMap.set(u.user_id, u)
+			recordDept(u.user_id, deptId)
 		}
+	}
+
+	// 用反向映射覆写 department_ids，避免下游 JSON.stringify(fu.department_ids || []) 拿空
+	for (const [uid, deptSet] of userDeptIds) {
+		const u = userMap.get(uid)
+		if (u) u.department_ids = Array.from(deptSet)
 	}
 
 	return userMap
