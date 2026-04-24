@@ -96,6 +96,12 @@ v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list" :col
 						<template #dropdown>
 							<el-dropdown-menu>
 								<el-dropdown-item command="download" :icon="Download">下载</el-dropdown-item>
+								<el-dropdown-item :command="row.isFavorited ? 'unfavorite' : 'favorite'" :icon="Star">
+									{{ row.isFavorited ? '取消收藏' : '收藏' }}
+								</el-dropdown-item>
+								<el-dropdown-item v-if="canPin" :command="row.isPinned ? 'unpin' : 'pin'" :icon="Top">
+									{{ row.isPinned ? '取消置顶' : '置顶' }}
+								</el-dropdown-item>
 								<el-dropdown-item v-if="canRemove" command="remove" :icon="Delete" divided style="color: #ef4444">
 									从组移除
 								</el-dropdown-item>
@@ -124,7 +130,15 @@ import {
 	Delete,
 } from '@element-plus/icons-vue'
 import type { TableColumn } from '~/components/DataTable.vue'
-import { apiGetDocuments, apiRemoveDocument, apiDownloadDocumentUrl } from '~/api/documents'
+import {
+	apiGetDocuments,
+	apiRemoveDocument,
+	apiDownloadDocumentUrl,
+	apiFavoriteDocument,
+	apiUnfavoriteDocument,
+	apiPinDocument,
+	apiUnpinDocument,
+} from '~/api/documents'
 import { apiGetGroup } from '~/api/groups'
 import type { DocumentListItem } from '~/types/document'
 import type { DocumentListQuery } from '~/server/schemas/document'
@@ -146,15 +160,19 @@ const canRemove = computed(() => can('doc:remove'))
 const filterKeyword = ref('')
 const filterGroupClearCount = computed(() => (filterKeyword.value ? 1 : 0))
 
-// ── 列表 + reviewingCount（透过 useListPage，但 reviewingCount 需要外挂） ──
+// ── 列表 + reviewingCount + canPin（透过 useListPage，但非标准字段需外挂） ──
 const reviewingCount = ref(0)
+const canPin = ref(false)
 
-/** 包装 apiGetDocuments：side-load reviewingCount，对外返回 PaginatedData 形状 */
+/** 包装 apiGetDocuments：side-load reviewingCount / canPin，对外返回 PaginatedData 形状 */
 function fetchWithReviewingCount(
 	params: DocumentListQuery,
 ): Promise<ApiResult<PaginatedData<DocumentListItem>>> {
 	return apiGetDocuments(params).then((res) => {
-		if (res.success) reviewingCount.value = res.data.reviewingCount
+		if (res.success) {
+			reviewingCount.value = res.data.reviewingCount
+			canPin.value = res.data.canPin
+		}
 		return res
 	})
 }
@@ -225,6 +243,64 @@ async function onRowCommand(cmd: string | number | object, row: DocumentListItem
 		window.location.href = apiDownloadDocumentUrl(row.id)
 	} else if (cmd === 'remove') {
 		await onRemove(row)
+	} else if (cmd === 'favorite' || cmd === 'unfavorite') {
+		await onToggleFavorite(row)
+	} else if (cmd === 'pin' || cmd === 'unpin') {
+		await onTogglePin(row)
+	}
+}
+
+// 防连点：Set 不需要响应式（不参与模板），仅作为幂等门闩
+const favPendingIds = new Set<number>()
+const pinPendingIds = new Set<number>()
+
+async function onToggleFavorite(row: DocumentListItem) {
+	if (favPendingIds.has(row.id)) return
+	favPendingIds.add(row.id)
+	const orig = row.isFavorited
+	row.isFavorited = !orig                                  // 乐观更新
+	try {
+		const res = orig
+			? await apiUnfavoriteDocument(row.id)
+			: await apiFavoriteDocument(row.id)
+		if (!res.success) {
+			row.isFavorited = orig                           // 回滚
+			msgError(res.message || '操作失败')
+			return
+		}
+		row.isFavorited = res.data.isFavorited               // 服务端对账
+		msgSuccess(res.message || (orig ? '已取消收藏' : '已收藏'))
+	} catch {
+		row.isFavorited = orig
+		msgError('操作失败，请重试')
+	} finally {
+		favPendingIds.delete(row.id)
+	}
+}
+
+async function onTogglePin(row: DocumentListItem) {
+	if (pinPendingIds.has(row.id)) return
+	pinPendingIds.add(row.id)
+	const orig = row.isPinned
+	row.isPinned = !orig
+	try {
+		const res = orig
+			? await apiUnpinDocument(row.id)
+			: await apiPinDocument(row.id)
+		if (!res.success) {
+			row.isPinned = orig
+			msgError(res.message || '操作失败')
+			return
+		}
+		row.isPinned = res.data.isPinned
+		msgSuccess(res.message || (orig ? '已取消置顶' : '已置顶'))
+		// 置顶状态影响列表排序（ORDER BY is_pinned DESC），刷新一次保持顺序正确
+		refresh()
+	} catch {
+		row.isPinned = orig
+		msgError('操作失败，请重试')
+	} finally {
+		pinPendingIds.delete(row.id)
 	}
 }
 

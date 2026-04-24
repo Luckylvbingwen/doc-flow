@@ -8,6 +8,23 @@
 					</el-icon>
 					返回仓库
 				</el-button>
+				<el-tooltip v-if="detail" :content="detail.isFavorited ? '取消收藏' : '收藏'" placement="top">
+					<el-button
+circle :type="detail.isFavorited ? 'warning' : 'default'" :loading="favoritePending"
+						@click="onToggleFavorite">
+						<el-icon>
+							<StarFilled v-if="detail.isFavorited" />
+							<Star v-else />
+						</el-icon>
+					</el-button>
+				</el-tooltip>
+				<el-tooltip v-if="detail?.canPin" :content="detail.isPinned ? '取消置顶' : '置顶'" placement="top">
+					<el-button circle :type="detail.isPinned ? 'primary' : 'default'" :loading="pinPending" @click="onTogglePin">
+						<el-icon>
+							<Top />
+						</el-icon>
+					</el-button>
+				</el-tooltip>
 				<el-button
 v-if="detail?.canSubmitApproval" type="primary" :loading="submitLoading"
 					@click="handleSubmitApproval">
@@ -201,6 +218,9 @@ import {
 	Loading,
 	DataAnalysis,
 	List,
+	Star,
+	StarFilled,
+	Top,
 } from '@element-plus/icons-vue'
 import type { VersionInfo, CompareResult } from '~/types/version'
 import type { ApiResponse, PaginatedData } from '~/types/api'
@@ -210,6 +230,10 @@ import {
 	apiPreviewDocument,
 	apiDownloadDocumentUrl,
 	apiRemoveDocument,
+	apiFavoriteDocument,
+	apiUnfavoriteDocument,
+	apiPinDocument,
+	apiUnpinDocument,
 } from '~/api/documents'
 import { apiSubmitApproval } from '~/api/approvals'
 import { formatTime } from '~/utils/format'
@@ -258,6 +282,58 @@ async function loadDetail() {
 		detail.value = res.data
 	} else {
 		msgError(res.message || '加载文档失败')
+	}
+}
+
+// ── 收藏 / 置顶 ──
+const favoritePending = ref(false)
+const pinPending = ref(false)
+
+async function onToggleFavorite() {
+	if (!detail.value || favoritePending.value) return
+	favoritePending.value = true
+	const orig = detail.value.isFavorited
+	detail.value.isFavorited = !orig                         // 乐观更新
+	try {
+		const res = orig
+			? await apiUnfavoriteDocument(documentId.value)
+			: await apiFavoriteDocument(documentId.value)
+		if (!res.success) {
+			detail.value.isFavorited = orig                  // 回滚
+			msgError(res.message || '操作失败')
+			return
+		}
+		detail.value.isFavorited = res.data.isFavorited      // 服务端对账
+		msgSuccess(res.message || (orig ? '已取消收藏' : '已收藏'))
+	} catch {
+		detail.value.isFavorited = orig
+		msgError('操作失败，请重试')
+	} finally {
+		favoritePending.value = false
+	}
+}
+
+async function onTogglePin() {
+	if (!detail.value || pinPending.value) return
+	pinPending.value = true
+	const orig = detail.value.isPinned
+	detail.value.isPinned = !orig
+	try {
+		const res = orig
+			? await apiUnpinDocument(documentId.value)
+			: await apiPinDocument(documentId.value)
+		if (!res.success) {
+			detail.value.isPinned = orig
+			msgError(res.message || '操作失败')
+			return
+		}
+		detail.value.isPinned = res.data.isPinned
+		msgSuccess(res.message || (orig ? '已取消置顶' : '已置顶'))
+	} catch {
+		detail.value.isPinned = orig
+		msgError('操作失败，请重试')
+	} finally {
+		pinPending.value = false
 	}
 }
 

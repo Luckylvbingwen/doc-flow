@@ -60,3 +60,31 @@ export function apiDownloadDocumentUrl(id: number, versionId?: number): string {
 	const q = versionId ? `?versionId=${versionId}` : ''
 	return `/api/documents/${id}/download${q}`
 }
+
+/** 收藏文档（幂等；返回最终 isFavorited 值供前端对账） */
+export function apiFavoriteDocument(id: number) {
+	return useAuthFetch<ApiResult<{ isFavorited: boolean }>>(`/api/documents/${id}/favorite`, {
+		method: 'POST',
+	})
+}
+
+/** 取消收藏（幂等） */
+export function apiUnfavoriteDocument(id: number) {
+	return useAuthFetch<ApiResult<{ isFavorited: boolean }>>(`/api/documents/${id}/favorite`, {
+		method: 'DELETE',
+	})
+}
+
+/** 置顶文档（幂等；组管理员及上游可用） */
+export function apiPinDocument(id: number) {
+	return useAuthFetch<ApiResult<{ isPinned: boolean }>>(`/api/documents/${id}/pin`, {
+		method: 'POST',
+	})
+}
+
+/** 取消置顶（幂等） */
+export function apiUnpinDocument(id: number) {
+	return useAuthFetch<ApiResult<{ isPinned: boolean }>>(`/api/documents/${id}/pin`, {
+		method: 'DELETE',
+	})
+}
