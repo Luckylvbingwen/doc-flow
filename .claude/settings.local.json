@@ -84,7 +84,11 @@
       "PowerShell(Stop-Process *)",
       "Bash(mysql -u root -proot -h 127.0.0.1 -P 3306 docflow -N -B -e \"SELECT id, name, feishu_department_id FROM doc_departments WHERE deleted_at IS NULL LIMIT 10;\")",
       "Bash(\"D:/phpstudy_pro/Extensions/MySQL8.0.12/bin/mysql.exe\" -u root -proot -h 127.0.0.1 -P 3306 docflow -N -B -e \"SELECT id, name, feishu_department_id FROM doc_departments WHERE deleted_at IS NULL;\")",
-      "Bash(\"D:/phpstudy_pro/Extensions/MySQL8.0.12/bin/mysql.exe\" -u root -proot -h 127.0.0.1 -P 3306 docflow -N -B -e \"SELECT u.id, u.name, u.status, fu.feishu_department_ids FROM doc_users u LEFT JOIN doc_feishu_users fu ON fu.feishu_open_id = u.feishu_open_id WHERE u.deleted_at IS NULL AND u.status=1 ORDER BY u.id LIMIT 15;\")"
+      "Bash(\"D:/phpstudy_pro/Extensions/MySQL8.0.12/bin/mysql.exe\" -u root -proot -h 127.0.0.1 -P 3306 docflow -N -B -e \"SELECT u.id, u.name, u.status, fu.feishu_department_ids FROM doc_users u LEFT JOIN doc_feishu_users fu ON fu.feishu_open_id = u.feishu_open_id WHERE u.deleted_at IS NULL AND u.status=1 ORDER BY u.id LIMIT 15;\")",
+      "Bash(sed -n '164,170p' docs/doc_seed.sql)",
+      "Bash(sed -n '648,652p' docs/doc_seed.sql)",
+      "Bash(\"D:/phpstudy_pro/Extensions/MySQL8.0.12/bin/mysql.exe\" -u root -proot -h 127.0.0.1 -P 3306 docflow)",
+      "Bash(D:/phpstudy_pro/Extensions/MySQL8.0.12/bin/mysql.exe -u root -proot -h 127.0.0.1 -P 3306 docflow -N -B -e ' *)"
     ]
   }
 }
