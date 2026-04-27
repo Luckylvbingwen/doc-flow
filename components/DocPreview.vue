@@ -8,10 +8,13 @@
 			<span>正在加载预览…</span>
 		</div>
 
-		<!-- Markdown 渲染 -->
+		<!-- Markdown 渲染：优先服务端预渲染 HTML（html prop），否则客户端 markdown-it (content prop) -->
 		<div
 v-else-if="fileType === 'md' || fileType === 'txt'" class="doc-preview__markdown"
 			v-html="sanitize(renderedMarkdown)" />
+
+		<!-- 服务端已渲染 HTML（不限文件类型） -->
+		<div v-else-if="html" class="doc-preview__markdown" v-html="sanitize(html)" />
 
 		<!-- Word / PDF 渲染 HTML（后端提取后传入） -->
 		<div v-else-if="fileType === 'docx' || fileType === 'pdf'" class="doc-preview__document">
@@ -80,9 +83,11 @@ interface ExcelSheet {
 
 const props = defineProps<{
 	fileType: string
-	/** 原始文本内容（Markdown / 纯文本） */
+	/** 原始文本内容（Markdown / 纯文本，客户端用 markdown-it 渲染） */
 	content?: string
-	/** 服务端渲染的 HTML（Word / PDF） */
+	/** 服务端预渲染的 HTML（推荐路径，所有 MD 来源都走 /api/documents/:id/preview） */
+	html?: string
+	/** 服务端渲染的 HTML（Word / PDF — 与 html 同义，保留向后兼容） */
 	htmlContent?: string
 	/** Excel 工作表数据 */
 	excelSheets?: ExcelSheet[]
@@ -91,7 +96,9 @@ const props = defineProps<{
 
 const activeSheet = ref(0)
 
+/** MD/TXT 优先服务端预渲染 HTML（props.html），fallback 客户端 markdown-it */
 const renderedMarkdown = computed(() => {
+	if (props.html) return props.html
 	if (!props.content) return ''
 	return md.render(props.content)
 })

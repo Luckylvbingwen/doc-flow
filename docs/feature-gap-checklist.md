@@ -107,7 +107,7 @@
 - [x] ~~权限设置弹窗（PermissionEditor 集成）~~ ✅ 2026-04-27（DocPermissionModal + GroupMemberPickerModal + GET/PUT /api/documents/:id/permissions + 4 值权限 enum 全栈对齐 + 文件信息卡橙锁图标）
 - [ ] 跨组移动弹窗（MoveTargetPicker 集成）
 - [ ] 上传新版本完整流程
-- [ ] 全屏文件预览器
+- [x] ~~全屏文件预览器~~ ✅ 2026-04-27（`FullscreenPreviewer` Teleport 全屏壳 + 顶栏标题/类型/版本徽章 + 左侧目录面板（H1-H3 自动抽取 + IntersectionObserver 高亮 + 可折叠）+ 主体 DocPreview 包裹（渲染字号 / 行距加大）+ 右侧批注面板占位 + ESC 关闭 + body scroll lock；附带修 DocPreview MD/TXT 分支，新增 `html` prop 优先使用服务端预渲染 HTML，原 `content` 客户端 markdown-it 路径作 fallback）
 - [x] ~~收藏 / 置顶图标按钮（PageTitle 圆形按钮，状态切换 + 乐观更新）~~ ✅ 2026-04-24
 - [ ] 文件级操作菜单（下载/分享/删除等）
 

@@ -211,21 +211,22 @@ function onOrgSelect(cat: NavTreeCategory, org: NavTreeOrgUnit) {
 async function onGroupSelect(group: NavTreeGroup, _file?: NavTreeFile) {
 	selectedGroupId.value = group.id
 	selectedType.value = 'group'
+	// 同步预填 selectedData = 树节点本身（id 必为 number），避免 GroupFilesPanel
+	// 在 await 期间拿到上一个分类节点的 id（可能是 'company' 等字符串）触发 NaN 请求
+	selectedData.value = group
+	selectedGroups.value = group.children ?? []
 	syncUrl(group.id)
 	// 构建面包屑
 	selectedBreadcrumb.value = buildBreadcrumb(group)
-	// Fetch full group detail from API
+	// 异步用 GroupDetail 覆盖（含 ownerName / fileCount / createdAt 等完整字段）
 	try {
 		const res = await apiGetGroup(group.id)
 		if (res.success && res.data) {
 			selectedData.value = res.data
-		} else {
-			selectedData.value = group
 		}
 	} catch {
-		selectedData.value = group
+		// 拉详情失败保留树节点初始数据
 	}
-	selectedGroups.value = group.children ?? []
 }
 
 function onPanelGroupClick(group: any) {

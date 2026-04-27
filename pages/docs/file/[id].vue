@@ -112,6 +112,14 @@ v-if="detail?.canSubmitApproval" type="primary" :loading="submitLoading"
 						<span style="width: 1px; height: 14px; background: var(--df-border)" />
 						<span>{{ fileTypeText }} 文档</span>
 						<span style="margin-left: auto" />
+						<el-button
+size="small" text :disabled="previewLoading || !previewHtml"
+							@click="fullscreenPreviewVisible = true">
+							<el-icon>
+								<FullScreen />
+							</el-icon>
+							全屏预览
+						</el-button>
 						<el-button size="small" text :disabled="!compareTarget" @click="openFullscreenCompare">
 							<el-icon>
 								<FullScreen />
@@ -222,6 +230,11 @@ v-if="detail?.groupId" v-model="uploadVisible" :group-id="detail.groupId" mode="
 		<DocPermissionModal
 v-if="detail?.groupId && detail?.canManagePermissions" v-model:visible="permModalVisible"
 			:document-id="documentId" :file-name="detail.title" :group-id="detail.groupId" @saved="onPermissionsSaved" />
+
+		<!-- 全屏预览（PRD §6.3.4 line 507 「全屏按钮」） -->
+		<FullscreenPreviewer
+v-model:visible="fullscreenPreviewVisible" :title="detail?.title"
+			:version-no="currentVersion?.versionNo" :file-type="fileType" :html="previewHtml" :loading="previewLoading" />
 
 		<!-- 底部 TAB 区（PRD §6.3.4：评论 / 飞书评论 / 审批记录；当前阶段只接审批记录） -->
 		<div class="pf-card df-file-tabs">
@@ -478,6 +491,9 @@ function handleRollback(_version: VersionInfo) {
 
 // ── 上传新版本 ──
 const uploadVisible = ref(false)
+
+// ── 全屏预览（PRD §6.3.4 line 507） ──
+const fullscreenPreviewVisible = ref(false)
 
 // ── 文档级权限弹窗（PRD §6.3.4） ──
 const permModalVisible = ref(false)

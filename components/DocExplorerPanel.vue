@@ -136,6 +136,7 @@ import {
 	OfficeBuilding,
 	Box,
 	User,
+	Document,
 	Plus,
 	Setting,
 } from '@element-plus/icons-vue'

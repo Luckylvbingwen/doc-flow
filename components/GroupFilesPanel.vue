@@ -5,7 +5,7 @@
 			<template v-for="(item, idx) in breadcrumb" :key="idx">
 				<span v-if="idx > 0" class="gfp__breadcrumb-sep">/</span>
 				<a v-if="item.clickable" class="gfp__breadcrumb-link" @click="$emit('breadcrumb-click', item)">{{ item.label
-					}}</a>
+				}}</a>
 				<span v-else class="gfp__breadcrumb-current">{{ item.label }}</span>
 			</template>
 		</nav>
@@ -273,7 +273,9 @@ const filterKeyword = ref('')
 
 const groupId = computed<number | null>(() => {
 	const id = props.data?.id
-	return id != null ? Number(id) : null
+	if (id == null) return null
+	const n = Number(id)
+	return Number.isNaN(n) ? null : n
 })
 
 function fetchListWithFlags(

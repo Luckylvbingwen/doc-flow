@@ -372,6 +372,43 @@ A 阶段已就绪：表 `doc_document_favorites` / `doc_document_pins`、4 个 l
 
 ## 2026-04-27
 
+### feat: 全屏文件预览器（PRD §6.3.4 line 507 「全屏按钮」）
+
+文件详情页 2.7 收口的第三项。PRD §6.3.4 line 507 在文档预览主内容区列了「预览工具栏 + 全屏按钮 + 目录面板 + 文档正文 + 批注面板」；本期落地"全屏预览模式"对应入口与界面。
+
+- **新增 `components/FullscreenPreviewer.vue`**
+  - `<Teleport to="body">` 全屏遮罩 + flex shell（96vw × 94vh，轻微缩放过渡）
+  - 顶栏：文档图标 + 标题（超长截断）+ 文件类型徽章（Markdown / Word / PDF / Excel / 纯文本）+ 版本号徽章 + 「批注」按钮（占位）+ 关闭按钮
+  - 左侧目录面板：`querySelectorAll('h1, h2, h3')` 抽取 + 给每个标题植入 `id` 锚点；点击 `scrollIntoView({ behavior: 'smooth' })`；IntersectionObserver 监听（`rootMargin: -10% 0px -70% 0px`）高亮"主视口最靠上"标题；可折叠（`<` 按钮 + 容器从 240px 缩到 36px）
+  - 右侧批注面板**占位**：默认收起，顶栏批注按钮切换；面板内容仅显示「批注功能即将上线 / 将随评论 / 标注模块一并接入」（PRD §6.3.4 line 507 列出但归"评论 + 标注大核心"阶段实施）
+  - 主体 `<DocPreview>` 包裹（不修改其渲染逻辑），通过 `:deep` 调整字号 15px / 行距 1.85，`scroll-margin-top` 让锚点跳转后留呼吸
+  - 键盘：visible=true 时全局 `keydown ESC` → close；visible=false 时移除监听
+  - body scroll lock：`document.body.style.overflow = 'hidden'`，关闭恢复
+  - props.html / fileType 变化时 `nextTick(rebuildOutline)`，避免目录跟内容失同步
+
+- **顺手修 `components/DocPreview.vue` 历史 bug**
+  - MD/TXT 分支原本只用 `props.content` 走客户端 markdown-it，但文件详情页传的是 `:html="previewHtml"`（来自 `/api/documents/:id/preview` 服务端预渲染 HTML）—— prop 名不匹配导致 MD 预览实际是空 div
+  - 修复：新增 `html` prop（服务端预渲染 HTML 直传，推荐路径）；原 `content` 路径保留作客户端 fallback；`renderedMarkdown` computed 优先返回 `html`，fallback `md.render(content)`
+  - 文件详情页 `:html="previewHtml"` 现在正确显示
+
+- **`pages/docs/file/[id].vue` 接入**
+  - 预览工具栏在「全屏对比」按钮前新增「全屏预览」按钮（区别明确）
+  - `:disabled="previewLoading || !previewHtml"` 防 loading / 空内容触发
+  - 末尾 `<FullscreenPreviewer>` 集成，传入 detail.title / currentVersion.versionNo / fileType / previewHtml / previewLoading
+
+- **PRD 严格对照**
+  - §6.3.4 line 498：左侧文档预览（含目录面板 + 批注面板）→ ✅ 目录面板做、批注面板入口框架做、面板内容大核心阶段填
+  - §6.3.4 line 507："全屏按钮，点击打开全屏预览模式" → ✅ 工具栏新加按钮 + Teleport 全屏壳
+  - §6.3.4 line 507："目录面板，从文档标题自动生成，点击定位到对应章节，可收起/展开" → ✅ 完整实现（H1-H3 + 高亮 + 折叠）
+  - §6.3.1 line 648 适用范围 "已发布文档 → 全屏文件查看器" → ✅ 仅文件详情页（已发布走详情，审批中走审批中心独立预览）
+  - §6.3.3 line 478 "所有非 MD 格式自动转为 Markdown" + `upload.post.ts` 当前只允许 .md → 全屏预览本期纯 MD HTML 渲染路径，**不引入 pdfjs-dist**（未来 PDF 转 MD 后自动复用同路径）
+
+- **范围**：纯前端 + UI 工作；不引新业务后端；不改 schema；不引新依赖
+
+- **延迟项**：批注面板内容（归"评论 + 标注"大核心阶段）
+
+---
+
 ### refactor: 共享文档结构性修复 — 去"仓库"化（PRD §6.3.1 / §6.3.2 / §6.3.4 严格对齐）
 
 发现"组占位页 + 进入仓库按钮"违反 PRD §6.3.2 line 207「选中具体组后**直接显示**子组卡片 + 文件列表」。PRD 全文 0 次出现"仓库"；现行代码引入了 `pages/docs/repo/[id].vue` 独立路由 + 多处"仓库"措辞，是历史误译，本次结构性修复一并清除。
