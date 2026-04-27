@@ -6,12 +6,13 @@ import type {
 	UploadResult,
 } from '~/types/document'
 import type { DocumentListQuery } from '~/server/schemas/document'
+import type { ApprovalItem } from '~/types/approval'
 
 /** 仓库文件列表（默认 status=4 已发布） */
 export function apiGetDocuments(params: DocumentListQuery) {
 	return useAuthFetch<ApiResult<DocumentListResponse>>('/api/documents', {
 		method: 'GET',
-		query:  params,
+		query: params,
 	})
 }
 
@@ -24,7 +25,7 @@ export function apiGetDocument(id: number) {
 export function apiUploadDocument(formData: FormData) {
 	return useAuthFetch<ApiResult<UploadResult>>('/api/documents/upload', {
 		method: 'POST',
-		body:   formData,
+		body: formData,
 	})
 }
 
@@ -32,7 +33,7 @@ export function apiUploadDocument(formData: FormData) {
 export function apiUploadNewVersion(id: number, formData: FormData) {
 	return useAuthFetch<ApiResult<UploadResult>>(`/api/documents/${id}/versions`, {
 		method: 'POST',
-		body:   formData,
+		body: formData,
 	})
 }
 
@@ -47,7 +48,7 @@ export function apiRemoveDocument(id: number) {
 export function apiPreviewDocument(id: number, versionId?: number) {
 	return useAuthFetch<ApiResult<PreviewResponse>>(`/api/documents/${id}/preview`, {
 		method: 'GET',
-		query:  versionId ? { versionId } : {},
+		query: versionId ? { versionId } : {},
 	})
 }
 
@@ -87,4 +88,12 @@ export function apiUnpinDocument(id: number) {
 	return useAuthFetch<ApiResult<{ isPinned: boolean }>>(`/api/documents/${id}/pin`, {
 		method: 'DELETE',
 	})
+}
+
+/**
+ * 单文档审批历史（PRD §6.3.4 底部 TAB「审批记录」）
+ * 不分页，按 inst.created_at DESC 全量返回；canWithdraw 恒 false
+ */
+export function apiGetDocumentApprovals(id: number) {
+	return useAuthFetch<ApiResult<ApprovalItem[]>>(`/api/documents/${id}/approvals`)
 }

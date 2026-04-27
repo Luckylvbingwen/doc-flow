@@ -170,6 +170,7 @@
 | --- | --- | --- | --- | --- |
 | GET | /api/approvals | 是 | 仅操作自己相关 | 审批列表（按 tab 分三路：待我审批/我发起的/我已处理；分页，支持状态筛选） |
 | POST | /api/approvals/:id/withdraw | 是 | 仅发起人 + reviewing | 撤回审批（status=5） |
+| GET | /api/documents/:id/approvals | 是 | doc:read | 单文档审批历史（PRD §6.3.4 文件详情底部「审批记录」TAB；不分页） |
 
 ### 个人中心 (personal)
 
@@ -1455,6 +1456,56 @@
 **响应**：
 ```json
 { "success": true, "code": "OK", "message": "已取消置顶", "data": { "isPinned": false } }
+```
+
+---
+
+### 3.64 GET /api/documents/:id/approvals
+
+**路径**：`GET /api/documents/:id/approvals`
+
+**鉴权**：登录 + `doc:read`（与文件详情页一致）
+
+**用途**：PRD §6.3.4 文件详情底部「审批记录」TAB —— 以"文档"为中心列出该文档全部审批实例（含进行中），区别于 `/api/approvals` 的"以人为中心"。
+
+**规则**：
+- 文档不存在 / 已删除 → 404 `DOCUMENT_NOT_FOUND`
+- 不分页：单文档审批量级一般 < 20 条，前端一次拿完
+- 排序：`inst.created_at DESC, inst.id DESC`
+- 字段集与 `/api/approvals` 列表项一致（`ApprovalItem`），区别：
+  - `canWithdraw` 恒为 `false`（撤回入口在审批中心，详情页只读）
+  - `currentApproverName` 仅当 `status=2`（审批中）时返回，其他状态为 `null`
+  - `handledAt` 取 `inst.finished_at`（实例完结时间）
+
+**响应**：
+```json
+{
+  "success": true,
+  "code": "OK",
+  "data": [
+    {
+      "id": 50001,
+      "status": 3,
+      "documentId": 4001,
+      "title": "产品需求文档.docx",
+      "ext": "docx",
+      "versionId": 6001,
+      "versionNo": "v2.0",
+      "changeType": "iterate",
+      "groupId": 3001,
+      "groupName": "产品组",
+      "initiatorId": 10002,
+      "initiatorName": "张三",
+      "submittedAt": 1714123456000,
+      "handledAt": 1714234567000,
+      "currentApproverName": null,
+      "allApproverNames": "李四,王五",
+      "rejectReason": null,
+      "remindCount": 0,
+      "canWithdraw": false
+    }
+  ]
+}
 ```
 
 ---

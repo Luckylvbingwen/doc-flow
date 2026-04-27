@@ -204,6 +204,31 @@ v-if="compareLoading"
 		<UploadFileModal
 v-if="detail?.groupId" v-model="uploadVisible" :group-id="detail.groupId" mode="update"
 			:locked-document-id="documentId" @success="onUploadSuccess" />
+
+		<!-- 底部 TAB 区（PRD §6.3.4：评论 / 飞书评论 / 审批记录；当前阶段只接审批记录） -->
+		<div class="pf-card df-file-tabs">
+			<TabBar v-model="bottomTab" :tabs="bottomTabs" />
+
+			<div v-if="bottomTab === 'approvals'" class="df-file-tabs__panel">
+				<div v-if="approvalsLoading" class="df-file-tabs__loading">
+					<el-icon class="is-loading">
+						<Loading />
+					</el-icon>
+					<span>加载中...</span>
+				</div>
+				<EmptyState
+v-else-if="approvalRecords.length === 0" preset="no-completed" title="暂无审批记录"
+					description="该文档还未发起任何审批" compact />
+				<div v-else class="df-file-tabs__list">
+					<ApprovalListCard
+v-for="item in approvalRecords" :key="item.id" :item="item" tab="submitted"
+						@open="openApprovalDetail" />
+				</div>
+			</div>
+		</div>
+
+		<!-- 审批详情抽屉（只读：当前用户从文件详情页打开，不暴露通过 / 驳回操作） -->
+		<ApprovalDrawer v-model="approvalDrawerVisible" :approval="currentApproval" @view-file="onDrawerViewFile" />
 	</section>
 </template>
 
@@ -225,6 +250,13 @@ import {
 import type { VersionInfo, CompareResult } from '~/types/version'
 import type { ApiResponse, PaginatedData } from '~/types/api'
 import type { DocumentDetail, DocumentStatus } from '~/types/document'
+import type {
+	ApprovalItem,
+	ApprovalDetail,
+	ApprovalFullDetailData,
+	ChangeSummaryItem,
+	ChainNode,
+} from '~/types/approval'
 import {
 	apiGetDocument,
 	apiPreviewDocument,
@@ -234,8 +266,9 @@ import {
 	apiUnfavoriteDocument,
 	apiPinDocument,
 	apiUnpinDocument,
+	apiGetDocumentApprovals,
 } from '~/api/documents'
-import { apiSubmitApproval } from '~/api/approvals'
+import { apiSubmitApproval, apiGetApproval } from '~/api/approvals'
 import { formatTime } from '~/utils/format'
 
 definePageMeta({
@@ -455,7 +488,7 @@ async function handleSubmitApproval() {
 		})
 		if (res.success) {
 			msgSuccess(res.message || '已提交审批')
-			await loadDetail()
+			await Promise.all([loadDetail(), loadApprovalRecords()])
 		} else {
 			msgError(res.message || '提交失败')
 		}
@@ -500,6 +533,136 @@ function handleViewFile() {
 	fullscreenCompareVisible.value = false
 }
 
+// ── 底部 TAB（PRD §6.3.4） ──
+// 当前阶段只接审批记录；评论 / 飞书评论留待"评论 + 标注"大核心阶段
+type BottomTab = 'approvals'
+const bottomTab = ref<BottomTab>('approvals')
+const bottomTabs: Array<{ value: BottomTab; label: string; count?: number }> = [
+	{ value: 'approvals', label: '审批记录' },
+]
+
+// ── 审批记录 ──
+const approvalRecords = ref<ApprovalItem[]>([])
+const approvalsLoading = ref(false)
+const approvalsLoaded = ref(false)
+
+async function loadApprovalRecords() {
+	approvalsLoading.value = true
+	try {
+		const res = await apiGetDocumentApprovals(documentId.value)
+		if (res.success) approvalRecords.value = res.data
+		else msgError(res.message || '加载审批记录失败')
+	} catch {
+		msgError('加载审批记录失败')
+	} finally {
+		approvalsLoading.value = false
+		approvalsLoaded.value = true
+	}
+}
+
+// tab 激活时懒加载：当前默认即审批记录已 onMounted 时一次预拉；
+// 此 watch 为评论 / 飞书评论 tab 接入后切回审批记录时的兜底（避免重复请求）
+watch(bottomTab, (val) => {
+	if (val === 'approvals' && !approvalsLoaded.value) loadApprovalRecords()
+})
+
+// ── 审批详情抽屉（只读） ──
+const approvalDrawerVisible = ref(false)
+const currentApproval = ref<ApprovalDetail | null>(null)
+
+async function openApprovalDetail(id: number) {
+	currentApproval.value = null
+	approvalDrawerVisible.value = true
+	try {
+		const res = await apiGetApproval(id)
+		if (!res.success) {
+			msgError(res.message || '加载审批详情失败')
+			approvalDrawerVisible.value = false
+			return
+		}
+		currentApproval.value = await buildReadonlyApprovalDetail(res.data)
+	} catch {
+		msgError('加载审批详情失败')
+		approvalDrawerVisible.value = false
+	}
+}
+
+/**
+ * 构造只读模式的 ApprovalDetail
+ * 与 approvals.vue 的 buildApprovalDetail 区别：
+ *   即便实例 status=2（审批中），也强制映射为 'approved' 抽屉状态，
+ *   以隐藏「通过 / 驳回」操作区与按钮 —— 文件详情页是历史只读视图
+ *   chain 节点状态独立于此，仍按真实 actionStatus + currentNodeOrder 渲染
+ */
+async function buildReadonlyApprovalDetail(data: ApprovalFullDetailData): Promise<ApprovalDetail> {
+	const chain: ChainNode[] = data.nodes.map((n) => {
+		let status: ChainNode['status']
+		let statusText: string | undefined
+		if (n.actionStatus === 2) {
+			status = 'approved'
+			statusText = '已通过'
+		} else if (n.actionStatus === 3) {
+			status = 'rejected'
+			statusText = '已驳回'
+		} else if (data.status === 2 && n.order === data.currentNodeOrder) {
+			status = 'current'
+			statusText = '审批中'
+		} else {
+			status = 'waiting'
+			statusText = '待处理'
+		}
+		return { name: n.approverName, status, statusText }
+	})
+
+	// 只读：status=2 也按 approved 显示（隐藏通过 / 驳回区）；3=approved，4/5=rejected
+	const drawerStatus: ApprovalDetail['status'] = data.status === 4 || data.status === 5
+		? 'rejected'
+		: 'approved'
+
+	let changes: ChangeSummaryItem[] = []
+	let sizeChange: string | undefined
+	if (data.prevVersion && data.versionId) {
+		try {
+			const cmp = await useAuthFetch<ApiResponse<CompareResult>>('/api/version/compare', {
+				method: 'POST',
+				body: {
+					documentId: data.documentId,
+					fromVersionId: data.versionId,
+					toVersionId: data.prevVersion.id,
+				},
+			})
+			if (cmp.success) {
+				changes = cmp.data.summary.items.map((it) => ({
+					type: it.type === 'modify' ? 'mod' : it.type,
+					text: it.text,
+				}))
+				sizeChange = cmp.data.summary.sizeChange
+			}
+		} catch { /* 摘要失败不致命 */ }
+	}
+
+	return {
+		id: data.id,
+		documentId: data.documentId,
+		fileName: data.title,
+		fileType: (data.ext || '').toLowerCase(),
+		repo: data.groupName,
+		uploader: data.initiatorName,
+		uploadTime: data.uploadedAt ? formatTime(data.uploadedAt, 'YYYY-MM-DD HH:mm') : '',
+		version: data.versionNo,
+		prevVersion: data.prevVersion?.versionNo,
+		sizeChange,
+		changes,
+		chain,
+		status: drawerStatus,
+	}
+}
+
+function onDrawerViewFile(_approval: ApprovalDetail) {
+	// 已在文件详情页，关闭抽屉即可
+	approvalDrawerVisible.value = false
+}
+
 function backToRepo() {
 	if (detail.value?.groupId) {
 		navigateTo(`/docs/repo/${detail.value.groupId}`)
@@ -511,7 +674,7 @@ function backToRepo() {
 // ── 初始化 ──
 onMounted(async () => {
 	await loadDetail()
-	await Promise.all([fetchVersions(), loadPreview()])
+	await Promise.all([fetchVersions(), loadPreview(), loadApprovalRecords()])
 })
 </script>
 

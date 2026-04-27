@@ -89,7 +89,7 @@
 ### 2.7 文件详情 (`pages/docs/file/[id].vue`)
 
 - [ ] 评论区（CommentThread 集成）
-- [ ] 审批记录标签页
+- [x] ~~审批记录标签页~~ ✅ 2026-04-27（底部 TabBar + 审批记录列表 + ApprovalDrawer 只读模式 + `GET /api/documents/:id/approvals`）
 - [ ] 权限设置弹窗（PermissionEditor 集成）
 - [ ] 跨组移动弹窗（MoveTargetPicker 集成）
 - [ ] 上传新版本完整流程

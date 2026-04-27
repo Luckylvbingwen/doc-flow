@@ -578,6 +578,40 @@
 }
 
 /* =============================================
+   文件详情页底部 TAB 区（PRD §6.3.4）
+   ============================================= */
+.df-file-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 18px;
+}
+
+.df-file-tabs__panel {
+  min-height: 160px;
+}
+
+.df-file-tabs__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 0;
+  color: var(--df-subtext);
+  font-size: 13px;
+
+  .el-icon {
+    font-size: 18px;
+  }
+}
+
+.df-file-tabs__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* =============================================
    ApprovalChain — 审批链流程可视化
    ============================================= */
 .df-approval-chain {

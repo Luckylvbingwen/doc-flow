@@ -88,7 +88,9 @@
       "Bash(sed -n '164,170p' docs/doc_seed.sql)",
       "Bash(sed -n '648,652p' docs/doc_seed.sql)",
       "Bash(\"D:/phpstudy_pro/Extensions/MySQL8.0.12/bin/mysql.exe\" -u root -proot -h 127.0.0.1 -P 3306 docflow)",
-      "Bash(D:/phpstudy_pro/Extensions/MySQL8.0.12/bin/mysql.exe -u root -proot -h 127.0.0.1 -P 3306 docflow -N -B -e ' *)"
+      "Bash(D:/phpstudy_pro/Extensions/MySQL8.0.12/bin/mysql.exe -u root -proot -h 127.0.0.1 -P 3306 docflow -N -B -e ' *)",
+      "Read(//c/temp/**)",
+      "Bash(mkdir -p /c/temp)"
     ]
   }
 }

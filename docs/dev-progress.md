@@ -370,6 +370,32 @@ A 阶段已就绪：表 `doc_document_favorites` / `doc_document_pins`、4 个 l
 
 ---
 
+## 2026-04-27
+
+### feat: 文件详情底部「审批记录」TAB（PRD §6.3.4）
+
+文件详情页 2.7 收口的第一项。剩余 5 项（权限设置 / 跨组移动 / 上传新版本 UX / 全屏预览 / 文件级操作菜单）按顺序后续推进；评论 / 飞书评论 / 标注归"评论 + 标注"大核心阶段，本次不做。
+
+- **后端**
+  - 新增 `GET /api/documents/:id/approvals` — 单文档审批历史（不分页，按 `inst.created_at DESC` 全量返回）
+  - 字段集与 `/api/approvals` 列表项一致（`ApprovalItem`），区别：`canWithdraw` 恒为 `false`、`currentApproverName` 仅在 `status=2` 时返回、`handledAt` 取 `inst.finished_at`
+  - 鉴权：`doc:read` + 文档存在性校验（与文件详情页 `GET /api/documents/:id` 一致）
+  - SQL 复用 `/api/approvals` 的子查询模式（current_approver / all_approvers / remind_count / reject_reason / is_first_version）
+- **前端**
+  - `api/documents.ts` 新增 `apiGetDocumentApprovals`
+  - `pages/docs/file/[id].vue` 底部追加 `TabBar`（PRD §6.3.4 三 TAB 容器，本次只挂"审批记录"，预留"评论 / 飞书评论"位置）
+  - 复用 `ApprovalListCard`（传 `tab="submitted"` 让卡片以"审批人列表"展示）+ `ApprovalDrawer`（只读模式：`status=2` 强制映射为 `'approved'` 抽屉态以隐藏通过/驳回区，chain 节点状态独立按真实 `actionStatus` 渲染）
+  - `loadApprovalRecords` 在 `onMounted` 与"提交审批成功"后并发刷新；`watch(bottomTab)` 兜底懒加载（待评论 tab 接入后切回审批记录时复用）
+  - 空态：`EmptyState` 复用 `no-completed` 图，自定义文案「该文档还未发起任何审批」
+- **样式**
+  - `assets/styles/components/_doc-preview.scss` 追加 `.df-file-tabs` / `.df-file-tabs__panel` / `.df-file-tabs__loading` / `.df-file-tabs__list` 容器样式
+- **规格依据**：PRD §6.3.4「底部 TAB 区 — 评论 / 飞书评论 / 审批记录」 + §6.4.2 列表项字段
+- **范围**：单文档审批历史读端 + 抽屉只读查看；**不做**通过/驳回/撤回（撤回入口在审批中心，通过/驳回入口在审批中心 pending tab）
+- **数据库改动**：无（`doc_approval_instances` / `doc_approval_instance_nodes` / `doc_approval_templates` 已有，无需新表新字段）
+- **文档同步**：`docs/api-auth-design.md` §3.64 + 接口总览审批中心段；`docs/feature-gap-checklist.md` §2.7 打 ✅
+
+---
+
 ## 待开发（按优先级排序）
 
 | 优先级 | 模块 | 状态 |
