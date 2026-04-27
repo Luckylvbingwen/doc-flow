@@ -120,123 +120,12 @@ v-else-if="type === 'department' || type === 'productline'" type="primary" size=
 			</div>
 		</div>
 
-		<!-- Group detail view -->
-		<div v-else-if="type === 'group'" class="doc-panel__section">
-			<div class="doc-panel__group-detail">
-				<!-- 面包屑导航 -->
-				<nav v-if="breadcrumb && breadcrumb.length > 0" class="doc-panel__breadcrumb">
-					<template v-for="(item, idx) in breadcrumb" :key="idx">
-						<span v-if="idx > 0" class="doc-panel__breadcrumb-sep">/</span>
-						<a v-if="item.clickable" class="doc-panel__breadcrumb-link" @click="$emit('breadcrumb-click', item)">{{
-							item.label }}</a>
-						<span v-else class="doc-panel__breadcrumb-current">{{ item.label }}</span>
-					</template>
-				</nav>
-
-				<!-- Group header -->
-				<div class="doc-panel__header">
-					<div class="doc-panel__header-icon doc-panel__header-icon--group">
-						<el-icon :size="22">
-							<FolderOpened />
-						</el-icon>
-					</div>
-					<div class="doc-panel__header-info">
-						<div class="doc-panel__title-row">
-							<h3 class="doc-panel__title">{{ data?.name }}</h3>
-							<el-button size="small" @click="$emit('group-settings')">
-								<el-icon :size="13">
-									<Setting />
-								</el-icon>
-								设置
-							</el-button>
-						</div>
-						<p v-if="data?.description || data?.desc" class="doc-panel__desc">
-							{{ data.description || data.desc }}
-						</p>
-					</div>
-				</div>
-
-				<!-- Meta info -->
-				<div class="doc-panel__meta">
-					<div class="doc-panel__meta-item">
-						<el-icon :size="14">
-							<User />
-						</el-icon>
-						<span class="doc-panel__meta-label">负责人</span>
-						<span class="doc-panel__meta-value">{{ data?.ownerName || data?.owner || '-' }}</span>
-					</div>
-					<div class="doc-panel__meta-item">
-						<el-icon :size="14">
-							<Document />
-						</el-icon>
-						<span class="doc-panel__meta-label">文档数量</span>
-						<span class="doc-panel__meta-value">{{ data?.fileCount ?? 0 }}</span>
-					</div>
-					<div class="doc-panel__meta-item">
-						<el-icon :size="14">
-							<Clock />
-						</el-icon>
-						<span class="doc-panel__meta-label">创建时间</span>
-						<span class="doc-panel__meta-value">{{ formatTime(data?.createdAt, 'YYYY-MM-DD') }}</span>
-					</div>
-				</div>
-
-				<!-- Action -->
-				<div class="doc-panel__actions">
-					<el-button type="primary" @click="$emit('create-group')">
-						<el-icon :size="14">
-							<Plus />
-						</el-icon>
-						创建子组
-					</el-button>
-					<NuxtLink v-if="data?.id" class="doc-panel__enter-btn" :to="`/docs/repo/${data.id}`">
-						<el-icon :size="14">
-							<Right />
-						</el-icon>
-						进入仓库
-					</NuxtLink>
-				</div>
-
-				<!-- Sub-groups (if any) -->
-				<template v-if="groups && groups.length > 0">
-					<div class="doc-panel__grid-label" style="margin-top: 28px;">
-						<el-icon :size="14">
-							<Folder />
-						</el-icon>
-						<span>子组 ({{ groups.length }})</span>
-					</div>
-					<div class="doc-panel__grid">
-						<article
-v-for="group in groups" :key="group.id" class="doc-panel__card"
-							@click="$emit('group-click', group)">
-							<div class="doc-panel__card-head">
-								<el-icon :size="16" class="doc-panel__card-icon">
-									<Folder />
-								</el-icon>
-								<h5 class="doc-panel__card-name">{{ group.name }}</h5>
-							</div>
-							<p v-if="group.desc || group.description" class="doc-panel__card-desc">
-								{{ group.desc || group.description }}
-							</p>
-							<div class="doc-panel__card-footer">
-								<span v-if="group.owner || group.ownerName" class="doc-panel__card-meta">
-									<el-icon :size="12">
-										<User />
-									</el-icon>
-									{{ group.owner || group.ownerName }}
-								</span>
-								<span class="doc-panel__card-meta">
-									<el-icon :size="12">
-										<Document />
-									</el-icon>
-									{{ group.fileCount ?? 0 }} 个文件
-								</span>
-							</div>
-						</article>
-					</div>
-				</template>
-			</div>
-		</div>
+		<!-- Group detail view: 选中具体组时直接展示文件列表 + 子组卡片 + 操作（PRD §6.3.2 line 207） -->
+		<GroupFilesPanel
+v-else-if="type === 'group'" :data="data" :subgroups="groups" :breadcrumb="breadcrumb"
+			@group-settings="$emit('group-settings')" @create-subgroup="$emit('create-group')"
+			@group-click="$emit('group-click', $event)" @breadcrumb-click="$emit('breadcrumb-click', $event)"
+			@documents-changed="$emit('documents-changed')" />
 	</el-scrollbar>
 </template>
 
@@ -247,13 +136,9 @@ import {
 	OfficeBuilding,
 	Box,
 	User,
-	Document,
-	Clock,
-	Right,
 	Plus,
 	Setting,
 } from '@element-plus/icons-vue'
-import { formatTime } from '~/utils/format'
 
 export interface BreadcrumbItem {
 	label: string
@@ -277,6 +162,7 @@ defineEmits<{
 	'manage-entity': []
 	'group-settings': []
 	'breadcrumb-click': [item: BreadcrumbItem]
+	'documents-changed': []
 }>()
 </script>
 
@@ -369,34 +255,6 @@ defineEmits<{
 	h3 {
 		margin: 0;
 	}
-}
-
-// ── Breadcrumb ──
-.doc-panel__breadcrumb {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	font-size: 13px;
-	color: var(--df-subtext);
-	margin-bottom: 12px;
-}
-
-.doc-panel__breadcrumb-sep {
-	color: var(--df-border);
-}
-
-.doc-panel__breadcrumb-link {
-	color: var(--df-primary);
-	cursor: pointer;
-	transition: opacity 0.15s;
-
-	&:hover {
-		opacity: 0.8;
-	}
-}
-
-.doc-panel__breadcrumb-current {
-	color: var(--df-text);
 }
 
 // ── Action bar (操作按钮栏) ──
@@ -514,82 +372,6 @@ defineEmits<{
 		font-size: 13px;
 		color: var(--df-subtext);
 		margin: 0;
-	}
-}
-
-// ── Group detail meta ──
-.doc-panel__meta {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 20px;
-	padding: 16px 18px;
-	background: var(--df-surface);
-	border: 1px solid var(--df-border);
-	border-radius: 10px;
-	margin-bottom: 20px;
-}
-
-.doc-panel__meta-item {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	font-size: 13px;
-
-	.el-icon {
-		color: var(--df-subtext);
-		opacity: 0.6;
-	}
-}
-
-.doc-panel__meta-label {
-	color: var(--df-subtext);
-
-	&::after {
-		content: ':';
-		margin-right: 2px;
-	}
-}
-
-.doc-panel__meta-value {
-	color: var(--df-text);
-	font-weight: 500;
-}
-
-// ── Enter repo button ──
-.doc-panel__actions {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin-bottom: 4px;
-}
-
-.doc-panel__enter-btn {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	height: 32px;
-	padding: 0 15px;
-	font-size: 14px;
-	font-weight: 500;
-	color: #fff;
-	background: var(--df-primary);
-	border-radius: 4px;
-	text-decoration: none;
-	transition:
-		background 0.2s,
-		box-shadow 0.2s;
-
-	&:hover {
-		background: var(--df-primary-hover);
-		box-shadow: 0 2px 8px color-mix(in srgb, var(--df-primary) 30%, transparent);
-	}
-
-	.el-icon {
-		transition: transform 0.2s;
-	}
-
-	&:hover .el-icon {
-		transform: translateX(2px);
 	}
 }
 </style>

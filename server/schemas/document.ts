@@ -3,13 +3,13 @@ import { z } from 'zod'
 /**
  * GET /api/documents 列表查询
  *
- * 默认 status=4 已发布，对应 PRD §6.3.3 仓库详情文件列表
+ * 默认 status=4 已发布，对应 PRD §6.3.3 共享文档组面板文件列表
  */
 export const documentListQuerySchema = z.object({
-	groupId:  z.coerce.number().int().positive(),
-	status:   z.coerce.number().int().min(1).max(6).optional().default(4),
-	keyword:  z.string().trim().max(100).optional(),
-	page:     z.coerce.number().int().positive().default(1),
+	groupId: z.coerce.number().int().positive(),
+	status: z.coerce.number().int().min(1).max(6).optional().default(4),
+	keyword: z.string().trim().max(100).optional(),
+	page: z.coerce.number().int().positive().default(1),
 	pageSize: z.coerce.number().int().min(1).max(100).default(20),
 })
 export type DocumentListQuery = z.infer<typeof documentListQuerySchema>
@@ -20,8 +20,8 @@ export type DocumentListQuery = z.infer<typeof documentListQuerySchema>
  * 文件本身通过 readMultipartFormData 取，不走 Zod；Zod 只校验附带的 form 字段。
  */
 export const documentUploadFieldsSchema = z.object({
-	groupId:    z.coerce.number().int().positive(),
-	title:      z.string().trim().min(1).max(255).optional(),
+	groupId: z.coerce.number().int().positive(),
+	title: z.string().trim().min(1).max(255).optional(),
 	changeNote: z.string().trim().max(500).optional(),
 })
 export type DocumentUploadFields = z.infer<typeof documentUploadFieldsSchema>

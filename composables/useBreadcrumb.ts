@@ -7,7 +7,6 @@ const LABEL_MAP: Record<string, string> = {
 	notifications: '通知中心',
 	admin: '系统管理',
 	profile: '个人中心',
-	repo: '仓库详情',
 	file: '文件详情',
 }
 

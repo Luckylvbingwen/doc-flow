@@ -1,6 +1,6 @@
 /**
  * POST /api/documents/upload
- * 首次上传（PRD §6.3.3 仓库详情「上传文件」）
+ * 首次上传（PRD §6.3.3 共享文档组面板「上传文件」）
  *
  * multipart/form-data：
  *   - groupId:    number     （必填）

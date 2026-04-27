@@ -10,9 +10,9 @@ export interface RecycleItem {
 	title: string
 	/** 扩展名（pdf / docx / md / xlsx ...） */
 	ext: string
-	/** 原仓库（组）ID；草稿无组则为 null */
+	/** 原组 ID；草稿无组则为 null */
 	groupId: number | null
-	/** 原仓库名；无则显示 '-' */
+	/** 原组名；无则显示 '-' */
 	groupName: string
 	/** 归属人 ID */
 	ownerUserId: number

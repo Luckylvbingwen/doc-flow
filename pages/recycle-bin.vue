@@ -19,9 +19,9 @@ v-model="filterKeyword" placeholder="搜索文件名..." clearable @keyup.enter=
 					</el-input>
 				</div>
 				<div class="df-filter-item">
-					<label class="df-filter-label">原仓库</label>
+					<label class="df-filter-label">原组</label>
 					<RemoteSelect
-v-model="filterGroupId" :fetch-fn="fetchFilterGroups" placeholder="全部仓库" item-label="name"
+v-model="filterGroupId" :fetch-fn="fetchFilterGroups" placeholder="全部组" item-label="name"
 						item-value="id" @change="onFilterChange" />
 				</div>
 			</FilterBar>
@@ -140,7 +140,7 @@ const busy = computed(() => restoringId.value != null || purgingId.value != null
 
 const columns: TableColumn[] = [
 	{ label: '文件名', slot: 'title', minWidth: 260 },
-	{ prop: 'groupName', label: '原仓库', width: 160 },
+	{ prop: 'groupName', label: '原组', width: 160 },
 	{ prop: 'deletedByName', label: '删除人', width: 120 },
 	{ label: '删除时间', slot: 'deletedAt', width: 180 },
 	{ label: '大小', slot: 'fileSize', width: 100, align: 'right' },
@@ -199,7 +199,7 @@ async function fetchFilterGroups(params: { keyword: string; page: number; pageSi
 
 // ── 行操作 ──
 async function onRestore(row: RecycleItem) {
-	const ok = await msgConfirm(`确定将「${row.title}」恢复到原仓库「${row.groupName}」？`)
+	const ok = await msgConfirm(`确定将「${row.title}」恢复到原组「${row.groupName}」？`)
 	if (!ok) return
 	restoringId.value = row.id
 	try {
@@ -234,7 +234,7 @@ async function onPurge(row: RecycleItem) {
 async function onBulkRestore() {
 	const ids = selection.value.map(r => r.id)
 	if (ids.length === 0) return
-	const ok = await msgConfirm(`确定恢复已选 ${ids.length} 个文件到其原仓库？`)
+	const ok = await msgConfirm(`确定恢复已选 ${ids.length} 个文件到其原组？`)
 	if (!ok) return
 	bulkRestoring.value = true
 	try {

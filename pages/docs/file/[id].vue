@@ -2,11 +2,11 @@
 	<section class="pf-page-stack">
 		<PageTitle :title="fileName || '加载中...'" :subtitle="subtitle">
 			<template #actions>
-				<el-button @click="backToRepo">
+				<el-button @click="backToGroup">
 					<el-icon>
 						<Back />
 					</el-icon>
-					返回仓库
+					{{ backLabel }}
 				</el-button>
 				<el-tooltip v-if="detail" :content="detail.isFavorited ? '取消收藏' : '收藏'" placement="top">
 					<el-button
@@ -541,7 +541,7 @@ async function handleRemove() {
 		if (res.success) {
 			msgSuccess(res.message || '已移除')
 			if (detail.value?.groupId) {
-				navigateTo(`/docs/repo/${detail.value.groupId}`)
+				navigateTo(`/docs?groupId=${detail.value.groupId}`)
 			} else {
 				navigateTo('/docs')
 			}
@@ -689,9 +689,15 @@ function onDrawerViewFile(_approval: ApprovalDetail) {
 	approvalDrawerVisible.value = false
 }
 
-function backToRepo() {
+/** 返回按钮文案：有组名 → 「返回 [组名]」；否则 → 「返回共享文档」 */
+const backLabel = computed(() => {
+	const name = detail.value?.groupName
+	return name ? `返回 ${name}` : '返回共享文档'
+})
+
+function backToGroup() {
 	if (detail.value?.groupId) {
-		navigateTo(`/docs/repo/${detail.value.groupId}`)
+		navigateTo(`/docs?groupId=${detail.value.groupId}`)
 	} else {
 		navigateTo('/docs')
 	}

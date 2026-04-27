@@ -26,7 +26,7 @@ const PRESETS: Record<string, PresetConfig> = {
 	'no-content': {
 		image: '/images/empty/no-content.svg',
 		title: '暂无内容',
-		description: '创建仓库开始管理文件',
+		description: '创建组开始管理文件',
 	},
 	'no-files': {
 		image: '/images/empty/no-files.svg',

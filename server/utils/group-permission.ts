@@ -120,6 +120,42 @@ export async function canUserPinInGroup(
 }
 
 /**
+ * 布尔版：当前用户是否是指定组的活跃成员（role ∈ {1, 2, 3}）
+ *
+ * 用途：上传文件 / 导入飞书 等"组内全员可操作"判定（PRD §6.3.3 line 478 / 479）
+ * 注意：仅判组成员身份，不包含上游 scope 管理员（上游管理员靠 canUserPinInGroup 已覆盖）
+ */
+export async function isUserGroupMember(
+	userId: number,
+	groupId: number | bigint | null,
+): Promise<boolean> {
+	if (groupId == null) return false
+	const member = await prisma.doc_group_members.findFirst({
+		where: {
+			group_id: BigInt(groupId),
+			user_id: BigInt(userId),
+			deleted_at: null,
+		},
+		select: { id: true },
+	})
+	return !!member
+}
+
+/**
+ * 布尔版：当前用户是否能上传新文件到指定组
+ *   = 组内活跃成员（role ∈ {1, 2, 3}） OR 组管理员 / 上游管理员
+ * 上游管理员同样视为可上传（PRD §4.3 权限矩阵：上传文件全部 ✅）
+ */
+export async function canUserUploadInGroup(
+	userId: number,
+	groupId: number | bigint | null,
+): Promise<boolean> {
+	if (groupId == null) return false
+	if (await isUserGroupMember(userId, groupId)) return true
+	return canUserPinInGroup(userId, groupId)
+}
+
+/**
  * 校验当前用户是否有权管理指定组的成员
  * 在 requireGroupPermission 基础上，增加：组内 role=1（管理员）也可管理成员
  * 注意：先查组内管理员身份，再回落到 scope 校验，避免 fail() 预设状态码后被反转

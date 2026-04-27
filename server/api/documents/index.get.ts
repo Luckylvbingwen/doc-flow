@@ -1,6 +1,6 @@
 /**
  * GET /api/documents
- * 仓库文件列表（PRD §6.3.3 — 默认只看已发布，置顶优先 + 更新时间倒序）
+ * 组文件列表（PRD §6.3.3 — 默认只看已发布，置顶优先 + 更新时间倒序）
  *
  * 查询见 server/schemas/document.ts documentListQuerySchema
  *   - groupId:   必填
@@ -8,12 +8,12 @@
  *   - keyword:   可选，按 title 模糊搜
  *   - page/pageSize
  *
- * 返回附加 reviewingCount（仓库详情上方提示条用）
+ * 返回附加 reviewingCount（共享文档组面板顶部提示条用）
  */
 import { Prisma } from '@prisma/client'
 import { prisma } from '~/server/utils/prisma'
 import { documentListQuerySchema } from '~/server/schemas/document'
-import { canUserPinInGroup } from '~/server/utils/group-permission'
+import { canUserPinInGroup, canUserUploadInGroup } from '~/server/utils/group-permission'
 import type { DocumentListItem, DocumentListResponse, DocumentStatus } from '~/types/document'
 
 interface Row {
@@ -105,8 +105,13 @@ export default defineEventHandler(async (event) => {
 		hasCustomPermissions: Number(r.has_custom_permissions) === 1,
 	}))
 
-	// canPin 与 canManagePermissions 同口径（均为"组管理员判定"，PRD §6.3.3 / §6.3.4）
-	const isGroupAdmin = await canUserPinInGroup(user.id, groupId)
+	// 三个组级权限标志（PRD §6.3.3 / §6.3.4 / §4.3 权限矩阵）
+	//   - canPin / canCreateSubgroup / canManagePermissions：组管理员判定（同口径）
+	//   - canUpload：组成员或上游管理员（"上传文件"全员 ✅）
+	const [isGroupAdmin, canUpload] = await Promise.all([
+		canUserPinInGroup(user.id, groupId),
+		canUserUploadInGroup(user.id, groupId),
+	])
 
 	const resp: DocumentListResponse = {
 		list,
@@ -116,6 +121,8 @@ export default defineEventHandler(async (event) => {
 		reviewingCount: Number(reviewingBig),
 		canPin: isGroupAdmin,
 		canManagePermissions: isGroupAdmin,
+		canCreateSubgroup: isGroupAdmin,
+		canUpload,
 	}
 	return ok(resp)
 })

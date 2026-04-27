@@ -5,7 +5,7 @@ import { z } from 'zod'
  *
  * 筛选项：
  *   - keyword:     模糊搜索文件名
- *   - groupId:     按原仓库（组）筛选
+ *   - groupId:     按原组筛选
  *   - deletedBy:   按删除人筛选（user.id）
  *   - startAt:     删除时间起始（YYYY-MM-DD 含当天）
  *   - endAt:       删除时间结束（YYYY-MM-DD 含当天）

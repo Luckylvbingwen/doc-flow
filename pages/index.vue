@@ -26,8 +26,7 @@ definePageMeta({
 useHead({ title: '首页 - DocFlow' })
 
 const entries = [
-	{ path: '/docs', title: '共享文档', desc: '组织树 + 仓库卡片主入口。' },
-	{ path: '/docs/repo/1', title: '仓库详情', desc: '文件列表与基础配置区域。' },
+	{ path: '/docs', title: '共享文档', desc: '组导航树 + 选中组直接展示子组卡片与文件列表。' },
 	{ path: '/docs/file/101', title: '文件详情', desc: '预览、版本、评论与审批记录。' },
 	{ path: '/approvals', title: '审批中心', desc: '待我审批、我发起、归档视图。' },
 	{ path: '/logs', title: '操作日志', desc: '审计日志检索与查看。' },

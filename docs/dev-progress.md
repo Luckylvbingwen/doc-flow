@@ -372,6 +372,47 @@ A 阶段已就绪：表 `doc_document_favorites` / `doc_document_pins`、4 个 l
 
 ## 2026-04-27
 
+### refactor: 共享文档结构性修复 — 去"仓库"化（PRD §6.3.1 / §6.3.2 / §6.3.4 严格对齐）
+
+发现"组占位页 + 进入仓库按钮"违反 PRD §6.3.2 line 207「选中具体组后**直接显示**子组卡片 + 文件列表」。PRD 全文 0 次出现"仓库"；现行代码引入了 `pages/docs/repo/[id].vue` 独立路由 + 多处"仓库"措辞，是历史误译，本次结构性修复一并清除。
+
+**核心改动**：
+
+- **新建** `components/GroupFilesPanel.vue` —— 选中具体组的右栏完整视图：面包屑 + 组 header（名/描述/负责人/文件数/时间/组设置按钮）+ 操作条（创建子组/上传文件/导入飞书）+ 审批中提示条 + 子组卡片网格 + 关键词搜索 + 文件列表 DataTable（含锁图标 / 行 actions：详情/下载/收藏/置顶/文档级权限/移除）+ 分页 + UploadFileModal + DocPermissionModal 集成
+- **简化** `components/DocExplorerPanel.vue` `type='group'` 分支 —— 去掉冗余"组占位页 + 进入仓库按钮"，直接挂 `<GroupFilesPanel>` 子组件
+- **删除** `pages/docs/repo/[id].vue` —— PRD 无"仓库"概念，独立路由清除（按用户意见全清，不留 301 重定向）
+- **URL 同步** `pages/docs/index.vue` —— `?groupId=X` query 同步：左树切换 → router.replace；URL 直链/刷新自动 selectGroupById；watch route.query.groupId 跨页跳回还原
+- **后端字段**
+  - `server/utils/group-permission.ts` 新增 `isUserGroupMember` / `canUserUploadInGroup` 两个布尔助手
+  - `/api/documents` 列表响应顶层加 `canCreateSubgroup`（同 canPin 口径）+ `canUpload`（组内活跃成员 OR 上游管理员）
+  - `types/document.ts` `DocumentListResponse` 同步新字段
+- **文件详情页**
+  - `pages/docs/file/[id].vue` "返回仓库" → 「返回 [组名]」（fallback "返回共享文档"）；`backToGroup` 跳 `/docs?groupId=X`；`handleRemove` 同步
+- **全局术语清洗（仅代码层；历史 dev-progress 条目为时序快照保留）**
+  - `utils/doc-meta.ts` / `types/document.ts` / `types/recycle-bin.ts` / `api/documents.ts` 注释
+  - `pages/recycle-bin.vue` 列名/筛选标签/确认文案：原仓库 → 原组
+  - `composables/useBreadcrumb.ts` 删除 `repo: '仓库详情'` 路径段
+  - `pages/index.vue` 原型导航卡片去除 `/docs/repo/1` 条目；副标题改"组导航树 + 选中组直接展示子组卡片与文件列表"
+  - `i18n/locales/zh-CN.ts` + `en-US.ts`：repoDetail* / repoCards / repoList / enterSampleRepo / colOriginalRepo / colRepo 全部改为对应"组"key 名 + 值
+  - `server/api/documents/upload.post.ts` / `server/api/documents/index.get.ts` / `server/schemas/document.ts` / `server/schemas/recycle-bin.ts` 注释
+  - `components/EmptyState.vue` `no-content` preset 描述
+- **PRD 严格对照表**
+
+| PRD 节 / 行 | 引用 | 落地点 |
+|---|---|---|
+| §6.3.1 line 195 | "右侧显示选中组的子组卡片和文件列表" | `GroupFilesPanel`（type='group'）|
+| §6.3.2 line 207 | "选中具体组后**直接显示**" | 取消"组占位页 + 进入仓库按钮"中间步 |
+| §6.3.2 line 206 | "鼠标悬停显示 + / ··· 飞书风格" | DocNavTreeNode 已实现，确认无需补 |
+| §6.3.3 line 478 | 上传文件"组内所有成员（管理员/可编辑/上传下载）" | `canUpload` 后端字段 = `isUserGroupMember` OR `canUserPinInGroup` |
+| §6.3.3 line 480 | 文档级权限+锁图标 列表行入口 | 行【···】菜单项 + title slot 锁图标（保留 B 阶段产物，搬到 `GroupFilesPanel`）|
+| §6.3.4 line 510 | 文件详情"返回"按钮 | "返回 [组名]" + 跳 `/docs?groupId=X` |
+| §4.3 权限矩阵 | 创建子组 / 置顶 / 配置权限 — 组管理员判定 | `canPin` = `canCreateSubgroup` = `canManagePermissions` 同口径 |
+
+- **范围**：纯结构修复 + 术语清洗，不引入新业务功能；行【···】权限设置 / 锁图标等 B 阶段刚做的能力 100% 保留并搬到新位置
+- **延迟项**（PRD 已涉及但本次未做）：飞书导入入口接通后端 / 文件列表批量操作 / 全局搜索栏
+
+---
+
 ### feat: 文档级权限设置（PRD §6.3.4 + §6.3.3 line 480）
 
 文件详情页 2.7 收口的第二项；伴随推动 §2.5 仓库行【···】"文档级权限"菜单项一起做完，避免 PRD 入口缺失。

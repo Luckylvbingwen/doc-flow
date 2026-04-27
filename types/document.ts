@@ -7,7 +7,7 @@
 /** 文档状态：1草稿 / 2编辑中 / 3审批中 / 4已发布 / 5已驳回 / 6已删除 */
 export type DocumentStatus = 1 | 2 | 3 | 4 | 5 | 6
 
-/** 仓库文件列表行（GET /api/documents） */
+/** 组文件列表行（GET /api/documents） */
 export interface DocumentListItem {
 	id: number
 	title: string
@@ -68,7 +68,7 @@ export interface UploadResult {
 	approvalInstanceId: number | null
 }
 
-/** 仓库列表分页包装（比标准 PaginatedData 多 reviewingCount + 组管理员标志） */
+/** 共享文档组面板 — 列表分页包装（含组级权限标志） */
 export interface DocumentListResponse {
 	list: DocumentListItem[]
 	total: number
@@ -79,6 +79,10 @@ export interface DocumentListResponse {
 	canPin: boolean
 	/** 当前用户在此组是否可配置文档级权限（与 canPin 同口径） */
 	canManagePermissions: boolean
+	/** 当前用户是否可创建子组（与 canPin 同口径） */
+	canCreateSubgroup: boolean
+	/** 当前用户是否可上传新文件到此组（组内活跃成员 OR 上游管理员） */
+	canUpload: boolean
 }
 
 /** 预览响应 */

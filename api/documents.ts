@@ -8,7 +8,7 @@ import type {
 import type { DocumentListQuery } from '~/server/schemas/document'
 import type { ApprovalItem } from '~/types/approval'
 
-/** 仓库文件列表（默认 status=4 已发布） */
+/** 组文件列表（默认 status=4 已发布） */
 export function apiGetDocuments(params: DocumentListQuery) {
 	return useAuthFetch<ApiResult<DocumentListResponse>>('/api/documents', {
 		method: 'GET',

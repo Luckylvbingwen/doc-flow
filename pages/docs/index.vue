@@ -27,7 +27,8 @@ v-model="selectedGroupId" :categories="treeCategories" mode="nav" @group-select=
 :type="selectedType" :data="selectedData" :groups="selectedGroups"
 					:breadcrumb="selectedBreadcrumb" @group-click="onPanelGroupClick" @create-group="onPanelCreateGroup"
 					@create-product-line="onCreateProductLine" @admin-settings="onAdminSettings" @manage-entity="onManageEntity"
-					@group-settings="onGroupSettings" @breadcrumb-click="onBreadcrumbClick" />
+					@group-settings="onGroupSettings" @breadcrumb-click="onBreadcrumbClick"
+					@documents-changed="onDocumentsChanged" />
 			</div>
 		</section>
 
@@ -95,6 +96,34 @@ async function fetchTree() {
 	if (res.success && res.data) {
 		treeCategories.value = res.data
 	}
+}
+
+// ── URL ?groupId=X 同步 ──
+const route = useRoute()
+const router = useRouter()
+
+/** 把当前选中组写入 URL query（不触发新历史记录） */
+function syncUrl(groupId: number | null) {
+	const target = { ...route.query, groupId: groupId != null ? String(groupId) : undefined }
+	if (groupId == null) delete target.groupId
+	if (route.query.groupId === target.groupId) return  // 避免无意义 replace
+	router.replace({ query: target })
+}
+
+/** 按 groupId 在树中查找节点并选中（用于 URL 恢复 / 跨页跳转）*/
+function selectGroupById(id: number) {
+	for (const cat of treeCategories.value) {
+		const allGroups = [
+			...(cat.groups ?? []),
+			...(cat.orgUnits?.flatMap(o => o.groups) ?? []),
+		]
+		const found = findGroupById(allGroups, id)
+		if (found) {
+			onGroupSelect(found)
+			return true
+		}
+	}
+	return false
 }
 
 async function refreshTree() {
@@ -166,6 +195,7 @@ function onCategorySelect(cat: NavTreeCategory) {
 	} else {
 		selectedGroups.value = []
 	}
+	syncUrl(null)
 }
 
 function onOrgSelect(cat: NavTreeCategory, org: NavTreeOrgUnit) {
@@ -175,11 +205,13 @@ function onOrgSelect(cat: NavTreeCategory, org: NavTreeOrgUnit) {
 	selectedData.value = { ...org, scope }
 	selectedBreadcrumb.value = []
 	selectedGroups.value = org.groups ?? []
+	syncUrl(null)
 }
 
 async function onGroupSelect(group: NavTreeGroup, _file?: NavTreeFile) {
 	selectedGroupId.value = group.id
 	selectedType.value = 'group'
+	syncUrl(group.id)
 	// 构建面包屑
 	selectedBreadcrumb.value = buildBreadcrumb(group)
 	// Fetch full group detail from API
@@ -423,6 +455,12 @@ async function onGroupSettingsSuccess() {
 	}
 }
 
+/** 文件列表新增/移除后，按需刷新树 fileCount（轻量场景下可省略；保留事件钩子便于未来扩展） */
+function onDocumentsChanged() {
+	// 当前不刷新树（树 fileCount 用户切组时会随 apiGetGroup 自然对账）；
+	// 若后续需要实时刷新树徽标数，这里可改为 refreshTree()
+}
+
 /** 右侧面板中的「创建组/创建子组」按钮 */
 function onPanelCreateGroup() {
 	if (selectedType.value === 'group' && selectedData.value) {
@@ -565,8 +603,23 @@ function findGroupById(groups: NavTreeGroup[], id: number): NavTreeGroup | null 
 }
 
 // ── Init ──
-onMounted(() => {
-	run(() => fetchTree())
+onMounted(async () => {
+	await run(() => fetchTree())
+
+	// URL 直链恢复：?groupId=X 自动选中对应组
+	const initialGroupId = route.query.groupId
+	if (initialGroupId && typeof initialGroupId === 'string') {
+		const id = Number(initialGroupId)
+		if (!Number.isNaN(id)) selectGroupById(id)
+	}
+})
+
+// 监听外部跳转（如文件详情页"返回 [组名]"跳 /docs?groupId=X）
+watch(() => route.query.groupId, (val) => {
+	if (typeof val !== 'string') return
+	const id = Number(val)
+	if (Number.isNaN(id) || id === selectedGroupId.value) return
+	selectGroupById(id)
 })
 </script>
 
