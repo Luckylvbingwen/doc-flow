@@ -28,11 +28,7 @@ export const ITEM_SOURCE = {
 export type ItemSourceCode = typeof ITEM_SOURCE[keyof typeof ITEM_SOURCE]
 
 /**
- * 文档级权限（对齐 doc_document_permissions.permission 注释）
- *   1 可编辑 / 2 可阅读
+ * 文档级权限 — 重导出 server/constants/permission.ts 的统一定义
+ * 历史值 (1=可编辑/2=可阅读) 已通过 patch-008 迁移到 (2=可编辑/4=可阅读)
  */
-export const PERMISSION_LEVEL = {
-	EDIT: 1,
-	READ: 2,
-} as const
-export type PermissionLevelCode = typeof PERMISSION_LEVEL[keyof typeof PERMISSION_LEVEL]
+export { PERMISSION_LEVEL, type PermissionLevelCode } from './permission'

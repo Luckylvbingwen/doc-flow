@@ -9,73 +9,81 @@ export type DocumentStatus = 1 | 2 | 3 | 4 | 5 | 6
 
 /** 仓库文件列表行（GET /api/documents） */
 export interface DocumentListItem {
-	id:             number
-	title:          string
-	ext:            string
-	status:         DocumentStatus
-	versionNo:      string | null
-	fileSize:       number | null
-	ownerId:        number
-	ownerName:      string
-	updatedAt:      number
-	downloadCount:  number
-	isPinned:       boolean
-	isFavorited:    boolean
+	id: number
+	title: string
+	ext: string
+	status: DocumentStatus
+	versionNo: string | null
+	fileSize: number | null
+	ownerId: number
+	ownerName: string
+	updatedAt: number
+	downloadCount: number
+	isPinned: boolean
+	isFavorited: boolean
+	/** 该文档是否已设置文档级权限（PRD §6.3.3 行级橙锁图标 / §6.3.4 弹窗保存后） */
+	hasCustomPermissions: boolean
 }
 
 /** 文件详情（GET /api/documents/:id） */
 export interface DocumentDetail {
-	id:        number
-	title:     string
-	ext:       string
-	status:    DocumentStatus
-	groupId:   number | null
+	id: number
+	title: string
+	ext: string
+	status: DocumentStatus
+	groupId: number | null
 	groupName: string | null
-	ownerId:   number
+	ownerId: number
 	ownerName: string
 	currentVersion: {
-		id:              number
-		versionNo:       string
-		fileSize:        number
-		mimeType:        string | null
-		uploadedByName:  string
-		publishedAt:     number | null
+		id: number
+		versionNo: string
+		fileSize: number
+		mimeType: string | null
+		uploadedByName: string
+		publishedAt: number | null
 	} | null
-	createdAt:          number
-	updatedAt:          number
-	downloadCount:      number
-	isPinned:           boolean
-	isFavorited:        boolean
-	sourceDocId:        number | null
-	canEdit:            boolean
-	canRemove:          boolean
-	canSubmitApproval:  boolean
-	canUploadVersion:   boolean
-	canPin:             boolean
+	createdAt: number
+	updatedAt: number
+	downloadCount: number
+	isPinned: boolean
+	isFavorited: boolean
+	/** 该文档是否已设置文档级权限（PRD §6.3.4 文件信息卡橙锁图标） */
+	hasCustomPermissions: boolean
+	sourceDocId: number | null
+	canEdit: boolean
+	canRemove: boolean
+	canSubmitApproval: boolean
+	canUploadVersion: boolean
+	canPin: boolean
+	/** 当前用户是否可配置该文档的文档级权限（PRD §6.3.4 仅组管理员可配置） */
+	canManagePermissions: boolean
 }
 
 /** 上传 / 更新版本 返回结构 */
 export interface UploadResult {
-	documentId:          number
-	versionId:           number
-	path:                'direct_publish' | 'approval'
-	approvalInstanceId:  number | null
+	documentId: number
+	versionId: number
+	path: 'direct_publish' | 'approval'
+	approvalInstanceId: number | null
 }
 
-/** 仓库列表分页包装（比标准 PaginatedData 多 reviewingCount + canPin） */
+/** 仓库列表分页包装（比标准 PaginatedData 多 reviewingCount + 组管理员标志） */
 export interface DocumentListResponse {
-	list:            DocumentListItem[]
-	total:           number
-	page:            number
-	pageSize:        number
-	reviewingCount:  number
+	list: DocumentListItem[]
+	total: number
+	page: number
+	pageSize: number
+	reviewingCount: number
 	/** 当前用户在此组是否有置顶权限（组管理员及上游） */
-	canPin:          boolean
+	canPin: boolean
+	/** 当前用户在此组是否可配置文档级权限（与 canPin 同口径） */
+	canManagePermissions: boolean
 }
 
 /** 预览响应 */
 export interface PreviewResponse {
-	html:       string
-	versionNo:  string
-	mimeType:   string
+	html: string
+	versionNo: string
+	mimeType: string
 }

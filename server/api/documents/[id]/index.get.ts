@@ -27,6 +27,7 @@ interface Row {
 	download_count: number
 	is_pinned: number
 	is_favorited: number
+	has_custom_permissions: number
 	member_role: number | null
 	cv_id: bigint | null
 	cv_version_no: string | null
@@ -55,6 +56,10 @@ export default defineEventHandler(async (event) => {
 			u.name AS owner_name,
 			(p.id IS NOT NULL) AS is_pinned,
 			(f.id IS NOT NULL) AS is_favorited,
+			(EXISTS(
+				SELECT 1 FROM doc_document_permissions dp
+				WHERE dp.document_id = d.id AND dp.deleted_at IS NULL
+			)) AS has_custom_permissions,
 			gm.role AS member_role,
 			v.id           AS cv_id,
 			v.version_no   AS cv_version_no,
@@ -93,33 +98,35 @@ export default defineEventHandler(async (event) => {
 	)
 
 	const detail: DocumentDetail = {
-		id:        Number(row.id),
-		title:     row.title,
-		ext:       row.ext ?? '',
+		id: Number(row.id),
+		title: row.title,
+		ext: row.ext ?? '',
 		status,
-		groupId:   row.group_id != null ? Number(row.group_id) : null,
+		groupId: row.group_id != null ? Number(row.group_id) : null,
 		groupName: row.group_name,
-		ownerId:   Number(row.owner_user_id),
+		ownerId: Number(row.owner_user_id),
 		ownerName: row.owner_name,
 		currentVersion: row.cv_id ? {
-			id:             Number(row.cv_id),
-			versionNo:      row.cv_version_no!,
-			fileSize:       Number(row.cv_file_size!),
-			mimeType:       row.cv_mime_type,
+			id: Number(row.cv_id),
+			versionNo: row.cv_version_no!,
+			fileSize: Number(row.cv_file_size!),
+			mimeType: row.cv_mime_type,
 			uploadedByName: row.cv_uploader_name ?? '',
-			publishedAt:    row.cv_published_at?.getTime() ?? null,
+			publishedAt: row.cv_published_at?.getTime() ?? null,
 		} : null,
-		createdAt:         row.created_at.getTime(),
-		updatedAt:         row.updated_at.getTime(),
-		downloadCount:     row.download_count,
-		isPinned:          Number(row.is_pinned) === 1,
-		isFavorited:       Number(row.is_favorited) === 1,
-		sourceDocId:       row.source_doc_id != null ? Number(row.source_doc_id) : null,
-		canEdit:           false,  // 编辑器 A 阶段不做
-		canRemove:         isGroupAdmin && status === 4,
+		createdAt: row.created_at.getTime(),
+		updatedAt: row.updated_at.getTime(),
+		downloadCount: row.download_count,
+		isPinned: Number(row.is_pinned) === 1,
+		isFavorited: Number(row.is_favorited) === 1,
+		hasCustomPermissions: Number(row.has_custom_permissions) === 1,
+		sourceDocId: row.source_doc_id != null ? Number(row.source_doc_id) : null,
+		canEdit: false,  // 编辑器 A 阶段不做
+		canRemove: isGroupAdmin && status === 4,
 		canSubmitApproval: isOwner && (status === 1 || status === 5),
-		canUploadVersion:  canEditInGroup && (status === 4 || status === 5),
+		canUploadVersion: canEditInGroup && (status === 4 || status === 5),
 		canPin,
+		canManagePermissions: canPin,  // 与 canPin 同口径（PRD §6.3.4 仅组管理员可配置）
 	}
 
 	return ok(detail)

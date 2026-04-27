@@ -29,6 +29,7 @@ interface Row {
 	file_size: bigint | null
 	is_pinned: number
 	is_favorited: number
+	has_custom_permissions: number
 }
 
 export default defineEventHandler(async (event) => {
@@ -51,7 +52,11 @@ export default defineEventHandler(async (event) => {
 			u.name AS owner_name,
 			v.version_no, v.file_size,
 			(p.id IS NOT NULL) AS is_pinned,
-			(f.id IS NOT NULL) AS is_favorited
+			(f.id IS NOT NULL) AS is_favorited,
+			(EXISTS(
+				SELECT 1 FROM doc_document_permissions dp
+				WHERE dp.document_id = d.id AND dp.deleted_at IS NULL
+			)) AS has_custom_permissions
 		FROM doc_documents d
 		JOIN doc_users u ON u.id = d.owner_user_id
 		LEFT JOIN doc_document_versions v ON v.id = d.current_version_id
@@ -85,29 +90,32 @@ export default defineEventHandler(async (event) => {
 	`
 
 	const list: DocumentListItem[] = rows.map(r => ({
-		id:            Number(r.id),
-		title:         r.title,
-		ext:           r.ext ?? '',
-		status:        r.status as DocumentStatus,
-		versionNo:     r.version_no,
-		fileSize:      r.file_size != null ? Number(r.file_size) : null,
-		ownerId:       Number(r.owner_user_id),
-		ownerName:     r.owner_name,
-		updatedAt:     r.updated_at.getTime(),
+		id: Number(r.id),
+		title: r.title,
+		ext: r.ext ?? '',
+		status: r.status as DocumentStatus,
+		versionNo: r.version_no,
+		fileSize: r.file_size != null ? Number(r.file_size) : null,
+		ownerId: Number(r.owner_user_id),
+		ownerName: r.owner_name,
+		updatedAt: r.updated_at.getTime(),
 		downloadCount: r.download_count,
-		isPinned:      Number(r.is_pinned) === 1,
-		isFavorited:   Number(r.is_favorited) === 1,
+		isPinned: Number(r.is_pinned) === 1,
+		isFavorited: Number(r.is_favorited) === 1,
+		hasCustomPermissions: Number(r.has_custom_permissions) === 1,
 	}))
 
-	const canPin = await canUserPinInGroup(user.id, groupId)
+	// canPin 与 canManagePermissions 同口径（均为"组管理员判定"，PRD §6.3.3 / §6.3.4）
+	const isGroupAdmin = await canUserPinInGroup(user.id, groupId)
 
 	const resp: DocumentListResponse = {
 		list,
-		total:          Number(totalBig),
+		total: Number(totalBig),
 		page,
 		pageSize,
 		reviewingCount: Number(reviewingBig),
-		canPin,
+		canPin: isGroupAdmin,
+		canManagePermissions: isGroupAdmin,
 	}
 	return ok(resp)
 })

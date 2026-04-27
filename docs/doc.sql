@@ -268,14 +268,17 @@ CREATE TABLE doc_document_snapshots (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='编辑快照（§6.3.6）';
 
 -- ---------------------------------------------------------
--- 2.4 文档级权限（§6.3.3 / §6.3.8 覆盖组级权限）
+-- 2.4 文档级权限（§6.3.3 / §6.3.4 / §6.3.8 覆盖组级权限）
+-- 同时承载 PRD §6.5.2 "分享给我的"边界中的两类来源：
+--   - 文档级权限设置（§6.3.4，权限值为 2/3）
+--   - 链接分享 ACL（§6.3.7-§6.3.8，权限值为 2/4）
 -- ---------------------------------------------------------
 DROP TABLE IF EXISTS doc_document_permissions;
 CREATE TABLE doc_document_permissions (
   id          BIGINT UNSIGNED PRIMARY KEY COMMENT 'ID',
   document_id BIGINT UNSIGNED NOT NULL,
   user_id     BIGINT UNSIGNED NOT NULL,
-  permission  TINYINT         NOT NULL COMMENT '1可编辑 2可阅读',
+  permission  TINYINT         NOT NULL COMMENT '权限级别（与 doc_group_members.role 对齐）：1管理员（仅组级用） 2可编辑 3上传下载 4可阅读',
   granted_by  BIGINT UNSIGNED NOT NULL,
   expires_at  DATETIME(3)     DEFAULT NULL,
   created_at  DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -543,7 +546,7 @@ CREATE TABLE doc_share_links (
   id          BIGINT UNSIGNED PRIMARY KEY,
   document_id BIGINT UNSIGNED NOT NULL,
   token       VARCHAR(64)     NOT NULL COMMENT '分享令牌（URL 中使用）',
-  permission  TINYINT         NOT NULL COMMENT '1可编辑 2可阅读',
+  permission  TINYINT         NOT NULL COMMENT '权限级别（与 doc_group_members.role 对齐）：分享场景仅出现 2可编辑 / 4可阅读',
   created_by  BIGINT UNSIGNED NOT NULL,
   created_at  DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   UNIQUE KEY uk_token (token),

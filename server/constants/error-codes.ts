@@ -163,3 +163,11 @@ export const APPROVAL_ALREADY_ACTED = 'APPROVAL_ALREADY_ACTED'
 export const APPROVAL_REASON_REQUIRED = 'APPROVAL_REASON_REQUIRED'
 /** 组未配置审批模板（但起审批接口要求有模板） (409) */
 export const APPROVAL_NO_TEMPLATE = 'APPROVAL_NO_TEMPLATE'
+
+// ─── 文档级权限 ───
+/** 文档未归组，无法设置文档级权限（个人草稿态） (409) */
+export const DOC_PERMISSION_NOT_IN_GROUP = 'DOC_PERMISSION_NOT_IN_GROUP'
+/** 文档级权限的目标用户必须是组成员 (400) */
+export const DOC_PERMISSION_NOT_GROUP_MEMBER = 'DOC_PERMISSION_NOT_GROUP_MEMBER'
+/** 不允许给组负责人设置文档级权限（语义上"覆盖"对最高权限无意义） (400) */
+export const DOC_PERMISSION_TARGET_INVALID = 'DOC_PERMISSION_TARGET_INVALID'
