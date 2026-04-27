@@ -78,41 +78,74 @@ v-else-if="type === 'department' || type === 'productline'" type="primary" size=
 				</el-button>
 			</div>
 
-			<!-- Group cards grid -->
-			<div v-if="groups && groups.length > 0" class="doc-panel__grid-label">
-				<el-icon :size="14">
-					<Folder />
-				</el-icon>
-				<span>下属组 ({{ groups.length }})</span>
-			</div>
-			<div v-if="groups && groups.length > 0" class="doc-panel__grid">
-				<article v-for="group in groups" :key="group.id" class="doc-panel__card" @click="$emit('group-click', group)">
-					<div class="doc-panel__card-head">
-						<el-icon :size="16" class="doc-panel__card-icon">
-							<Folder />
-						</el-icon>
-						<h5 class="doc-panel__card-name">{{ group.name }}</h5>
-					</div>
-					<p v-if="group.desc || group.description" class="doc-panel__card-desc">
-						{{ group.desc || group.description }}
-					</p>
-					<div class="doc-panel__card-footer">
-						<span v-if="group.owner || group.ownerName" class="doc-panel__card-meta">
-							<el-icon :size="12">
-								<User />
+			<!-- OrgUnit cards: 按部门/按产品线顶级分类时展示部门卡片/产品线卡片（PRD §6.3.2） -->
+			<template v-if="type === 'category' && orgUnits && orgUnits.length > 0">
+				<div class="doc-panel__grid-label">
+					<el-icon :size="14">
+						<OfficeBuilding v-if="data?.scope === 'department'" />
+						<Box v-else />
+					</el-icon>
+					<span>{{ data?.scope === 'department' ? '部门' : '产品线' }} ({{ orgUnits.length }})</span>
+				</div>
+				<div class="doc-panel__grid">
+					<article v-for="org in orgUnits" :key="org.id" class="doc-panel__card" @click="$emit('org-click', org)">
+						<div class="doc-panel__card-head">
+							<el-icon :size="16" class="doc-panel__card-icon">
+								<OfficeBuilding v-if="data?.scope === 'department'" />
+								<Box v-else />
 							</el-icon>
-							{{ group.owner || group.ownerName }}
-						</span>
-						<span class="doc-panel__card-meta">
-							<el-icon :size="12">
-								<Document />
+							<h5 class="doc-panel__card-name">{{ org.label }}</h5>
+						</div>
+						<div class="doc-panel__card-footer">
+							<span class="doc-panel__card-meta">
+								<el-icon :size="12">
+									<Folder />
+								</el-icon>
+								{{ org.groups?.length ?? 0 }} 个组
+							</span>
+						</div>
+					</article>
+				</div>
+			</template>
+
+			<!-- Group cards grid: 公司层顶级分类 / 部门详情 / 产品线详情 -->
+			<template v-else-if="groups && groups.length > 0">
+				<div class="doc-panel__grid-label">
+					<el-icon :size="14">
+						<Folder />
+					</el-icon>
+					<span>下属组 ({{ groups.length }})</span>
+				</div>
+				<div class="doc-panel__grid">
+					<article v-for="group in groups" :key="group.id" class="doc-panel__card" @click="$emit('group-click', group)">
+						<div class="doc-panel__card-head">
+							<el-icon :size="16" class="doc-panel__card-icon">
+								<Folder />
 							</el-icon>
-							{{ group.fileCount ?? 0 }} 个文件
-						</span>
-					</div>
-				</article>
-			</div>
-			<div v-else class="doc-panel__no-groups">
+							<h5 class="doc-panel__card-name">{{ group.name }}</h5>
+						</div>
+						<p v-if="group.desc || group.description" class="doc-panel__card-desc">
+							{{ group.desc || group.description }}
+						</p>
+						<div class="doc-panel__card-footer">
+							<span v-if="group.owner || group.ownerName" class="doc-panel__card-meta">
+								<el-icon :size="12">
+									<User />
+								</el-icon>
+								{{ group.owner || group.ownerName }}
+							</span>
+							<span class="doc-panel__card-meta">
+								<el-icon :size="12">
+									<Document />
+								</el-icon>
+								{{ group.fileCount ?? 0 }} 个文件
+							</span>
+						</div>
+					</article>
+				</div>
+			</template>
+
+			<div v-else-if="type !== 'category' || !orgUnits?.length" class="doc-panel__no-groups">
 				<el-icon :size="36" color="var(--df-subtext)" style="opacity: 0.3">
 					<Folder />
 				</el-icon>
@@ -152,11 +185,13 @@ defineProps<{
 	type: 'empty' | 'category' | 'department' | 'productline' | 'group'
 	data?: any
 	groups?: any[]
+	orgUnits?: any[]
 	breadcrumb?: BreadcrumbItem[]
 }>()
 
 defineEmits<{
 	'group-click': [group: any]
+	'org-click': [org: any]
 	'create-group': []
 	'create-product-line': []
 	'admin-settings': []

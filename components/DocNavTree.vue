@@ -297,10 +297,72 @@ function getCategoryCreateLabel(scope: string) {
 }
 
 // ── Public methods ──
+
+/** 从外部激活分类节点（右侧面板 → 树同步） */
+function activateCategory(catId: string) {
+	activeNodeId.value = catId
+	expandedMap[catId] = true
+}
+
+/** 从外部激活 orgUnit 节点（右侧面板 → 树同步） */
+function activateOrgUnit(orgId: string) {
+	activeNodeId.value = orgId
+	// 展开所属分类
+	for (const cat of props.categories) {
+		if (cat.orgUnits?.some(o => o.id === orgId)) {
+			expandedMap[cat.id] = true
+			expandedMap[orgId] = true
+			break
+		}
+	}
+}
+
+/** 从外部激活组节点并展开父链（右侧面板 → 树同步） */
+function activateGroup(groupId: number) {
+	activeNodeId.value = groupId
+	// 在树中找到该组的完整路径并展开
+	for (const cat of props.categories) {
+		if (cat.groups) {
+			const chain = findChain(cat.groups, groupId)
+			if (chain) {
+				expandedMap[cat.id] = true
+				chain.forEach(g => { expandedMap[g.id] = true })
+				return
+			}
+		}
+		if (cat.orgUnits) {
+			for (const org of cat.orgUnits) {
+				const chain = findChain(org.groups, groupId)
+				if (chain) {
+					expandedMap[cat.id] = true
+					expandedMap[org.id] = true
+					chain.forEach(g => { expandedMap[g.id] = true })
+					return
+				}
+			}
+		}
+	}
+}
+
+/** 递归查找组链（含自身） */
+function findChain(groups: NavTreeGroup[], targetId: number): NavTreeGroup[] | null {
+	for (const g of groups) {
+		if (g.id === targetId) return [g]
+		if (g.children) {
+			const chain = findChain(g.children, targetId)
+			if (chain) return [g, ...chain]
+		}
+	}
+	return null
+}
+
 defineExpose({
 	expandAll,
 	toggleExpand,
 	keyword,
+	activateCategory,
+	activateOrgUnit,
+	activateGroup,
 })
 </script>
 

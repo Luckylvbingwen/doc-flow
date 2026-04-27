@@ -12,10 +12,10 @@
 					<span>文档导航</span>
 				</div>
 				<DocNavTree
-v-model="selectedGroupId" :categories="treeCategories" mode="nav" @group-select="onGroupSelect"
-					@category-select="onCategorySelect" @org-select="onOrgSelect" @category-create="onCategoryCreate"
-					@category-more="onCategoryMore" @org-create="onOrgCreate" @org-more="onOrgMore" @group-create="onGroupCreate"
-					@group-more="onGroupMore" />
+ref="treeRef" v-model="selectedGroupId" :categories="treeCategories" mode="nav"
+					@group-select="onGroupSelect" @category-select="onCategorySelect" @org-select="onOrgSelect"
+					@category-create="onCategoryCreate" @category-more="onCategoryMore" @org-create="onOrgCreate"
+					@org-more="onOrgMore" @group-create="onGroupCreate" @group-more="onGroupMore" />
 			</div>
 
 			<!-- Resizer -->
@@ -25,10 +25,10 @@ v-model="selectedGroupId" :categories="treeCategories" mode="nav" @group-select=
 			<div class="doc-explorer__content">
 				<DocExplorerPanel
 :type="selectedType" :data="selectedData" :groups="selectedGroups"
-					:breadcrumb="selectedBreadcrumb" @group-click="onPanelGroupClick" @create-group="onPanelCreateGroup"
-					@create-product-line="onCreateProductLine" @admin-settings="onAdminSettings" @manage-entity="onManageEntity"
-					@group-settings="onGroupSettings" @breadcrumb-click="onBreadcrumbClick"
-					@documents-changed="onDocumentsChanged" />
+					:org-units="selectedOrgUnits" :breadcrumb="selectedBreadcrumb" @group-click="onPanelGroupClick"
+					@org-click="onPanelOrgClick" @create-group="onPanelCreateGroup" @create-product-line="onCreateProductLine"
+					@admin-settings="onAdminSettings" @manage-entity="onManageEntity" @group-settings="onGroupSettings"
+					@breadcrumb-click="onBreadcrumbClick" @documents-changed="onDocumentsChanged" />
 			</div>
 		</section>
 
@@ -67,6 +67,9 @@ useHead({ title: '共享文档 - DocFlow' })
 
 // ── Page loading ──
 const { pageLoading, run } = usePageLoading()
+
+// ── Tree component ref ──
+const treeRef = ref<{ activateCategory: (id: string) => void; activateOrgUnit: (id: string) => void; activateGroup: (id: number) => void } | null>(null)
 
 // ── Tree panel resize ──
 const treePanelWidth = ref(260)
@@ -171,6 +174,7 @@ function resetSelection() {
 	selectedType.value = 'empty'
 	selectedData.value = null
 	selectedGroups.value = []
+	selectedOrgUnits.value = []
 	selectedGroupId.value = null
 	selectedBreadcrumb.value = []
 }
@@ -180,6 +184,7 @@ const selectedGroupId = ref<number | null>(null)
 const selectedType = ref<'empty' | 'category' | 'department' | 'productline' | 'group'>('empty')
 const selectedData = ref<any>(null)
 const selectedGroups = ref<any[]>([])
+const selectedOrgUnits = ref<any[]>([])
 const selectedBreadcrumb = ref<Array<{ label: string; clickable?: boolean; type?: string; id?: number | string }>>([])
 
 // ── Tree events: category / group select ──
@@ -190,10 +195,14 @@ function onCategorySelect(cat: NavTreeCategory) {
 	selectedBreadcrumb.value = []
 	if (cat.groups?.length) {
 		selectedGroups.value = cat.groups
+		selectedOrgUnits.value = []
 	} else if (cat.orgUnits?.length) {
-		selectedGroups.value = cat.orgUnits.flatMap((org) => org.groups)
+		// 按部门/按产品线：展示 orgUnit 卡片列表（PRD §6.3.2）
+		selectedOrgUnits.value = cat.orgUnits
+		selectedGroups.value = []
 	} else {
 		selectedGroups.value = []
+		selectedOrgUnits.value = []
 	}
 	syncUrl(null)
 }
@@ -205,6 +214,7 @@ function onOrgSelect(cat: NavTreeCategory, org: NavTreeOrgUnit) {
 	selectedData.value = { ...org, scope }
 	selectedBreadcrumb.value = []
 	selectedGroups.value = org.groups ?? []
+	selectedOrgUnits.value = []
 	syncUrl(null)
 }
 
@@ -233,6 +243,16 @@ function onPanelGroupClick(group: any) {
 	if (group?.id) {
 		selectedGroupId.value = group.id
 		onGroupSelect(group as NavTreeGroup)
+		treeRef.value?.activateGroup(group.id)
+	}
+}
+
+/** 右侧面板 orgUnit 卡片点击 → 进入部门/产品线视图 */
+function onPanelOrgClick(org: any) {
+	const cat = treeCategories.value.find(c => c.orgUnits?.some(o => o.id === org.id))
+	if (cat) {
+		onOrgSelect(cat, org as NavTreeOrgUnit)
+		treeRef.value?.activateOrgUnit(org.id)
 	}
 }
 
@@ -566,13 +586,17 @@ function findGroupChain(groups: NavTreeGroup[], targetId: number): NavTreeGroup[
 function onBreadcrumbClick(item: { label: string; type?: string; id?: number | string }) {
 	if (item.type === 'category') {
 		const cat = treeCategories.value.find(c => c.id === item.id)
-		if (cat) onCategorySelect(cat)
+		if (cat) {
+			onCategorySelect(cat)
+			treeRef.value?.activateCategory(cat.id)
+		}
 	} else if (item.type === 'org') {
 		// 找到对应的 orgUnit 和 category
 		for (const cat of treeCategories.value) {
 			const org = cat.orgUnits?.find(o => o.id === item.id)
 			if (org) {
 				onOrgSelect(cat, org)
+				treeRef.value?.activateOrgUnit(org.id as string)
 				break
 			}
 		}
@@ -586,6 +610,7 @@ function onBreadcrumbClick(item: { label: string; type?: string; id?: number | s
 			const found = findGroupById(allGroups, item.id)
 			if (found) {
 				onGroupSelect(found)
+				treeRef.value?.activateGroup(item.id)
 				break
 			}
 		}

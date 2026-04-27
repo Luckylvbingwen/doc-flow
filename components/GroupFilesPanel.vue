@@ -173,9 +173,8 @@ v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list" :col
 				<div class="gfp-row-actions">
 					<el-button link type="primary" @click="navigateTo(`/docs/file/${row.id}`)">详情</el-button>
 					<el-dropdown trigger="click" @command="onRowCommand($event, row)">
-						<el-button link>
-							更多
-							<el-icon>
+						<el-button link type="info" class="gfp-more-btn">
+							<el-icon :size="16">
 								<MoreFilled />
 							</el-icon>
 						</el-button>
@@ -758,5 +757,15 @@ function onPermissionsSaved() {
 	display: flex;
 	align-items: center;
 	gap: 4px;
+}
+
+.gfp-more-btn {
+	padding: 4px;
+	border-radius: 4px;
+	transition: background 0.15s;
+
+	&:hover {
+		background: var(--el-fill-color-light);
+	}
 }
 </style>
