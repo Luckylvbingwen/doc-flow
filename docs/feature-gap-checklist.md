@@ -168,7 +168,7 @@
 
 - [ ] 版本列表 API 接真实数据库
 - [ ] 版本对比 API 接真实文件存储
-- [ ] 回滚 API 与事务
+- [x] ~~回滚 API 与事务~~ ✅ 2026-04-27（POST /api/documents/:id/rollback — 复用目标版本 storage_key 生成新版本 + 前端 VersionSidebar 按钮 + canRollback 读端字段）
 - [ ] 上传新版本 API
 - [ ] 审批流 CRUD API
 - [ ] 文档 CRUD API

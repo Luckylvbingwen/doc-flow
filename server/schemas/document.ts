@@ -36,6 +36,12 @@ export const documentVersionUploadFieldsSchema = z.object({
 })
 export type DocumentVersionUploadFields = z.infer<typeof documentVersionUploadFieldsSchema>
 
+/** POST /api/documents/:id/rollback 请求体 */
+export const documentRollbackSchema = z.object({
+	versionId: z.coerce.number().int().positive(),
+})
+export type DocumentRollbackBody = z.infer<typeof documentRollbackSchema>
+
 /** GET /api/documents/:id/download 查询参数 */
 export const documentDownloadQuerySchema = z.object({
 	versionId: z.coerce.number().int().positive().optional(),

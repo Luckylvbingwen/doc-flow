@@ -140,6 +140,14 @@
 | --- | --- | --- | --- |
 | POST | /api/version/compare | 是 | 文档版本比较 |
 
+### 版本回滚
+
+| 方法 | 路径 | 鉴权 | 权限/条件 | 说明 |
+| --- | --- | --- | --- | --- |
+| POST | /api/documents/:id/rollback | 是 | 组管理员（requireMemberPermission） | 版本回滚：复用目标版本文件生成新版本（PRD §6.3.4 / §4.3） |
+
+> 仅 `status=4`（已发布）文档可回滚；回滚不删除中间版本，生成新版本号；`GET /api/documents/:id` 响应已含 `canRollback` 字段供前端按钮显示。
+
 ### 操作日志 (logs)
 
 | 方法 | 路径 | 鉴权 | 权限 | 说明 |
@@ -1602,6 +1610,52 @@
   "code": "OK",
   "message": "文档权限已保存",
   "data": { "inserted": 1, "updated": 0, "removed": 0 }
+}
+```
+
+---
+
+### 3.67 POST /api/documents/:id/rollback
+
+**路径**：`POST /api/documents/:id/rollback`
+
+**鉴权**：登录 + 组管理员（`requireMemberPermission`：组内 role=1 / 组负责人 / super_admin / company_admin / 当组在 dept_head/pl_head 的 scope）
+
+**用途**：PRD §6.3.4 版本回滚 — 回滚生成新版本，不删除中间版本。对应 PRD §4.3 权限矩阵「版本回滚」列。
+
+**Body**：
+```json
+{ "versionId": 60001 }
+```
+
+**约束**（Zod `documentRollbackSchema`）：
+- `versionId`：正整数，必填
+
+**业务规则**：
+- 文档不存在 / 已删除 → 404 `DOCUMENT_NOT_FOUND`
+- 文档未归组（个人草稿） → 409 `DOCUMENT_STATUS_INVALID`
+- 文档 status ≠ 4（非已发布） → 409 `DOCUMENT_STATUS_INVALID`
+- 目标版本不存在 / 不属于该文档 → 404 `VERSION_NOT_FOUND`
+- 目标版本就是当前版本 → 409 `VERSION_ROLLBACK_SAME`
+
+**事务流程**：
+1. 复用目标版本的 `storage_key`（MinIO 对象不可变，无需复制文件）
+2. 创建新版本行：`version_no` 递增、`source_meta: { rollbackFrom: "vX.Y" }`、`change_note: "回滚至 vX.Y"`、`published_at` 立即设置
+3. 更新 `doc_documents.current_version_id` 指向新版本
+4. 写操作日志（`doc.rollback`）
+
+**响应**：
+```json
+{
+  "success": true,
+  "code": "OK",
+  "message": "已回滚至 v1.0，生成新版本 v3.0",
+  "data": {
+    "documentId": 4001,
+    "versionId": 60003,
+    "versionNo": "v3.0",
+    "rollbackFrom": "v1.0"
+  }
 }
 ```
 

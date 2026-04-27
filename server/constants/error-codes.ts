@@ -139,6 +139,8 @@ export const DOCUMENT_STATUS_INVALID = 'DOCUMENT_STATUS_INVALID'
 export const DOCUMENT_DUPLICATE_NAME = 'DOCUMENT_DUPLICATE_NAME'
 /** 文档版本不存在 (404) */
 export const VERSION_NOT_FOUND = 'VERSION_NOT_FOUND'
+/** 不能回滚到当前版本 (409) */
+export const VERSION_ROLLBACK_SAME = 'VERSION_ROLLBACK_SAME'
 
 // ─── 文件上传 ───
 /** 文件超出大小限制 (413) */

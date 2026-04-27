@@ -169,8 +169,9 @@ v-if="compareLoading"
 
 			<!-- 版本侧边栏 -->
 			<VersionSidebar
-:versions="versions" @download="handleDownloadVersion" @rollback="handleRollback"
-				@compare="handleCompare" @upload="onVersionSidebarUpload" />
+:versions="versions" :can-rollback="detail?.canRollback ?? false"
+				@download="handleDownloadVersion" @rollback="handleRollback" @compare="handleCompare"
+				@upload="onVersionSidebarUpload" />
 		</div>
 
 		<!-- 变更摘要（仅对比时显示） -->
@@ -294,6 +295,7 @@ import {
 	apiPreviewDocument,
 	apiDownloadDocumentUrl,
 	apiRemoveDocument,
+	apiRollbackVersion,
 	apiFavoriteDocument,
 	apiUnfavoriteDocument,
 	apiPinDocument,
@@ -484,9 +486,32 @@ function handleDownloadVersion(version: VersionInfo) {
 	window.location.href = apiDownloadDocumentUrl(documentId.value, version.id)
 }
 
-// ── 回滚（A 阶段暂未做，按钮提示） ──
-function handleRollback(_version: VersionInfo) {
-	msgInfo('版本回滚功能将在 B 阶段上线；当前可通过「上传新版本」手工替代')
+// ── 版本回滚（PRD §6.3.4 — 回滚生成新版本，不删除中间版本） ──
+const rollbackLoading = ref(false)
+async function handleRollback(version: VersionInfo) {
+	const confirmed = await msgConfirm(
+		`确定将文档回滚至 ${version.versionNo}？回滚会基于该版本创建一个新的发布版本，中间版本不会被删除。`,
+		'版本回滚',
+		{ type: 'warning', confirmText: '确认回滚' },
+	)
+	if (!confirmed) return
+	rollbackLoading.value = true
+	try {
+		const res = await apiRollbackVersion(documentId.value, version.id)
+		if (res.success) {
+			msgSuccess(res.message || '回滚成功')
+			await Promise.all([loadDetail(), fetchVersions()])
+			await loadPreview()
+			// 退出对比模式（如果在对比中触发回滚）
+			if (inlineComparing.value) exitInlineCompare()
+		} else {
+			msgError(res.message || '回滚失败')
+		}
+	} catch {
+		msgError('回滚失败，请重试')
+	} finally {
+		rollbackLoading.value = false
+	}
 }
 
 // ── 上传新版本 ──

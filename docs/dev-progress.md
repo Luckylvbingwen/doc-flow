@@ -553,6 +553,30 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
 
 ---
 
+### feat: 版本回滚（PRD §6.3.4 / §4.3 权限矩阵「版本回滚」列）
+
+文件详情页 VersionSidebar 非当前版本可触发回滚操作，回滚生成新版本号，不删除中间版本。
+
+- **后端**
+  - 新增 `POST /api/documents/:id/rollback` — body `{ versionId }` 指定回滚目标版本
+  - 鉴权：`requireMemberPermission`（组管理员级别 = canPin 同口径）
+  - 业务规则：文档必须归组 + status=4（已发布） + 目标版本存在且不是当前版本
+  - 事务：复用目标版本的 `storage_key`（MinIO 对象不可变无需复制）→ 创建新版本行（`version_no` 递增、`source_meta: { rollbackFrom: "vX.Y" }`、`change_note: "回滚至 vX.Y"`、`published_at` 立即设置）→ 更新 `doc_documents.current_version_id`
+  - 操作日志：`doc.rollback` action
+  - 错误码新增：`VERSION_ROLLBACK_SAME`（409，不能回滚到当前版本）
+  - Zod schema：`documentRollbackSchema`（`server/schemas/document.ts`）
+  - `GET /api/documents/:id/versions` 响应新增 `rollbackFrom` 字段（从 `source_meta.rollbackFrom` 取）
+  - `GET /api/documents/:id` 响应新增 `canRollback` 字段（= canPin && status === 4）
+- **前端**
+  - `api/documents.ts` 新增 `apiRollbackVersion(id, versionId)`
+  - `components/VersionSidebar.vue` 回滚按钮改为条件显示（`!v.isCurrent && canRollback`）
+  - `pages/docs/file/[id].vue` `handleRollback` 实现：确认弹窗 → 调用 API → 刷新详情/版本/预览 + 退出内联对比
+  - `types/document.ts` `DocumentDetail` 新增 `canRollback: boolean`
+- **数据库改动**：无（`source_meta` Json? 列已存在于 `doc_document_versions`）
+- **文档同步**：`docs/api-auth-design.md` §3.67 + 接口总览新增"版本回滚"段；`docs/feature-gap-checklist.md` §六 回滚 API 打 ✅
+
+---
+
 ## 待开发（按优先级排序）
 
 | 优先级 | 模块 | 状态 |

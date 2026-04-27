@@ -22,6 +22,7 @@ interface Row {
 	published_at: Date | null
 	created_at: Date
 	current_version_id: bigint | null
+	source_meta: { rollbackFrom?: string } | null
 }
 
 export default defineEventHandler(async (event) => {
@@ -48,6 +49,7 @@ export default defineEventHandler(async (event) => {
 		SELECT
 			v.id, v.document_id, v.version_no, v.file_size, v.mime_type,
 			v.change_note, v.uploaded_by, v.published_at, v.created_at,
+			v.source_meta,
 			u.name AS uploader_name,
 			d.current_version_id
 		FROM doc_document_versions v
@@ -77,7 +79,7 @@ export default defineEventHandler(async (event) => {
 		publishedAt:   r.published_at?.getTime() ?? null,
 		createdAt:     r.created_at.getTime(),
 		isCurrent:     r.current_version_id != null && r.current_version_id === r.id,
-		rollbackFrom:  null,  // A 阶段不做回滚，永远为 null
+		rollbackFrom:  r.source_meta?.rollbackFrom ?? null,
 	}))
 
 	return ok({ list, total: Number(totalBig), page, pageSize })

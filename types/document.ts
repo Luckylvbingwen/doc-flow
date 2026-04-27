@@ -57,8 +57,8 @@ export interface DocumentDetail {
 	canUploadVersion: boolean
 	canPin: boolean
 	/** 当前用户是否可配置该文档的文档级权限（PRD §6.3.4 仅组管理员可配置） */
-	canManagePermissions: boolean
-}
+	canManagePermissions: boolean	/** 当前用户是否可进行版本回滚（PRD §4.3 组管理员及上游） */
+	canRollback: boolean}
 
 /** 上传 / 更新版本 返回结构 */
 export interface UploadResult {

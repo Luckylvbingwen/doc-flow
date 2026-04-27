@@ -28,7 +28,7 @@
 							</el-icon>
 							下载
 						</el-button>
-						<el-button v-if="!v.isCurrent" size="small" text type="warning" @click="emit('rollback', v)">
+						<el-button v-if="!v.isCurrent && canRollback" size="small" text type="warning" @click="emit('rollback', v)">
 							<el-icon>
 								<RefreshLeft />
 							</el-icon>
@@ -42,7 +42,8 @@
 						</el-button>
 					</div>
 				</div>
-				<div v-if="versions.length === 0" style="
+				<div
+v-if="versions.length === 0" style="
 						text-align: center;
 						padding: 24px;
 						color: var(--df-subtext);
@@ -70,6 +71,7 @@ import { formatTime } from '~/utils/format'
 
 defineProps<{
 	versions: VersionInfo[]
+	canRollback?: boolean
 }>()
 
 const emit = defineEmits<{

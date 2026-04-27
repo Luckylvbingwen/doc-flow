@@ -44,6 +44,19 @@ export function apiRemoveDocument(id: number) {
 	})
 }
 
+/** 版本回滚（PRD §6.3.4 — 回滚生成新版本，不删除中间版本） */
+export function apiRollbackVersion(id: number, versionId: number) {
+	return useAuthFetch<ApiResult<{
+		documentId: number
+		versionId: number
+		versionNo: string
+		rollbackFrom: string
+	}>>(`/api/documents/${id}/rollback`, {
+		method: 'POST',
+		body: { versionId },
+	})
+}
+
 /** 预览（服务端渲染 MD） */
 export function apiPreviewDocument(id: number, versionId?: number) {
 	return useAuthFetch<ApiResult<PreviewResponse>>(`/api/documents/${id}/preview`, {

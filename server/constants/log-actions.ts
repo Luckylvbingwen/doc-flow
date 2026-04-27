@@ -24,6 +24,8 @@ export const LOG_ACTIONS = {
 	DOC_UPLOAD_VERSION: 'doc.upload_version',
 	DOC_IMPORT_FEISHU: 'doc.import_feishu',
 
+	DOC_ROLLBACK: 'doc.rollback',
+
 	// ── 文件编辑 ──
 	DOC_DRAFT_CREATE: 'doc.draft_create',
 	DOC_EDIT_SAVE: 'doc.edit_save',
@@ -153,6 +155,7 @@ export const LOG_ACTION_TO_TYPE: Record<LogActionCode, LogTypeCode> = {
 	[LOG_ACTIONS.APPROVAL_REMIND_LIMIT]: 'approval',
 
 	[LOG_ACTIONS.DOC_PUBLISH]: 'file_publish',
+	[LOG_ACTIONS.DOC_ROLLBACK]: 'file_publish',
 
 	[LOG_ACTIONS.DOC_MOVE_REQUEST]: 'file_move',
 	[LOG_ACTIONS.DOC_MOVE_APPROVE]: 'file_move',

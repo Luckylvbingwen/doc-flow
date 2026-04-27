@@ -127,6 +127,7 @@ export default defineEventHandler(async (event) => {
 		canUploadVersion: canEditInGroup && (status === 4 || status === 5),
 		canPin,
 		canManagePermissions: canPin,  // 与 canPin 同口径（PRD §6.3.4 仅组管理员可配置）
+		canRollback: canPin && status === 4,  // 版本回滚：组管理员 + 已发布（PRD §4.3）
 	}
 
 	return ok(detail)
