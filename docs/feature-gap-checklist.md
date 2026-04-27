@@ -74,6 +74,7 @@
 - [x] ~~组设置 — 成员管理 tab~~ ✅ 2026-04-17（`GroupSettingsModal` 成员管理 Tab）
 - [x] ~~组设置 — 审批流配置 tab~~ ✅ 2026-04-17（`GroupApprovalPanel`，整包 PUT + 组创建时初始化默认模板）
 - [x] ~~行 actions 收藏 / 置顶下拉（置顶仅管理员可见）~~ ✅ 2026-04-24
+- [x] ~~行【···】"文档级权限"菜单项 + 文件名旁橙锁图标~~ ✅ 2026-04-27（PRD §6.3.3 line 480 / §6.3.4）
 - [ ] 飞书导入入口
 
 ### 2.6 文档主页 (`pages/docs/index.vue`)
@@ -90,7 +91,7 @@
 
 - [ ] 评论区（CommentThread 集成）
 - [x] ~~审批记录标签页~~ ✅ 2026-04-27（底部 TabBar + 审批记录列表 + ApprovalDrawer 只读模式 + `GET /api/documents/:id/approvals`）
-- [ ] 权限设置弹窗（PermissionEditor 集成）
+- [x] ~~权限设置弹窗（PermissionEditor 集成）~~ ✅ 2026-04-27（DocPermissionModal + GroupMemberPickerModal + GET/PUT /api/documents/:id/permissions + 4 值权限 enum 全栈对齐 + 文件信息卡橙锁图标）
 - [ ] 跨组移动弹窗（MoveTargetPicker 集成）
 - [ ] 上传新版本完整流程
 - [ ] 全屏文件预览器

@@ -190,6 +190,16 @@
 
 > 读端 `GET /api/documents` 与 `GET /api/documents/:id` 响应中已含 `isFavorited` / `isPinned` / `canPin` 字段供前端按钮显示。
 
+### 文档级权限 (document permissions)
+
+| 方法 | 路径 | 鉴权 | 权限/条件 | 说明 |
+| --- | --- | --- | --- | --- |
+| GET | /api/documents/:id/permissions | 是 | 组管理员（requireMemberPermission） | 弹窗初始数据：`{ groupMembers, customPerms }`（PRD §6.3.4 文档级权限设置弹窗） |
+| PUT | /api/documents/:id/permissions | 是 | 同上 | 整包替换：body `{ perms: [{ userId, permission: 2|3 }, ...] }`，事务 diff + 操作日志 |
+
+> 读端 `GET /api/documents` 与 `GET /api/documents/:id` 响应已含 `hasCustomPermissions`（行/详情级橙锁图标）与 `canManagePermissions`（按钮 / 菜单可见性）。
+> permission 取值集对齐 `doc_group_members.role`：`1管理员 / 2可编辑 / 3上传下载 / 4可阅读`，文档级弹窗仅暴露 `[2, 3]`，分享 ACL 仅暴露 `[2, 4]`。
+
 ### 定时任务
 
 | 任务名 | cron | 说明 |
@@ -1505,6 +1515,93 @@
       "canWithdraw": false
     }
   ]
+}
+```
+
+---
+
+### 3.65 GET /api/documents/:id/permissions
+
+**路径**：`GET /api/documents/:id/permissions`
+
+**鉴权**：登录 + 组管理员（requireMemberPermission：组内 role=1 / 组负责人 / super_admin / company_admin / 当组在 dept_head/pl_head 的 scope）
+
+**用途**：PRD §6.3.4 文档级权限设置弹窗的初始数据 — 组成员只读区 + 已自定义条目
+
+**规则**：
+- 文档不存在 / 已删除 → 404 `DOCUMENT_NOT_FOUND`
+- 文档未归组（个人草稿态 `group_id=null`）→ 409 `DOC_PERMISSION_NOT_IN_GROUP`
+- 组成员只读区按"组负责人 → role 升序 → 加入时间"排序
+- 文档级权限区按 `created_at ASC` 排序
+
+**响应**：
+```json
+{
+  "success": true,
+  "code": "OK",
+  "data": {
+    "groupMembers": [
+      { "userId": 10002, "name": "张晓明", "avatar": null, "role": 1, "isOwner": true },
+      { "userId": 10003, "name": "李婷婷", "avatar": null, "role": 3, "isOwner": false }
+    ],
+    "customPerms": [
+      {
+        "id": 7001,
+        "userId": 10003,
+        "name": "李婷婷",
+        "avatar": null,
+        "permission": 2,
+        "grantedBy": 10002,
+        "grantedByName": "张晓明",
+        "grantedAt": 1714234567000
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 3.66 PUT /api/documents/:id/permissions
+
+**路径**：`PUT /api/documents/:id/permissions`
+
+**鉴权**：同 3.65（组管理员）
+
+**用途**：弹窗"保存权限"按钮 — 草稿模式整包替换（PRD §6.3.4）
+
+**Body**：
+```json
+{ "perms": [{ "userId": 10003, "permission": 2 }, { "userId": 10004, "permission": 3 }] }
+```
+
+**约束**（Zod `docPermissionPutSchema`）：
+- `permission` ∈ `[2, 3]`（可编辑 / 上传下载，文档级弹窗专属取值；可阅读 4 仅分享 ACL 用）
+- `userId` 不重复，最多 200 条
+
+**业务规则**：
+- 文档未归组 → 409 `DOC_PERMISSION_NOT_IN_GROUP`
+- 目标 user 必须是该组的活跃成员 → 否则 400 `DOC_PERMISSION_NOT_GROUP_MEMBER`
+- 不允许给组负责人设置文档级权限 → 400 `DOC_PERMISSION_TARGET_INVALID`
+
+**事务流程**：
+1. 拉当前未软删条目，与 body 比对：
+   - 新条目 → INSERT
+   - 已有 + permission 不同 → UPDATE
+   - 已有但不在 body → 软删（`deleted_at = NOW`）
+2. 一事件一日志：每条 diff 写一条 `permission.doc_update` 操作日志，4 种 desc 区分语义：
+   - 新增：`为「张三」设置文档级权限「可编辑」`
+   - 升级：`将「王五」的文档级权限从「上传下载」升级为「可编辑」`
+   - 降级：`将「赵六」的文档级权限从「可编辑」降级为「上传下载」`
+   - 移除：`移除「李四」的文档级权限`
+
+**响应**：
+```json
+{
+  "success": true,
+  "code": "OK",
+  "message": "文档权限已保存",
+  "data": { "inserted": 1, "updated": 0, "removed": 0 }
 }
 ```
 

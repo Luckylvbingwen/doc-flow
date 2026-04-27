@@ -333,9 +333,15 @@
   font-weight: 600;
   color: var(--df-text);
   margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.df-file-info-lock {
+  flex-shrink: 0;
+  font-size: 14px;
 }
 
 .df-file-info-meta {

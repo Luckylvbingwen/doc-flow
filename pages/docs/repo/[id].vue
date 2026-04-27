@@ -64,12 +64,15 @@ v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list" :col
 						<NuxtLink :to="`/docs/file/${row.id}`" class="repo-title-link">
 							{{ row.title }}
 						</NuxtLink>
-						<div v-if="row.isPinned || row.isFavorited" class="repo-title-flags">
+						<div v-if="row.isPinned || row.isFavorited || row.hasCustomPermissions" class="repo-title-flags">
 							<el-icon v-if="row.isPinned" title="已置顶" color="var(--df-primary)">
 								<Top />
 							</el-icon>
 							<el-icon v-if="row.isFavorited" title="已收藏" color="#f59e0b">
 								<Star />
+							</el-icon>
+							<el-icon v-if="row.hasCustomPermissions" title="已设置文档级权限" color="#f97316">
+								<Lock />
 							</el-icon>
 						</div>
 					</div>
@@ -102,6 +105,9 @@ v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list" :col
 								<el-dropdown-item v-if="canPin" :command="row.isPinned ? 'unpin' : 'pin'" :icon="Top">
 									{{ row.isPinned ? '取消置顶' : '置顶' }}
 								</el-dropdown-item>
+								<el-dropdown-item v-if="canManagePermissions" command="permissions" :icon="Lock">
+									文档级权限
+								</el-dropdown-item>
 								<el-dropdown-item v-if="canRemove" command="remove" :icon="Delete" divided style="color: #ef4444">
 									从组移除
 								</el-dropdown-item>
@@ -113,6 +119,11 @@ v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list" :col
 		</DataTable>
 
 		<UploadFileModal v-model="uploadVisible" :group-id="groupId" mode="first" @success="onUploadSuccess" />
+
+		<!-- 文档级权限弹窗（PRD §6.3.4，组管理员通过行【···】"文档级权限"打开） -->
+		<DocPermissionModal
+v-if="permModalRow" v-model:visible="permModalVisible" :document-id="permModalRow.id"
+			:file-name="permModalRow.title" :group-id="groupId" @saved="onPermissionsSaved" />
 	</ListPageShell>
 </template>
 
@@ -128,6 +139,7 @@ import {
 	MoreFilled,
 	Download,
 	Delete,
+	Lock,
 } from '@element-plus/icons-vue'
 import type { TableColumn } from '~/components/DataTable.vue'
 import {
@@ -160,11 +172,12 @@ const canRemove = computed(() => can('doc:remove'))
 const filterKeyword = ref('')
 const filterGroupClearCount = computed(() => (filterKeyword.value ? 1 : 0))
 
-// ── 列表 + reviewingCount + canPin（透过 useListPage，但非标准字段需外挂） ──
+// ── 列表 + reviewingCount + canPin / canManagePermissions（透过 useListPage，但非标准字段需外挂） ──
 const reviewingCount = ref(0)
 const canPin = ref(false)
+const canManagePermissions = ref(false)
 
-/** 包装 apiGetDocuments：side-load reviewingCount / canPin，对外返回 PaginatedData 形状 */
+/** 包装 apiGetDocuments：side-load reviewingCount / canPin / canManagePermissions，对外返回 PaginatedData 形状 */
 function fetchWithReviewingCount(
 	params: DocumentListQuery,
 ): Promise<ApiResult<PaginatedData<DocumentListItem>>> {
@@ -172,6 +185,7 @@ function fetchWithReviewingCount(
 		if (res.success) {
 			reviewingCount.value = res.data.reviewingCount
 			canPin.value = res.data.canPin
+			canManagePermissions.value = res.data.canManagePermissions
 		}
 		return res
 	})
@@ -247,7 +261,23 @@ async function onRowCommand(cmd: string | number | object, row: DocumentListItem
 		await onToggleFavorite(row)
 	} else if (cmd === 'pin' || cmd === 'unpin') {
 		await onTogglePin(row)
+	} else if (cmd === 'permissions') {
+		openPermissionModal(row)
 	}
+}
+
+// ── 文档级权限弹窗 ──
+const permModalVisible = ref(false)
+const permModalRow = ref<DocumentListItem | null>(null)
+
+function openPermissionModal(row: DocumentListItem) {
+	permModalRow.value = row
+	permModalVisible.value = true
+}
+
+function onPermissionsSaved() {
+	// 锁图标 hasCustomPermissions 由后端按软删后的剩余条目数判定，刷新列表自动对账
+	refresh()
 }
 
 // 防连点：Set 不需要响应式（不参与模板），仅作为幂等门闩

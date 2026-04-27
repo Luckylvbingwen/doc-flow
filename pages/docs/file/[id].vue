@@ -39,6 +39,12 @@ v-if="detail?.canSubmitApproval" type="primary" :loading="submitLoading"
 					</el-icon>
 					上传新版本
 				</el-button>
+				<el-button v-if="detail?.canManagePermissions" @click="permModalVisible = true">
+					<el-icon>
+						<Lock />
+					</el-icon>
+					权限设置
+				</el-button>
 				<el-button v-if="detail?.canRemove" type="danger" plain :loading="removing" @click="handleRemove">
 					<el-icon>
 						<Delete />
@@ -55,7 +61,14 @@ v-if="detail?.canSubmitApproval" type="primary" :loading="submitLoading"
 					{{ fileTypeAbbr }}
 				</div>
 				<div class="df-file-info-body">
-					<h4 class="df-file-info-name">{{ fileName }}</h4>
+					<h4 class="df-file-info-name">
+						{{ fileName }}
+						<el-tooltip v-if="detail.hasCustomPermissions" content="该文档已设置文档级权限" placement="top">
+							<el-icon class="df-file-info-lock" color="#f97316">
+								<Lock />
+							</el-icon>
+						</el-tooltip>
+					</h4>
 					<p class="df-file-info-meta">
 						<span>{{ fileTypeText }} · {{ currentVersion?.versionNo || '-' }}</span>
 						<span class="file-status" :class="`file-status--${statusKey}`">
@@ -205,6 +218,11 @@ v-if="compareLoading"
 v-if="detail?.groupId" v-model="uploadVisible" :group-id="detail.groupId" mode="update"
 			:locked-document-id="documentId" @success="onUploadSuccess" />
 
+		<!-- 文档级权限弹窗（PRD §6.3.4，仅组管理员可见） -->
+		<DocPermissionModal
+v-if="detail?.groupId && detail?.canManagePermissions" v-model:visible="permModalVisible"
+			:document-id="documentId" :file-name="detail.title" :group-id="detail.groupId" @saved="onPermissionsSaved" />
+
 		<!-- 底部 TAB 区（PRD §6.3.4：评论 / 飞书评论 / 审批记录；当前阶段只接审批记录） -->
 		<div class="pf-card df-file-tabs">
 			<TabBar v-model="bottomTab" :tabs="bottomTabs" />
@@ -246,6 +264,7 @@ import {
 	Star,
 	StarFilled,
 	Top,
+	Lock,
 } from '@element-plus/icons-vue'
 import type { VersionInfo, CompareResult } from '~/types/version'
 import type { ApiResponse, PaginatedData } from '~/types/api'
@@ -459,6 +478,13 @@ function handleRollback(_version: VersionInfo) {
 
 // ── 上传新版本 ──
 const uploadVisible = ref(false)
+
+// ── 文档级权限弹窗（PRD §6.3.4） ──
+const permModalVisible = ref(false)
+function onPermissionsSaved() {
+	// 锁图标 hasCustomPermissions 由后端按软删后剩余条目数判定，刷新详情自动对账
+	loadDetail()
+}
 function onVersionSidebarUpload() {
 	if (!detail.value?.canUploadVersion) {
 		msgWarning('当前状态或权限不允许上传新版本')

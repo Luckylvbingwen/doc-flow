@@ -4,7 +4,7 @@
  *   - 来源徽章色（PRD §6.5.2 来源标签）
  *   - 权限级别徽章色（§6.5.2 "分享给我的"权限标签）
  */
-import type { DocStatus, ItemSource, PermissionLevel } from '~/types/personal'
+import type { DocStatus, ItemSource } from '~/types/personal'
 
 export interface BadgeMeta {
 	label: string
@@ -29,12 +29,6 @@ export const ITEM_SOURCE_META: Record<ItemSource, BadgeMeta> = {
 	favorite: { label: '共享文档', color: '#15803d', bg: '#dcfce7' },
 }
 
-/** 权限级别 → UI meta（"分享给我的"TAB 附加标签） */
-export const PERMISSION_LEVEL_META: Record<PermissionLevel, BadgeMeta> = {
-	1: { label: '可编辑', color: '#1d4ed8', bg: '#dbeafe' },
-	2: { label: '可阅读', color: '#6b7280', bg: '#f3f4f6' },
-}
-
 export function getDocStatusMeta(status: DocStatus): BadgeMeta {
 	return DOC_STATUS_META[status] ?? { label: '未知', color: '#6b7280', bg: '#f3f4f6' }
 }
@@ -43,6 +37,8 @@ export function getItemSourceMeta(source: ItemSource): BadgeMeta {
 	return ITEM_SOURCE_META[source] ?? { label: '', color: '#6b7280', bg: '#f3f4f6' }
 }
 
-export function getPermissionLevelMeta(lv: PermissionLevel): BadgeMeta {
-	return PERMISSION_LEVEL_META[lv] ?? { label: '', color: '#6b7280', bg: '#f3f4f6' }
-}
+/**
+ * 权限级别徽章（4 值齐全：管理员 / 可编辑 / 上传下载 / 可阅读）
+ * 实现迁到 utils/permission-meta.ts 集中管理；此处保留导出以维持向后兼容
+ */
+export { getPermissionMeta as getPermissionLevelMeta, PERMISSION_META as PERMISSION_LEVEL_META } from '~/utils/permission-meta'

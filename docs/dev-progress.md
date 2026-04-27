@@ -372,6 +372,85 @@ A 阶段已就绪：表 `doc_document_favorites` / `doc_document_pins`、4 个 l
 
 ## 2026-04-27
 
+### feat: 文档级权限设置（PRD §6.3.4 + §6.3.3 line 480）
+
+文件详情页 2.7 收口的第二项；伴随推动 §2.5 仓库行【···】"文档级权限"菜单项一起做完，避免 PRD 入口缺失。
+
+**核心 — 权限 enum 4 值全栈对齐**
+
+PRD 通篇"上传下载"是组级权限第三档；§4.2 / §4.3 / §253 / §254 / §276 / §367 / §539 / `doc_group_members.role` 注释完全一致（1管理员 / 2可编辑 / 3上传下载）。但 `doc_document_permissions` 当初按"分享 ACL"建表（1可编辑 / 2可阅读），与 PRD §6.3.4 文档级权限弹窗的"可编辑 / 上传下载"取值不匹配。§6.5.2 line 895-897 又把"组级或文档级权限设置"+"链接分享"两类来源合并到"分享给我的"——同一张表必须能容纳两套语义。
+
+**方案**：`doc_document_permissions` / `doc_share_links` 的 `permission` enum 扩到 4 值，与 `doc_group_members.role` 同口径：
+
+```
+1 管理员    （仅组级用，本表不出现）
+2 可编辑    （文档级 + 分享 共用）
+3 上传下载  （仅文档级用）
+4 可阅读    （仅分享用）
+```
+
+UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立（PRD §6.3.7 "分享时可选权限不能超过分享人自身"= `shareLevel <= myLevel`）。
+
+- **数据库**
+  - `docs/patch-008-doc-permission-align-group-role.sql` 新建：ALTER 列注释 + 数据迁移（`UPDATE permission=4 WHERE 2; UPDATE permission=2 WHERE 1`）
+  - 同步：`docs/doc.sql` 两张表列注释更新
+  - 不需要：`docs/doc_seed.sql`（清理后已无该表数据）/ `docs/rbac.sql`（无新权限码）/ `prisma/schema.prisma`（TinyInt 通用）
+
+- **常量层（全栈共享）**
+  - `utils/permission-meta.ts` — 集中 `PERMISSION_LEVEL` 常量 + 各场景子集（`DOC_CUSTOM_PERMISSION_LEVELS` / `SHARE_PERMISSION_LEVELS` / `GROUP_MEMBER_ROLES`）+ `PERMISSION_LABEL` 中文标签 + `PERMISSION_META` 4 值徽章 meta（管理员红 / 可编辑蓝 / 上传下载琥珀 / 可阅读灰）
+  - `server/constants/permission.ts` — 重导出 `~/utils/permission-meta`，避免双源
+  - `server/constants/personal.ts` — 重导出 PERMISSION_LEVEL（兼容历史调用）
+  - `utils/doc-meta.ts` — 旧 2 值 `PERMISSION_LEVEL_META` / `getPermissionLevelMeta` 改为重导出新 4 值版（向后兼容 profile.vue 调用面不破坏）
+  - `types/personal.ts` — `PermissionLevel` 类型从 `1|2` 扩到 `1|2|3|4`
+
+- **后端 API（GET / PUT 两端）**
+  - `GET /api/documents/:id/permissions` — `{ groupMembers, customPerms }`，组成员只读区按"组负责人 → role 升序 → 加入时间"排序，文档级条目按 `created_at ASC`
+  - `PUT /api/documents/:id/permissions` — 草稿模式整包替换；事务内 diff（INSERT / UPDATE / 软删）+ 一事件一日志；新增条目 `created_at=now`、UPDATE 改 `permission` + `updated_at`、软删写 `deleted_at`
+  - 鉴权：`requireMemberPermission` 同置顶口径（PRD §6.3.4 "仅组管理员可配置"）
+  - 业务规则：文档必须归组 + 目标必须是组成员 + 不允许给组负责人设置（覆盖最高权限无意义）
+  - Zod schema `server/schemas/document-permission.ts`：`permission ∈ [2, 3]` + userId 唯一 + 上限 200
+  - 错误码：`DOC_PERMISSION_NOT_IN_GROUP` / `DOC_PERMISSION_NOT_GROUP_MEMBER` / `DOC_PERMISSION_TARGET_INVALID`
+
+- **后端读端字段扩展**
+  - `/api/documents/:id` + `/api/documents` 列表响应同步加：
+    - `hasCustomPermissions: boolean`（行级，EXISTS 子查询，PRD §6.3.3 / §6.3.4 锁图标用）
+    - `canManagePermissions: boolean`（顶层 / 详情，与 `canPin` 同口径，组管理员判定 — 复用 `canUserPinInGroup`）
+
+- **操作日志**
+  - 沿用既有 `permission.doc_update` action（与 `permission.group_update` 单 action 口径一致），按 diff 写多条
+  - 4 种 desc 文案区分：
+    - 新增：`为「张三」设置文档级权限「可编辑」`
+    - 升级：`将「王五」的文档级权限从「上传下载」升级为「可编辑」`
+    - 降级：`将「赵六」的文档级权限从「可编辑」降级为「上传下载」`
+    - 移除：`移除「李四」的文档级权限`
+
+- **前端组件**
+  - `components/GroupMemberPickerModal.vue` 新建 — 仅组成员选择（搜索 + 多选 + 已自定义 / 组负责人灰显）；按 PRD line 6024 原型"仅限组成员"实现，**不复用** MemberSelectorModal（后者是飞书全公司目录钻入，语义不符）
+  - `components/DocPermissionModal.vue` 新建 — PRD §6.3.4 弹窗主体：组权限只读区 + 文档级权限区（行内权限下拉 + 删除按钮）+ 添加成员区（输入框 readonly 点击打开 picker + 默认权限下拉 + 添加按钮）+ 草稿模式 + 关闭前 dirty 二次确认
+  - `api/document-permissions.ts` + `types/document-permission.ts`
+
+- **页面接入（2 个入口，PRD 双入口完整呈现）**
+  - `pages/docs/file/[id].vue` — 操作栏新增「权限设置」按钮（v-if `canManagePermissions`）+ 文件信息卡文件名旁加橙锁图标（v-if `hasCustomPermissions`，悬停 tooltip）
+  - `pages/docs/repo/[id].vue` — 行【···】下拉新增「文档级权限」菜单项（v-if `canManagePermissions`）+ 文件名旁锁图标 + 集成同弹窗
+  - 两端弹窗保存后 `loadDetail()` / `refresh()`，由后端 EXISTS 子查询自动对账锁图标
+
+- **样式**
+  - `assets/styles/components/_doc-preview.scss` — `.df-file-info-name` 改 flex 布局（容纳锁图标）+ `.df-file-info-lock` 新加
+
+- **PRD 严格对照（防止"功能模糊"）**
+  - 弹窗结构 / 按钮 / 草稿模式：§6.3.4 line 483
+  - 双入口（详情页操作栏 + 列表行【···】）：§6.3.3 line 480 + §6.3.4
+  - 双锁图标（详情页 + 列表行）：§6.3.3 line 480 + §6.3.4
+  - "仅限组成员"选择器范围：原型 HTML line 6024
+  - "覆盖组级权限"语义：§6.3.4 + §6.5.2 line 895-897 合并语义到"分享给我的"
+  - "权限标签 vs 下拉"PRD 用"标签"原型 HTML 用 `<select>`：遵循原型（行内可改更优）
+
+- **范围**：A 阶段 = 弹窗读 / 写 + 锁图标 + 双入口接入；**不做**：M14-M16 通知（归 permission-request 模块，用户主动申请→归属人审批语义，本次"管理员主动设置"不沾）/ M19（归 group-member 模块，组级 role 变更语义不沾）
+
+- **数据库 / 文档同步**：`docs/api-auth-design.md` §3.65 / §3.66 + 接口总览新增"文档级权限"段；`docs/feature-gap-checklist.md` §2.5 行【···】文档级权限 ✅ + §2.7 权限设置弹窗 ✅
+
+---
+
 ### feat: 文件详情底部「审批记录」TAB（PRD §6.3.4）
 
 文件详情页 2.7 收口的第一项。剩余 5 项（权限设置 / 跨组移动 / 上传新版本 UX / 全屏预览 / 文件级操作菜单）按顺序后续推进；评论 / 飞书评论 / 标注归"评论 + 标注"大核心阶段，本次不做。
