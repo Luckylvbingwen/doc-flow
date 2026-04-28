@@ -122,6 +122,14 @@ export const RECYCLE_GROUP_MISSING = 'RECYCLE_GROUP_MISSING'
 /** 恢复操作已过期（超 30 天） (400) */
 export const RECYCLE_EXPIRED = 'RECYCLE_EXPIRED'
 
+// ─── 评论 ───
+/** 评论不存在 (404) */
+export const COMMENT_NOT_FOUND = 'COMMENT_NOT_FOUND'
+/** 仅评论创建人可删除 (403) */
+export const COMMENT_NOT_OWNER = 'COMMENT_NOT_OWNER'
+/** 父评论不存在 (404) */
+export const COMMENT_PARENT_NOT_FOUND = 'COMMENT_PARENT_NOT_FOUND'
+
 // ─── 系统管理（§6.9） ───
 /** 系统管理员角色受保护，不可通过此接口变更 (403) */
 export const ADMIN_SUPER_ADMIN_PROTECTED = 'ADMIN_SUPER_ADMIN_PROTECTED'
@@ -155,6 +163,12 @@ export const FILE_CONVERT_FAILED = 'FILE_CONVERT_FAILED'
 export const STORAGE_PUT_FAILED = 'STORAGE_PUT_FAILED'
 /** 对象存储读取失败 (500) */
 export const STORAGE_GET_FAILED = 'STORAGE_GET_FAILED'
+
+// ─── 分享 ───
+/** 分享链接不存在 (404) */
+export const SHARE_NOT_FOUND = 'SHARE_NOT_FOUND'
+/** 分享权限超出自身权限 (403) */
+export const SHARE_PERMISSION_EXCEEDED = 'SHARE_PERMISSION_EXCEEDED'
 
 // ─── 审批运行时 ───
 /** 当前用户不是本节点的待处理审批人 (403) */

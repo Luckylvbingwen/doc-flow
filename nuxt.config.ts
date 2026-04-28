@@ -114,6 +114,8 @@ export default defineNuxtConfig({
       '0 2 * * *': ['feishu:sync-contacts'],
       // 每整点扫描超时审批节点，发送 M5/M6 催办
       '0 * * * *': ['approval:remind-timeout'],
+      // 每天凌暨 3:00 自动清理回收站中超过 30 天的文件
+      '0 3 * * *': ['recycle:auto-purge'],
     },
     routeRules: {
       // 静态资源长缓存（Nuxt 构建产物自带 hash）

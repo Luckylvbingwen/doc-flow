@@ -57,6 +57,7 @@ export const LOG_ACTIONS = {
 	DOC_DRAFT_DELETE: 'doc.draft_delete',
 	RECYCLE_RESTORE: 'recycle.restore',
 	RECYCLE_PURGE: 'recycle.purge',
+	RECYCLE_AUTO_PURGE: 'recycle.auto_purge',
 
 	// ── 权限变更 ──
 	PERMISSION_GROUP_UPDATE: 'permission.group_update',
@@ -167,6 +168,7 @@ export const LOG_ACTION_TO_TYPE: Record<LogActionCode, LogTypeCode> = {
 	[LOG_ACTIONS.DOC_DRAFT_DELETE]: 'file_remove',
 	[LOG_ACTIONS.RECYCLE_RESTORE]: 'file_remove',
 	[LOG_ACTIONS.RECYCLE_PURGE]: 'file_remove',
+	[LOG_ACTIONS.RECYCLE_AUTO_PURGE]: 'file_remove',
 
 	[LOG_ACTIONS.PERMISSION_GROUP_UPDATE]: 'permission',
 	[LOG_ACTIONS.PERMISSION_DOC_UPDATE]: 'permission',

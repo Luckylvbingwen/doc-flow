@@ -44,6 +44,14 @@ export function apiRemoveDocument(id: number) {
 	})
 }
 
+/** 批量移除文档 */
+export function apiBatchRemoveDocuments(ids: number[]) {
+	return useAuthFetch<ApiResult<{ removedCount: number; removedIds: number[]; failed: Array<{ id: number; reason: string }> }>>('/api/documents/batch-remove', {
+		method: 'POST',
+		body: { ids },
+	})
+}
+
 /** 版本回滚（PRD §6.3.4 — 回滚生成新版本，不删除中间版本） */
 export function apiRollbackVersion(id: number, versionId: number) {
 	return useAuthFetch<ApiResult<{
@@ -109,4 +117,20 @@ export function apiUnpinDocument(id: number) {
  */
 export function apiGetDocumentApprovals(id: number) {
 	return useAuthFetch<ApiResult<ApprovalItem[]>>(`/api/documents/${id}/approvals`)
+}
+
+/** 发起跨组移动 */
+export function apiRequestCrossMove(documentId: number, targetGroupId: number) {
+	return useAuthFetch<ApiResult<{ moveId: number }>>(`/api/documents/${documentId}/move`, {
+		method: 'POST',
+		body: { targetGroupId },
+	})
+}
+
+/** 审核跨组移动 */
+export function apiReviewCrossMove(moveId: number, action: 'approve' | 'reject') {
+	return useAuthFetch<ApiResult<null>>(`/api/documents/cross-move/${moveId}/review`, {
+		method: 'PUT',
+		body: { action },
+	})
 }

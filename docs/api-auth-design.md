@@ -209,12 +209,41 @@
 > 读端 `GET /api/documents` 与 `GET /api/documents/:id` 响应已含 `hasCustomPermissions`（行/详情级橙锁图标）与 `canManagePermissions`（按钮 / 菜单可见性）。
 > permission 取值集对齐 `doc_group_members.role`：`1管理员 / 2可编辑 / 3上传下载 / 4可阅读`，文档级弹窗仅暴露 `[2, 3]`，分享 ACL 仅暴露 `[2, 4]`。
 
+### 文档评论 (comments)
+
+| 方法 | 路径 | 鉴权 | 权限 | 说明 |
+| --- | --- | --- | --- | --- |
+| GET | /api/documents/:id/comments | 是 | doc:read | 文档评论列表（嵌套回复，一级按创建时间升序） |
+| POST | /api/documents/:id/comments | 是 | doc:read | 新增评论/回复（parentId 可选） |
+| DELETE | /api/documents/:id/comments/:commentId | 是 | doc:read + 仅创建人 | 软删除评论（顶层评论级联软删回复） |
+
+### 批量操作 (batch)
+
+| 方法 | 路径 | 鉴权 | 权限 | 说明 |
+| --- | --- | --- | --- | --- |
+| POST | /api/documents/batch-remove | 是 | doc:remove + 组管理权限 | 批量从组移除文档（status 4→1，1-50 条） |
+
+### 跨组移动 (cross-move)
+
+| 方法 | 路径 | 鉴权 | 权限/条件 | 说明 |
+| --- | --- | --- | --- | --- |
+| POST | /api/documents/:id/move | 是 | doc:move + 源组管理权限 | 发起跨组移动请求（M12 通知目标组负责人） |
+| PUT | /api/documents/cross-move/:id/review | 是 | doc:move + 目标组负责人/super_admin | 审核移动请求（approve/reject，M13 通知发起人） |
+
+### 分享链接 (share)
+
+| 方法 | 路径 | 鉴权 | 权限 | 说明 |
+| --- | --- | --- | --- | --- |
+| POST | /api/share/create | 是 | doc:read | 创建分享链接（幂等，permission 2=可编辑/4=可阅读） |
+| GET | /api/share/:token | 是 | doc:read | 打开分享链接（权限不降级，M17 通知链接创建者） |
+
 ### 定时任务
 
 | 任务名 | cron | 说明 |
 | --- | --- | --- |
 | feishu:sync-contacts | 0 2 * * *（每天凌晨 2:00） | 自动同步飞书通讯录 |
 | approval:remind-timeout | 0 * * * *（每整点） | 审批超时催办扫描（M5 / M6 通知 + remind_count 状态机） |
+| recycle:auto-purge | 0 3 * * *（每天凌晨 3:00） | 回收站 30 天自动清理（批量永久删除，BATCH_SIZE=200） |
 
 ---
 
@@ -1278,6 +1307,233 @@
 ```json
 { "success": true, "code": "OK", "message": "已撤回审批", "data": { "id": 62001 } }
 ```
+
+---
+
+### 3.56 GET /api/documents/:id/comments
+
+**路径**：`GET /api/documents/:id/comments`
+**鉴权**：JWT + `doc:read`
+
+文档评论列表（PRD §6.3.4 底部 Tab「评论」），返回一级评论列表（按创建时间升序），每条含嵌套 `replies`。已软删除的评论自动过滤。
+
+**响应 data**（数组）：
+```json
+[
+  {
+    "id": 70001,
+    "userId": 10001,
+    "user": { "name": "管理员", "avatar": "" },
+    "content": "评论内容",
+    "time": "2026-04-27 10:30",
+    "deletable": true,
+    "replies": [
+      {
+        "id": 70002,
+        "userId": 10003,
+        "user": { "name": "编辑人", "avatar": "" },
+        "content": "回复内容",
+        "time": "2026-04-27 10:35",
+        "deletable": false,
+        "replies": []
+      }
+    ]
+  }
+]
+```
+
+**错误码**：INVALID_PARAMS, DOCUMENT_NOT_FOUND
+
+---
+
+### 3.57 POST /api/documents/:id/comments
+
+**路径**：`POST /api/documents/:id/comments`
+**鉴权**：JWT + `doc:read`
+
+新增评论或回复。Schema：`createCommentSchema`。
+
+**Body**：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| content | string | 是 | 评论内容（1-2000 字） |
+| parentId | number | 否 | 回复目标评论 ID，不传则为一级评论 |
+
+**规则**：
+- 文档必须存在且未删除
+- 若提供 `parentId`，父评论必须存在且属于同一文档
+- 写入 `doc_document_comments`
+- 操作日志：COMMENT_ADD（一级）/ COMMENT_REPLY（回复）
+
+**成功响应 data**：同 GET 列表中的单条 VO 结构
+
+**错误码**：INVALID_PARAMS, DOCUMENT_NOT_FOUND, COMMENT_PARENT_NOT_FOUND
+
+---
+
+### 3.58 DELETE /api/documents/:id/comments/:commentId
+
+**路径**：`DELETE /api/documents/:id/comments/:commentId`
+**鉴权**：JWT + `doc:read`（仅评论创建人可删）
+
+软删除评论。如果删除的是顶层评论，其所有回复也一并软删。
+
+**规则**：
+- 仅评论创建人可删除，其他人返回 403
+- 顶层评论删除时级联软删所有子回复
+- 操作日志：COMMENT_DELETE
+
+**成功响应**：`{ "success": true, "message": "删除成功", "data": null }`
+
+**错误码**：INVALID_PARAMS, DOCUMENT_NOT_FOUND, COMMENT_NOT_FOUND, COMMENT_NOT_OWNER
+
+---
+
+### 3.59 POST /api/documents/batch-remove
+
+**路径**：`POST /api/documents/batch-remove`
+**鉴权**：JWT + `doc:remove`
+
+批量从组移除文档（PRD §6.3.2 文件列表批量操作）。
+
+**Body**：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| ids | number[] | 是 | 文档 ID 数组（1-50 条，去重） |
+
+**规则**：
+- 文档必须 `status=4`（已发布）且属于某个组
+- 操作人需对文档所在组有管理权限（组管理员 / 组负责人 / super_admin）
+- 移除后 `status=1`（退回归属人个人中心）
+- 按组缓存权限检查（同组文档只查一次）
+- 写日志 + M9 通知归属人（按归属人去重合并通知）
+- 不满足条件的 ID 进入 `failed` 列表
+
+**成功响应 data**：
+```json
+{
+  "removedCount": 3,
+  "removedIds": [50001, 50002, 50003],
+  "failed": [{ "id": 50004, "reason": "无组管理权限" }]
+}
+```
+
+**错误码**：INVALID_PARAMS
+
+---
+
+### 3.60 POST /api/documents/:id/move
+
+**路径**：`POST /api/documents/:id/move`
+**鉴权**：JWT + `doc:move`
+
+发起跨组移动请求（PRD §6.3.3 / §6.8.2 M12）。
+
+**Body**：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| targetGroupId | number | 是 | 目标组 ID |
+
+**规则**：
+- 文档必须 `status=4` 且属于某个组
+- 操作人需对源组有管理权限
+- 目标组不能是当前组
+- 目标组不能有同名文件（`DOCUMENT_DUPLICATE_NAME`）
+- 若已有待处理的移动请求（`status=1`），拒绝重复发起
+- 写入 `doc_cross_group_moves`（status=1 待确认）
+- M12 通知目标组负责人
+- 操作日志：DOC_MOVE_REQUEST
+
+**成功响应 data**：
+```json
+{ "moveId": 80001 }
+```
+
+**错误码**：INVALID_PARAMS, DOCUMENT_NOT_FOUND, DOCUMENT_STATUS_INVALID, GROUP_NOT_FOUND, DOCUMENT_DUPLICATE_NAME
+
+---
+
+### 3.61 PUT /api/documents/cross-move/:id/review
+
+**路径**：`PUT /api/documents/cross-move/:id/review`
+**鉴权**：JWT + `doc:move`
+
+审核跨组移动请求（目标组负责人同意或拒绝）。
+
+**Body**：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| action | string | 是 | `approve` 或 `reject` |
+
+**规则**：
+- 操作人必须是目标组负责人或 super_admin
+- 仅 `status=1`（待确认）可审核，已处理返回 409 `MOVE_ALREADY_REVIEWED`
+- **approve**：执行移动（`UPDATE doc_documents SET group_id = targetGroupId`）+ 操作日志 DOC_MOVE_APPROVE + M13 通知发起人
+- **reject**：`status=3` + 操作日志 DOC_MOVE_REJECT + M13 通知发起人
+
+**成功响应**：
+```json
+{ "success": true, "message": "已同意移动", "data": null }
+```
+
+**错误码**：INVALID_PARAMS, NOT_FOUND, PERMISSION_DENIED, MOVE_ALREADY_REVIEWED
+
+---
+
+### 3.62 POST /api/share/create
+
+**路径**：`POST /api/share/create`
+**鉴权**：JWT + `doc:read`
+
+创建分享链接（PRD §6.3.8）。幂等：相同 doc + 用户 + permission 复用已有链接。
+
+**Body**：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| documentId | number | 是 | 文档 ID |
+| permission | 2 \| 4 | 是 | 2=可编辑, 4=可阅读 |
+
+**规则**：
+- 文档必须存在且未删除
+- 分享「可编辑」需操作人拥有 `doc:edit` 权限或 super_admin 角色，否则只能分享「可阅读」
+- 已存在同文档+同创建者+同权限的链接时复用（幂等）
+- 生成 32 字符随机 hex token
+- 操作日志：SHARE_CREATE
+
+**成功响应 data**：
+```json
+{ "token": "a1b2c3d4e5f6...（32位hex）", "url": "/share/view/a1b2c3d4e5f6..." }
+```
+
+**错误码**：DOCUMENT_NOT_FOUND, SHARE_PERMISSION_EXCEEDED
+
+---
+
+### 3.63 GET /api/share/:token
+
+**路径**：`GET /api/share/:token`
+**鉴权**：JWT + `doc:read`
+
+打开分享链接：校验 token → 授予/升级文档权限 → 返回文档 ID 供前端跳转。
+
+**规则**：
+- token 必须为 32 位 hex 字符串
+- 链接必须存在且文档未删除
+- **权限不降级**：如果用户已有更高权限（数字更小），不覆盖
+- 无权限时新增 `doc_document_permissions` 行
+- 若访问者非链接创建者，发送 M17 通知链接创建者
+
+**成功响应 data**：
+```json
+{ "documentId": 50001, "title": "文档标题", "permission": 4 }
+```
+
+**错误码**：SHARE_NOT_FOUND, DOCUMENT_NOT_FOUND
 
 **错误码**：
 - 400 `INVALID_PARAMS` — ID 非法

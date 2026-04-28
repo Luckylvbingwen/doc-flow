@@ -51,6 +51,18 @@ v-if="detail?.canSubmitApproval" type="primary" :loading="submitLoading"
 					</el-icon>
 					下载
 				</el-button>
+				<el-button v-if="detail?.status === 4 && detail?.groupId && canMove" @click="movePickerVisible = true">
+					<el-icon>
+						<Rank />
+					</el-icon>
+					跨组移动
+				</el-button>
+				<el-button v-if="detail?.status === 4" @click="shareModalVisible = true">
+					<el-icon>
+						<Share />
+					</el-icon>
+					分享
+				</el-button>
 				<el-button v-if="detail?.canRemove" type="danger" plain :loading="removing" @click="handleRemove">
 					<el-icon>
 						<Delete />
@@ -243,9 +255,23 @@ v-if="detail?.groupId && detail?.canManagePermissions" v-model:visible="permModa
 v-model:visible="fullscreenPreviewVisible" :title="detail?.title"
 			:version-no="currentVersion?.versionNo" :file-type="fileType" :html="previewHtml" :loading="previewLoading" />
 
-		<!-- 底部 TAB 区（PRD §6.3.4：评论 / 飞书评论 / 审批记录；当前阶段只接审批记录） -->
+		<!-- 跨组移动弹窗 -->
+		<MoveTargetPicker
+v-if="detail?.groupId" v-model="movePickerVisible" v-model:loading="moveLoading"
+			:document-id="documentId" :exclude-group-id="detail.groupId" @confirm="onMoveConfirm" />
+
+		<!-- 分享链接弹窗 -->
+		<ShareLinkModal v-if="detail" v-model="shareModalVisible" :document-id="documentId" :file-name="detail.title" />
+
+		<!-- 底部 TAB 区（PRD §6.3.4：评论 / 飞书评论 / 审批记录） -->
 		<div class="pf-card df-file-tabs">
 			<TabBar v-model="bottomTab" :tabs="bottomTabs" />
+
+			<div v-if="bottomTab === 'comments'" class="df-file-tabs__panel">
+				<CommentThread
+:comments="commentList" :current-user="commentCurrentUser" :readonly="false"
+					:loading="commentsLoading" @submit="onCommentSubmit" @reply="onCommentReply" @delete="onCommentDelete" />
+			</div>
 
 			<div v-if="bottomTab === 'approvals'" class="df-file-tabs__panel">
 				<div v-if="approvalsLoading" class="df-file-tabs__loading">
@@ -286,6 +312,8 @@ import {
 	StarFilled,
 	Top,
 	Lock,
+	Rank,
+	Share,
 } from '@element-plus/icons-vue'
 import type { VersionInfo, CompareResult } from '~/types/version'
 import type { ApiResponse, PaginatedData } from '~/types/api'
@@ -308,8 +336,12 @@ import {
 	apiPinDocument,
 	apiUnpinDocument,
 	apiGetDocumentApprovals,
+	apiRequestCrossMove,
 } from '~/api/documents'
 import { apiSubmitApproval, apiGetApproval } from '~/api/approvals'
+import { apiGetComments, apiCreateComment, apiDeleteComment } from '~/api/comments'
+import type { CommentVO } from '~/api/comments'
+import type { CommentItem } from '~/components/CommentThread.vue'
 import { formatTime } from '~/utils/format'
 
 definePageMeta({
@@ -531,11 +563,37 @@ const uploadVisible = ref(false)
 // ── 全屏预览（PRD §6.3.4 line 507） ──
 const fullscreenPreviewVisible = ref(false)
 
+// ── 分享 ──
+const shareModalVisible = ref(false)
+
 // ── 文档级权限弹窗（PRD §6.3.4） ──
 const permModalVisible = ref(false)
 function onPermissionsSaved() {
 	// 锁图标 hasCustomPermissions 由后端按软删后剩余条目数判定，刷新详情自动对账
 	loadDetail()
+}
+
+// ── 跨组移动 ──
+const { can: canPerm } = useAuth()
+const canMove = computed(() => canPerm('doc:move'))
+const movePickerVisible = ref(false)
+const moveLoading = ref(false)
+
+async function onMoveConfirm(targetGroupId: number) {
+	moveLoading.value = true
+	try {
+		const res = await apiRequestCrossMove(documentId.value, targetGroupId)
+		if (res.success) {
+			msgSuccess(res.message || '移动请求已发起')
+			movePickerVisible.value = false
+		} else {
+			msgError(res.message || '发起移动失败')
+		}
+	} catch {
+		msgError('发起移动失败')
+	} finally {
+		moveLoading.value = false
+	}
 }
 function onVersionSidebarUpload() {
 	if (!detail.value?.canUploadVersion) {
@@ -612,10 +670,10 @@ function handleViewFile() {
 }
 
 // ── 底部 TAB（PRD §6.3.4） ──
-// 当前阶段只接审批记录；评论 / 飞书评论留待"评论 + 标注"大核心阶段
-type BottomTab = 'approvals'
-const bottomTab = ref<BottomTab>('approvals')
-const bottomTabs: Array<{ value: BottomTab; label: string; count?: number }> = [
+type BottomTab = 'comments' | 'approvals'
+const bottomTab = ref<BottomTab>('comments')
+const bottomTabs: Array<{ value: BottomTab; label: string }> = [
+	{ value: 'comments', label: '评论' },
 	{ value: 'approvals', label: '审批记录' },
 ]
 
@@ -638,11 +696,79 @@ async function loadApprovalRecords() {
 	}
 }
 
-// tab 激活时懒加载：当前默认即审批记录已 onMounted 时一次预拉；
-// 此 watch 为评论 / 飞书评论 tab 接入后切回审批记录时的兜底（避免重复请求）
+// tab 激活时懒加载
 watch(bottomTab, (val) => {
 	if (val === 'approvals' && !approvalsLoaded.value) loadApprovalRecords()
+	if (val === 'comments' && !commentsLoaded.value) loadComments()
 })
+
+// ── 评论模块 ──
+const commentList = ref<CommentItem[]>([])
+const commentsLoading = ref(false)
+const commentsLoaded = ref(false)
+
+const commentCurrentUser = computed(() => ({
+	name: useAuthStore().user?.name || '我',
+}))
+
+function toCommentItem(vo: CommentVO): CommentItem {
+	return {
+		id: vo.id,
+		user: vo.user,
+		content: vo.content,
+		time: vo.time,
+		deletable: vo.deletable,
+		replies: vo.replies?.map(toCommentItem) || [],
+	}
+}
+
+async function loadComments() {
+	commentsLoading.value = true
+	try {
+		const res = await apiGetComments(documentId.value)
+		if (res.success) commentList.value = res.data.map(toCommentItem)
+	} catch { /* silent */ } finally {
+		commentsLoading.value = false
+		commentsLoaded.value = true
+	}
+}
+
+async function onCommentSubmit(content: string) {
+	const res = await apiCreateComment(documentId.value, { content })
+	if (res.success) {
+		commentList.value.push(toCommentItem(res.data))
+		msgSuccess(res.message || '评论成功')
+	} else {
+		msgError(res.message || '评论失败')
+	}
+}
+
+async function onCommentReply(payload: { commentId: string | number; content: string }) {
+	const res = await apiCreateComment(documentId.value, {
+		content: payload.content,
+		parentId: Number(payload.commentId),
+	})
+	if (res.success) {
+		const parent = commentList.value.find(c => c.id === payload.commentId)
+		if (parent) {
+			if (!parent.replies) parent.replies = []
+			parent.replies.push(toCommentItem(res.data))
+		}
+		msgSuccess(res.message || '回复成功')
+	} else {
+		msgError(res.message || '回复失败')
+	}
+}
+
+async function onCommentDelete(commentId: string | number) {
+	const res = await apiDeleteComment(documentId.value, Number(commentId))
+	if (res.success) {
+		commentList.value = commentList.value.filter(c => c.id !== commentId)
+		msgSuccess(res.message || '删除成功')
+	} else {
+		msgError(res.message || '删除失败')
+	}
+}
 
 // ── 审批详情抽屉（只读） ──
 const approvalDrawerVisible = ref(false)
@@ -758,7 +884,7 @@ function backToGroup() {
 // ── 初始化 ──
 onMounted(async () => {
 	await loadDetail()
-	await Promise.all([fetchVersions(), loadPreview(), loadApprovalRecords()])
+	await Promise.all([fetchVersions(), loadPreview(), loadApprovalRecords(), loadComments()])
 })
 </script>
 

@@ -139,9 +139,9 @@ v-model="filterKeyword" placeholder="搜索文件名…" clearable size="default
 
 		<!-- 文件列表 -->
 		<DataTable
-v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list" :columns="columns"
-			:total="total" :loading="loading" :page-sizes="[10, 15, 30, 50]" empty-preset="no-docs" row-key="id"
-			@page-change="onPageChange">
+ref="tableRef" v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list"
+			:columns="columns" :total="total" :loading="loading" :page-sizes="[10, 15, 30, 50]" empty-preset="no-docs"
+			row-key="id" show-selection @page-change="onPageChange" @selection-change="onSelectionChange">
 			<template #title="{ row }">
 				<div class="gfp-title-cell">
 					<div class="gfp-file-icon" :class="fileIconClass(row)">
@@ -189,8 +189,11 @@ v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list" :col
 								</el-dropdown-item>
 								<el-dropdown-item v-if="canManagePermissions" command="permissions" :icon="Lock">
 									文档级权限
-								</el-dropdown-item>
-								<el-dropdown-item v-if="canRemoveDoc" command="remove" :icon="Delete" divided style="color: #ef4444">
+								</el-dropdown-item> <el-dropdown-item v-if="canMoveDoc" command="move" :icon="Rank">
+									跨组移动
+								</el-dropdown-item> <el-dropdown-item
+v-if="canRemoveDoc" command="remove" :icon="Delete" divided
+									style="color: #ef4444">
 									从组移除
 								</el-dropdown-item>
 							</el-dropdown-menu>
@@ -199,6 +202,24 @@ v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list" :col
 				</div>
 			</template>
 		</DataTable>
+
+		<!-- 批量操作栅 -->
+		<BulkActionBar :count="selectedRows.length" @clear="clearSelection">
+			<el-button size="small" @click="onBatchDownload">
+				<el-icon>
+					<Download />
+				</el-icon>
+				批量下载
+			</el-button>
+			<el-button
+v-if="canRemoveDoc" size="small" type="danger" plain :loading="batchRemoveLoading"
+				@click="onBatchRemove">
+				<el-icon>
+					<Delete />
+				</el-icon>
+				批量移除
+			</el-button>
+		</BulkActionBar>
 
 		<!-- 上传文件 -->
 		<UploadFileModal
@@ -210,6 +231,11 @@ v-if="data?.id" v-model="uploadVisible" :group-id="Number(data.id)" mode="first"
 v-if="permModalRow && data?.id" v-model:visible="permModalVisible"
 			:document-id="permModalRow.id" :file-name="permModalRow.title" :group-id="Number(data.id)"
 			@saved="onPermissionsSaved" />
+
+		<!-- 跨组移动弹窗 -->
+		<MoveTargetPicker
+v-if="moveRow && groupId" v-model="movePickerVisible" v-model:loading="moveLoading"
+			:document-id="moveRow.id" :exclude-group-id="groupId" @confirm="onMoveConfirm" />
 	</div>
 </template>
 
@@ -217,7 +243,7 @@ v-if="permModalRow && data?.id" v-model:visible="permModalVisible"
 import {
 	FolderOpened, Folder, Setting, Plus, Upload, Link, WarningFilled,
 	Search, Document, User, Clock, Top, Star, Lock, MoreFilled,
-	Download, Delete,
+	Download, Delete, Rank,
 } from '@element-plus/icons-vue'
 import type { TableColumn } from '~/components/DataTable.vue'
 import {
@@ -228,6 +254,8 @@ import {
 	apiUnfavoriteDocument,
 	apiPinDocument,
 	apiUnpinDocument,
+	apiBatchRemoveDocuments,
+	apiRequestCrossMove,
 } from '~/api/documents'
 import type { DocumentListItem } from '~/types/document'
 import type { DocumentListQuery } from '~/server/schemas/document'
@@ -260,6 +288,7 @@ const emit = defineEmits<{
 
 const { can } = useAuth()
 const canRemoveDoc = computed(() => can('doc:remove'))
+const canMoveDoc = computed(() => can('doc:move'))
 
 // ── 列表 + 组级权限标志 ──
 const reviewingCount = ref(0)
@@ -361,6 +390,8 @@ async function onRowCommand(cmd: string | number | object, row: DocumentListItem
 		await onTogglePin(row)
 	} else if (cmd === 'permissions') {
 		openPermissionModal(row)
+	} else if (cmd === 'move') {
+		openMovePicker(row)
 	}
 }
 
@@ -444,6 +475,82 @@ function openPermissionModal(row: DocumentListItem) {
 
 function onPermissionsSaved() {
 	refresh()
+}
+
+// ── 批量操作 ──
+const tableRef = ref<{ clearSelection: () => void } | null>(null)
+const selectedRows = ref<DocumentListItem[]>([])
+const batchRemoveLoading = ref(false)
+
+function onSelectionChange(selection: any[]) {
+	selectedRows.value = selection as DocumentListItem[]
+}
+
+function clearSelection() {
+	selectedRows.value = []
+	tableRef.value?.clearSelection()
+}
+
+function onBatchDownload() {
+	for (const row of selectedRows.value) {
+		window.open(apiDownloadDocumentUrl(row.id), '_blank')
+	}
+}
+
+async function onBatchRemove() {
+	const count = selectedRows.value.length
+	const confirmed = await msgConfirm(
+		`确定将选中的 ${count} 个文件从组移除？移除后将退回各归属人的个人中心。`,
+		'批量移除',
+		{ type: 'warning', confirmText: '确认移除', danger: true },
+	)
+	if (!confirmed) return
+	batchRemoveLoading.value = true
+	try {
+		const ids = selectedRows.value.map(r => r.id)
+		const res = await apiBatchRemoveDocuments(ids)
+		if (res.success) {
+			const msg = res.message || `已移除 ${res.data.removedCount} 个文件`
+			msgSuccess(msg)
+			clearSelection()
+			refresh()
+			emit('documents-changed')
+		} else {
+			msgError(res.message || '批量移除失败')
+		}
+	} catch {
+		msgError('批量移除失败')
+	} finally {
+		batchRemoveLoading.value = false
+	}
+}
+
+// ── 跨组移动 ──
+const movePickerVisible = ref(false)
+const moveLoading = ref(false)
+const moveRow = ref<DocumentListItem | null>(null)
+
+function openMovePicker(row: DocumentListItem) {
+	moveRow.value = row
+	movePickerVisible.value = true
+}
+
+async function onMoveConfirm(targetGroupId: number) {
+	if (!moveRow.value) return
+	moveLoading.value = true
+	try {
+		const res = await apiRequestCrossMove(moveRow.value.id, targetGroupId)
+		if (res.success) {
+			msgSuccess(res.message || '移动请求已发起')
+			movePickerVisible.value = false
+		} else {
+			msgError(res.message || '发起移动失败')
+		}
+	} catch {
+		msgError('发起移动失败')
+	} finally {
+		moveLoading.value = false
+	}
 }
 </script>
 
