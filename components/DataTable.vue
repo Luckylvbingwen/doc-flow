@@ -60,7 +60,9 @@ v-else-if="col.enum" :type="getEnumType(getCellValue(scope.row, col.prop), col.e
 				<!-- 操作列 -->
 				<el-table-column v-if="$slots.action" label="操作" :width="actionWidth" :fixed="actionFixed" align="center">
 					<template #default="scope">
-						<slot name="action" v-bind="scope" />
+						<div class="df-action-cell">
+							<slot name="action" v-bind="scope" />
+						</div>
 					</template>
 				</el-table-column>
 
@@ -145,7 +147,7 @@ const props = withDefaults(defineProps<DataTableProps>(), {
 	emptyText: '暂无数据',
 	emptyPreset: undefined,
 	stripe: false,
-	border: false,
+	border: true,
 	height: undefined,
 	maxHeight: undefined,
 	fillHeight: false,

@@ -30,6 +30,20 @@
   }
 }
 
+/* ── 操作列按钮容器 ── */
+.df-action-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 0;
+
+  /* 重置 Element Plus 相邻按钮默认 margin */
+  .el-button + .el-button {
+    margin-left: 0;
+  }
+}
+
 /* ── 搜索工具栏 ── */
 .df-table-toolbar {
   display: flex;

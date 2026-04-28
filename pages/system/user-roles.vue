@@ -82,8 +82,8 @@ useHead({ title: 'RBAC 用户授权 - DocFlow' })
 
 const columns = [
 	{ prop: 'userName', label: '用户名', minWidth: 120 },
-	{ prop: 'userEmail', label: '邮箱', minWidth: 160 },
-	{ prop: 'roleName', label: '角色', width: 140, slot: 'roleName' },
+	{ prop: 'userEmail', label: '邮箱', minWidth: 180 },
+	{ prop: 'roleName', label: '角色', minWidth: 120, slot: 'roleName' },
 	{ prop: 'createdAt', label: '分配时间', width: 170, dateFormat: 'datetime' }
 ]
 

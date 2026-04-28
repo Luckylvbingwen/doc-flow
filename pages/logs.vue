@@ -96,11 +96,11 @@ const activeFilterCount = computed(() => {
 })
 
 const columns: TableColumn[] = [
-	{ label: '操作类型', slot: 'type', width: 130 },
-	{ prop: 'actorName', label: '操作人', width: 120 },
-	{ prop: 'description', label: '操作描述', minWidth: 320 },
-	{ prop: 'groupName', label: '所属组', width: 160 },
-	{ label: '操作时间', slot: 'time', width: 160 },
+	{ label: '操作类型', slot: 'type', width: 120 },
+	{ prop: 'actorName', label: '操作人', minWidth: 100 },
+	{ prop: 'description', label: '操作描述', minWidth: 280 },
+	{ prop: 'groupName', label: '所属组', minWidth: 120 },
+	{ label: '操作时间', slot: 'time', width: 170 },
 ]
 
 const {

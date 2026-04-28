@@ -322,10 +322,10 @@ function fetchListWithFlags(
 }
 
 const columns: TableColumn[] = [
-	{ label: '文件名', slot: 'title', minWidth: 280 },
-	{ label: '版本', slot: 'version', width: 100 },
-	{ prop: 'ownerName', label: '归属人', width: 120 },
-	{ label: '更新时间', slot: 'updatedAt', width: 160 },
+	{ label: '文件名', slot: 'title', minWidth: 240 },
+	{ label: '版本', slot: 'version', minWidth: 80 },
+	{ prop: 'ownerName', label: '归属人', minWidth: 100 },
+	{ label: '更新时间', slot: 'updatedAt', width: 170 },
 	{ label: '操作', slot: 'actions', width: 160, fixed: 'right' },
 ]
 

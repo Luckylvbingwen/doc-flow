@@ -159,10 +159,10 @@ const bulkPurging = ref(false)
 const busy = computed(() => restoringId.value != null || purgingId.value != null || bulkRestoring.value || bulkPurging.value)
 
 const columns: TableColumn[] = [
-	{ label: '文件名', slot: 'title', minWidth: 260 },
-	{ prop: 'groupName', label: '原组', width: 160 },
-	{ prop: 'deletedByName', label: '删除人', width: 120 },
-	{ label: '删除时间', slot: 'deletedAt', width: 180 },
+	{ label: '文件名', slot: 'title', minWidth: 240 },
+	{ prop: 'groupName', label: '原组', minWidth: 120 },
+	{ prop: 'deletedByName', label: '删除人', minWidth: 100 },
+	{ label: '删除时间', slot: 'deletedAt', width: 170 },
 	{ label: '大小', slot: 'fileSize', width: 100, align: 'right' },
 	{ label: '版本数', slot: 'versionCount', width: 90, align: 'center' },
 ]

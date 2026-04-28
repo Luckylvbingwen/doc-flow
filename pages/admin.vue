@@ -110,14 +110,14 @@ v-for="r in row.roles" :key="r.code" class="admin-role-badge" :class="{ 'is-feis
 					停用时间：{{ row.deactivatedAt ? formatTime(row.deactivatedAt, 'YYYY-MM-DD') : '—' }}
 				</span>
 				<!-- 活跃行 -->
-				<div v-else class="admin-actions">
+				<template v-else>
 					<el-button v-auth="'admin:role_assign'" link type="primary" size="small" @click="onOpenAssign(row)">
 						角色管理
 					</el-button>
 					<el-button link type="danger" size="small" @click="onDeactivateStub(row)">
 						停用
 					</el-button>
-				</div>
+				</template>
 			</template>
 		</DataTable>
 
@@ -175,10 +175,10 @@ const activeFilterCount = computed(() => {
 
 // ── 列 ──
 const columns: TableColumn[] = [
-	{ label: '姓名', slot: 'name', width: 180, fixed: 'left' },
-	{ prop: 'email', label: '邮箱', minWidth: 200, showOverflowTooltip: true },
-	{ label: '系统角色', slot: 'roles', width: 220 },
-	{ label: '管理范围', slot: 'scopes', minWidth: 260 },
+	{ label: '姓名', slot: 'name', minWidth: 140, fixed: 'left' },
+	{ prop: 'email', label: '邮箱', minWidth: 180, showOverflowTooltip: true },
+	{ label: '系统角色', slot: 'roles', minWidth: 180 },
+	{ label: '管理范围', slot: 'scopes', minWidth: 220 },
 	{ label: '状态', slot: 'status', width: 100, align: 'center' },
 ]
 
@@ -407,12 +407,6 @@ async function onSyncFeishu() {
 }
 
 // ── 操作列 ──
-.admin-actions {
-	display: inline-flex;
-	gap: 8px;
-	justify-content: center;
-}
-
 .admin-system-preset,
 .admin-deactivated-time {
 	font-size: 12px;

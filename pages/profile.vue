@@ -188,13 +188,13 @@ const emptyPreset = computed(() => {
 })
 
 const columns: TableColumn[] = [
-	{ label: '文件名', slot: 'title', minWidth: 280 },
-	{ label: '来源', slot: 'source', width: 160 },
+	{ label: '文件名', slot: 'title', minWidth: 260 },
+	{ label: '来源', slot: 'source', minWidth: 120 },
 	{ prop: 'versionNo', label: '版本', width: 80, align: 'center' },
-	{ prop: 'ownerName', label: '创建人', width: 120 },
+	{ prop: 'ownerName', label: '创建人', minWidth: 100 },
 	{ label: '状态', slot: 'status', width: 100, align: 'center' },
-	{ prop: 'groupName', label: '所属组', width: 160 },
-	{ label: '更新时间', slot: 'updatedAt', width: 160 },
+	{ prop: 'groupName', label: '所属组', minWidth: 120 },
+	{ label: '更新时间', slot: 'updatedAt', width: 170 },
 ]
 
 // 加载操作态
