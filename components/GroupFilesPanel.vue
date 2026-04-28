@@ -543,6 +543,7 @@ async function onMoveConfirm(targetGroupId: number) {
 		if (res.success) {
 			msgSuccess(res.message || '移动请求已发起')
 			movePickerVisible.value = false
+			refresh()
 		} else {
 			msgError(res.message || '发起移动失败')
 		}

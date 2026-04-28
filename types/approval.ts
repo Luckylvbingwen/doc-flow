@@ -113,7 +113,7 @@ export interface ApprovalDetail {
 	/** 审批链节点 */
 	chain: ChainNode[]
 	/** 审批状态 */
-	status: 'pending' | 'approved' | 'rejected'
+	status: 'pending' | 'approved' | 'rejected' | 'withdrawn'
 	/** 额外：文档 id（审批完成后用于跳转文件详情页） */
 	documentId?: number
 }
@@ -123,34 +123,34 @@ export interface ApprovalDetail {
  * 由 approvals.vue 转成 ApprovalDetail 后传给抽屉
  */
 export interface ApprovalFullDetailData {
-	id:                number
-	status:            ApprovalStatus
-	documentId:        number
-	title:             string
-	ext:               string
-	groupId:           number | null
-	groupName:         string
-	initiatorId:       number
-	initiatorName:     string
-	versionId:         number | null
-	versionNo:         string
-	fileSize:          number | null
-	uploadedAt:        number | null
-	currentNodeOrder:  number | null
-	startedAt:         number
-	finishedAt:        number | null
+	id: number
+	status: ApprovalStatus
+	documentId: number
+	title: string
+	ext: string
+	groupId: number | null
+	groupName: string
+	initiatorId: number
+	initiatorName: string
+	versionId: number | null
+	versionNo: string
+	fileSize: number | null
+	uploadedAt: number | null
+	currentNodeOrder: number | null
+	startedAt: number
+	finishedAt: number | null
 	prevVersion: {
-		id:        number
+		id: number
 		versionNo: string
-		fileSize:  number
+		fileSize: number
 	} | null
 	nodes: Array<{
-		id:             number
-		order:          number
-		approverId:     number
-		approverName:   string
-		actionStatus:   1 | 2 | 3   // 1 待处理 / 2 通过 / 3 驳回
-		actionComment:  string | null
-		actionAt:       number | null
+		id: number
+		order: number
+		approverId: number
+		approverName: string
+		actionStatus: 1 | 2 | 3   // 1 待处理 / 2 通过 / 3 驳回
+		actionComment: string | null
+		actionAt: number | null
 	}>
 }

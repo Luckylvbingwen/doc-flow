@@ -69,7 +69,7 @@ useHead({ title: '共享文档 - DocFlow' })
 const { pageLoading, run } = usePageLoading()
 
 // ── Tree component ref ──
-const treeRef = ref<{ activateCategory: (id: string) => void; activateOrgUnit: (id: string) => void; activateGroup: (id: number) => void } | null>(null)
+const treeRef = ref<{ activateCategory: (id: string) => void; activateOrgUnit: (id: string) => void; activateGroup: (id: number) => void; expandAll: () => void } | null>(null)
 
 // ── Tree panel resize ──
 const treePanelWidth = ref(260)
@@ -131,6 +131,8 @@ function selectGroupById(id: number) {
 
 async function refreshTree() {
 	await fetchTree()
+	await nextTick()
+	treeRef.value?.expandAll()
 	resyncSelection()
 }
 

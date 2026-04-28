@@ -106,7 +106,7 @@
 - [x] ~~审批记录标签页~~ ✅ 2026-04-27（底部 TabBar + 审批记录列表 + ApprovalDrawer 只读模式 + `GET /api/documents/:id/approvals`）
 - [x] ~~权限设置弹窗（PermissionEditor 集成）~~ ✅ 2026-04-27（DocPermissionModal + GroupMemberPickerModal + GET/PUT /api/documents/:id/permissions + 4 值权限 enum 全栈对齐 + 文件信息卡橙锁图标）
 - [x] ~~跨组移动弹窗（MoveTargetPicker 集成）~~ ✅ 2026-04-28（MoveTargetPicker + POST /api/documents/:id/move + PUT /api/documents/cross-move/:id/review + M12/M13 通知）
-- [ ] 上传新版本完整流程
+- [x] ~~上传新版本完整流程~~ ✅ 2026-04-28（POST /api/documents/:id/versions + UploadFileModal update 模式 + VersionSidebar 按钮 + 审批路径判定 + 通知日志，全链路已实现）
 - [x] ~~全屏文件预览器~~ ✅ 2026-04-27（`FullscreenPreviewer` Teleport 全屏壳 + 顶栏标题/类型/版本徽章 + 左侧目录面板（H1-H3 自动抽取 + IntersectionObserver 高亮 + 可折叠）+ 主体 DocPreview 包裹（渲染字号 / 行距加大）+ 右侧批注面板占位 + ESC 关闭 + body scroll lock；附带修 DocPreview MD/TXT 分支，新增 `html` prop 优先使用服务端预渲染 HTML，原 `content` 客户端 markdown-it 路径作 fallback）
 - [x] ~~收藏 / 置顶图标按钮（PageTitle 圆形按钮，状态切换 + 乐观更新）~~ ✅ 2026-04-24
 - [x] ~~下载按钮~~ ✅ 2026-04-28（文件详情页操作栏新增下载当前版本按钮）
@@ -170,15 +170,15 @@
 
 ## 六、数据层
 
-- [ ] 版本列表 API 接真实数据库
-- [ ] 版本对比 API 接真实文件存储
+- [x] ~~版本列表 API 接真实数据库~~ ✅ 2026-04-28（GET /api/documents/:id/versions 查询真实表 + JOIN uploader + 分页）
+- [x] ~~版本对比 API 接真实文件存储~~ ✅ 2026-04-28（POST /api/version/compare 读 MinIO 文件 + diff 算法 + HTML 渲染）
 - [x] ~~回滚 API 与事务~~ ✅ 2026-04-27（POST /api/documents/:id/rollback — 复用目标版本 storage_key 生成新版本 + 前端 VersionSidebar 按钮 + canRollback 读端字段）
-- [ ] 上传新版本 API
-- [ ] 审批流 CRUD API
-- [ ] 文档 CRUD API
+- [x] ~~上传新版本 API~~ ✅ 2026-04-28（POST /api/documents/:id/versions + multipart 解析 + 格式转换 + 版本号自增 + executeUpload(mode='update')）
+- [x] ~~审批流 CRUD API~~ ✅ 2026-04-28（submit/approve/reject/withdraw + 审批模板 GET/PUT，全部真实实现）
+- [x] ~~文档 CRUD API~~ ✅ 2026-04-28（list/get/upload/新版本/草稿删除/从组移除/批量移除/下载/预览/权限/收藏/置顶/评论/跨组移动，23 个端点全部真实实现）
 - [x] ~~通知 API~~ ✅ 2026-04-18（4 接口已完成，见「七、通知触发点接入清单」）
 - [x] ~~收藏 / 置顶 API~~ ✅ 2026-04-24（POST/DELETE favorite + POST/DELETE pin + canPin 读端扩展 + purge 级联清理）
-- [ ] 日志查询 API
+- [x] ~~日志查询 API~~ ✅ 2026-04-28（GET /api/logs 查询真实表，支持类型/关键词/日期筛选 + 分页，38+ 处埋点写入）
 
 ---
 

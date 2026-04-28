@@ -86,7 +86,8 @@ const tabs: Array<{ value: ApprovalTab; label: string }> = [
 	{ value: 'handled', label: '我已处理' },
 ]
 
-const tab = ref<ApprovalTab>('pending')
+const route = useRoute()
+const tab = ref<ApprovalTab>((route.query.tab as ApprovalTab) || 'pending')
 const filterStatus = ref<ApprovalStatus | null>(null)
 const withdrawingId = ref<number | null>(null)
 
@@ -212,6 +213,7 @@ async function buildApprovalDetail(data: ApprovalFullDetailData): Promise<Approv
 	let drawerStatus: ApprovalDetail['status']
 	if (data.status === 2) drawerStatus = 'pending'
 	else if (data.status === 3) drawerStatus = 'approved'
+	else if (data.status === 5) drawerStatus = 'withdrawn'
 	else drawerStatus = 'rejected'
 
 	// 变更摘要（可选，有 prevVersion 才能调对比）

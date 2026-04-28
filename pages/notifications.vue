@@ -135,7 +135,8 @@ onMounted(() => {
 async function handleCardClick(item: NotificationItem) {
 	if (!item.read) {
 		try {
-			await markNotificationRead(item.id)
+			const res = await markNotificationRead(item.id)
+			if (!res.success) throw new Error()
 			const row = list.value.find(x => x.id === item.id)
 			if (row) {
 				row.read = true

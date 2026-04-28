@@ -509,6 +509,7 @@ async function loadCompareResult() {
 
 function handleCompare(version: VersionInfo) {
 	compareTarget.value = version
+	compareResult.value = null
 	inlineComparing.value = true
 	loadCompareResult()
 }
@@ -688,13 +689,16 @@ async function loadApprovalRecords() {
 	approvalsLoading.value = true
 	try {
 		const res = await apiGetDocumentApprovals(documentId.value)
-		if (res.success) approvalRecords.value = res.data
-		else msgError(res.message || '加载审批记录失败')
+		if (res.success) {
+			approvalRecords.value = res.data
+			approvalsLoaded.value = true
+		} else {
+			msgError(res.message || '加载审批记录失败')
+		}
 	} catch {
 		msgError('加载审批记录失败')
 	} finally {
 		approvalsLoading.value = false
-		approvalsLoaded.value = true
 	}
 }
 
@@ -729,10 +733,12 @@ async function loadComments() {
 	commentsLoading.value = true
 	try {
 		const res = await apiGetComments(documentId.value)
-		if (res.success) commentList.value = res.data.map(toCommentItem)
+		if (res.success) {
+			commentList.value = res.data.map(toCommentItem)
+			commentsLoaded.value = true
+		}
 	} catch { /* silent */ } finally {
 		commentsLoading.value = false
-		commentsLoaded.value = true
 	}
 }
 
@@ -766,7 +772,17 @@ async function onCommentReply(payload: { commentId: string | number; content: st
 async function onCommentDelete(commentId: string | number) {
 	const res = await apiDeleteComment(documentId.value, Number(commentId))
 	if (res.success) {
-		commentList.value = commentList.value.filter(c => c.id !== commentId)
+		// 顶层评论直接移除；回复从父级 replies 中过滤
+		const topIdx = commentList.value.findIndex(c => c.id === commentId)
+		if (topIdx !== -1) {
+			commentList.value.splice(topIdx, 1)
+		} else {
+			for (const c of commentList.value) {
+				if (c.replies) {
+					c.replies = c.replies.filter(r => r.id !== commentId)
+				}
+			}
+		}
 		msgSuccess(res.message || '删除成功')
 	} else {
 		msgError(res.message || '删除失败')

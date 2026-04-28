@@ -126,15 +126,19 @@ function openMemberSelector() {
 async function onMembersSelected(users: SelectedUser[], role: number) {
 	if (users.length === 0) return
 
-	const res = await apiAddGroupMembers(props.groupId, {
-		members: users.map(u => ({ userId: u.id, role: role as 1 | 2 | 3 })),
-	})
+	try {
+		const res = await apiAddGroupMembers(props.groupId, {
+			members: users.map(u => ({ userId: u.id, role: role as 1 | 2 | 3 })),
+		})
 
-	if (res.success) {
-		msgSuccess(res.message || '成员已添加')
-		memberPanelRef.value?.refresh()
-	} else {
-		msgError(res.message || '添加失败')
+		if (res.success) {
+			msgSuccess(res.message || '成员已添加')
+			memberPanelRef.value?.refresh()
+		} else {
+			msgError(res.message || '添加失败')
+		}
+	} catch {
+		msgError('添加失败')
 	}
 }
 
@@ -169,13 +173,18 @@ async function handleDeleteGroup() {
 	)
 	if (!confirmed) return
 
-	const res = await apiDeleteGroup(props.groupId)
-	if (res.success) {
-		msgSuccess(res.message || '组已删除')
-		emit('success')
-		close()
-	} else {
-		msgError(res.message || '删除失败')
+	try {
+		const res = await apiDeleteGroup(props.groupId)
+		if (res.success) {
+			msgSuccess(res.message || '组已删除')
+			emit('success')
+			close()
+		} else {
+			msgError(res.message || '删除失败')
+		}
+	} catch {
+		msgError('删除失败')
 	}
 }
+
 </script>

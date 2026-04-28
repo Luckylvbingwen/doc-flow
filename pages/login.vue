@@ -231,6 +231,8 @@ const handleFeishuCallback = async () => {
 
 		if (!res.success || !res.data) {
 			msgError(res.message || '飞书登录失败')
+			feishuLoading.value = false
+			feishuCallbackPending.value = false
 			return
 		}
 
