@@ -83,6 +83,19 @@
 - `tests/e2e/` — E2E
 - 单元/API/组件文件 `*.test.ts`，E2E `*.spec.ts`
 
+## 八、待引入（编辑器里程碑）
+
+> 以下技术栈在编辑器功能启动时引入，当前阶段无需安装。
+
+| 类别 | 候选方案 | 说明 |
+|---|---|---|
+| 富文本编辑器 | **Milkdown (Crepe)** 或 **tiptap** | 两者都基于 ProseMirror；Milkdown Crepe 模式开箱即用，tiptap 生态更大 |
+| 协同引擎 | **Yjs** (CRDT) | 客户端冲突解决，离线友好 |
+| 协同服务端 | **Hocuspocus** | Yjs WebSocket 服务，房间管理 + 持久化 |
+| 技术验证仓库 | [markdowm-sample](https://github.com/empty-byte/markdowm-sample) | 已验证：WYSIWYG + Slash 菜单 + 选区评论锚点 + 历史快照还原 + 多人协同 |
+
+**决策时间点**：P0-P2 完成后，启动编辑器里程碑前做 Milkdown vs tiptap POC 对比。
+
 **覆盖范围**：`server/schemas/`、`server/api/`、`composables/`、`utils/`、`stores/`
 
 ## 八、工程化

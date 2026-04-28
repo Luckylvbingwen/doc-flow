@@ -153,7 +153,10 @@
 |----|------|--------|
 | sortablejs / @types/sortablejs | 审批链节点拖拽排序、成员排序 | 高 |
 | pdfjs-dist | PDF 全屏预览（页级导航） | 中 |
-| @tiptap/vue-3 系列 | 在线富文本编辑（需求确认后再装） | 低 |
+| @tiptap/vue-3 系列 **或** @milkdown/kit (Crepe) | 在线富文本编辑（需求确认后再装） | 低 |
+| yjs + @hocuspocus/provider | CRDT 多人协同（与编辑器配套） | 低 |
+
+> **编辑器技术选型参考**：[markdowm-sample](https://github.com/empty-byte/markdowm-sample) 仓库已验证 **Milkdown (Crepe) + Yjs + Hocuspocus** 方案，覆盖 WYSIWYG 编辑、Slash 菜单、选区评论锚点、历史快照还原、多人协同。启动编辑器开发时可直接参考或复用，也可与 tiptap + Yjs 做横向 POC 对比。
 
 ## 五、样式层
 
