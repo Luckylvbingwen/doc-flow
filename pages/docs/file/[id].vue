@@ -265,6 +265,11 @@ v-if="detail?.groupId" v-model="movePickerVisible" v-model:loading="moveLoading"
 v-if="detail" v-model="shareModalVisible" :document-id="documentId"
 			:file-name="`${detail.title}.${detail.ext}`" />
 
+		<!-- 版本回滚确认弹窗 -->
+		<RollbackConfirmModal
+v-model="rollbackVisible" :file-name="fileName" :current-version="currentVersionNo"
+			:target-version="rollbackTarget?.versionNo ?? ''" :loading="rollbackLoading" @confirm="confirmRollback" />
+
 		<!-- 底部 TAB 区（PRD §6.3.4：评论 / 飞书评论 / 审批记录） -->
 		<div class="pf-card df-file-tabs">
 			<TabBar v-model="bottomTab" :tabs="bottomTabs" />
@@ -533,19 +538,28 @@ function handleDownloadCurrent() {
 }
 
 // ── 版本回滚（PRD §6.3.4 — 回滚生成新版本，不删除中间版本） ──
+const rollbackVisible = ref(false)
+const rollbackTarget = ref<VersionInfo | null>(null)
 const rollbackLoading = ref(false)
-async function handleRollback(version: VersionInfo) {
-	const confirmed = await msgConfirm(
-		`确定将文档回滚至 ${version.versionNo}？回滚会基于该版本创建一个新的发布版本，中间版本不会被删除。`,
-		'版本回滚',
-		{ type: 'warning', confirmText: '确认回滚' },
-	)
-	if (!confirmed) return
+
+const currentVersionNo = computed(() => {
+	const cur = versions.value.find(v => v.isCurrent)
+	return cur?.versionNo ?? detail.value?.currentVersion?.versionNo ?? '-'
+})
+
+function handleRollback(version: VersionInfo) {
+	rollbackTarget.value = version
+	rollbackVisible.value = true
+}
+
+async function confirmRollback() {
+	if (!rollbackTarget.value) return
 	rollbackLoading.value = true
 	try {
-		const res = await apiRollbackVersion(documentId.value, version.id)
+		const res = await apiRollbackVersion(documentId.value, rollbackTarget.value.id)
 		if (res.success) {
 			msgSuccess(res.message || '回滚成功')
+			rollbackVisible.value = false
 			await Promise.all([loadDetail(), fetchVersions()])
 			await loadPreview()
 			// 退出对比模式（如果在对比中触发回滚）

@@ -527,6 +527,83 @@ html.dark .el-drawer.df-detail-drawer {
   border-left: 3px solid var(--df-primary);
 }
 
+/* ── 版本回滚确认弹窗 ── */
+.el-dialog.df-modal.df-rollback-modal {
+  .el-dialog__header {
+    background: #fef3c7;
+  }
+
+  .rollback-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .rollback-header-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #92400e;
+  }
+}
+
+.rollback-icon-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.rollback-hint {
+  font-size: 14px;
+  color: var(--df-text);
+}
+
+.rollback-info-card {
+  background: var(--df-surface);
+  border: 1px solid var(--df-border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.rollback-info-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.rollback-info-item {
+  .rollback-info-label {
+    font-size: 11px;
+    color: var(--df-subtext);
+    margin-bottom: 4px;
+  }
+
+  .rollback-info-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--df-text);
+    word-break: break-all;
+  }
+}
+
+.rollback-direction {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+html.dark .el-dialog.df-modal.df-rollback-modal {
+  .el-dialog__header {
+    background: #78350f;
+  }
+
+  .rollback-header-title {
+    color: #fde68a;
+  }
+}
+
 .ap-preview .ap-card__header {
   background: transparent;
   border-bottom-color: color-mix(
