@@ -6,9 +6,14 @@
 				<div v-for="comment in comments" :key="comment.id" class="df-comment-item">
 					<!-- 主评论 -->
 					<div class="df-comment-row">
-						<div class="df-comment-avatar" :style="{ background: comment.user.color || '#a1a1aa' }"
+						<div
+class="df-comment-avatar"
+							:style="{ background: comment.user.avatar ? 'none' : (comment.user.color || '#a1a1aa') }"
 							:title="comment.user.name">
-							{{ comment.user.avatar || comment.user.name[0] }}
+							<img
+v-if="comment.user.avatar" :src="comment.user.avatar" :alt="comment.user.name"
+								class="df-comment-avatar__img">
+							<template v-else>{{ comment.user.name[0] }}</template>
 						</div>
 						<div class="df-comment-body">
 							<div class="df-comment-header">
@@ -23,7 +28,8 @@
 									</el-icon>
 									回复
 								</button>
-								<el-popconfirm v-if="comment.deletable" title="确定删除这条评论？" confirm-button-text="删除"
+								<el-popconfirm
+v-if="comment.deletable" title="确定删除这条评论？" confirm-button-text="删除"
 									cancel-button-text="取消" confirm-button-type="danger" width="200"
 									@confirm="$emit('delete', comment.id)">
 									<template #reference>
@@ -43,7 +49,8 @@
 									<div class="df-reply-input-label">
 										回复 {{ comment.user.name }}：
 									</div>
-									<el-input ref="replyInputRef" v-model="replyContent" type="textarea" :rows="2" :maxlength="500"
+									<el-input
+ref="replyInputRef" v-model="replyContent" type="textarea" :rows="2" :maxlength="500"
 										show-word-limit placeholder="输入回复…" resize="none" @keydown.ctrl.enter="submitReply(comment.id)"
 										@keydown.meta.enter="submitReply(comment.id)" />
 									<div class="df-reply-input-footer">
@@ -52,7 +59,8 @@
 											<el-button size="small" @click="cancelReply">
 												取消
 											</el-button>
-											<el-button type="primary" size="small" :disabled="!replyContent.trim()"
+											<el-button
+type="primary" size="small" :disabled="!replyContent.trim()"
 												@click="submitReply(comment.id)">
 												发送回复
 											</el-button>
@@ -64,9 +72,14 @@
 							<!-- 嵌套回复列表 -->
 							<div v-if="comment.replies && comment.replies.length > 0" class="df-comment-replies">
 								<div v-for="reply in comment.replies" :key="reply.id" class="df-comment-row df-comment-row--reply">
-									<div class="df-comment-avatar df-comment-avatar--sm"
-										:style="{ background: reply.user.color || '#a1a1aa' }" :title="reply.user.name">
-										{{ reply.user.avatar || reply.user.name[0] }}
+									<div
+class="df-comment-avatar df-comment-avatar--sm"
+										:style="{ background: reply.user.avatar ? 'none' : (reply.user.color || '#a1a1aa') }"
+										:title="reply.user.name">
+										<img
+v-if="reply.user.avatar" :src="reply.user.avatar" :alt="reply.user.name"
+											class="df-comment-avatar__img">
+										<template v-else>{{ reply.user.name[0] }}</template>
 									</div>
 									<div class="df-comment-body">
 										<div class="df-comment-header">
@@ -80,7 +93,8 @@
 											{{ reply.content }}
 										</div>
 										<div v-if="!readonly" class="df-comment-actions">
-											<el-popconfirm v-if="reply.deletable" title="确定删除这条回复？" confirm-button-text="删除"
+											<el-popconfirm
+v-if="reply.deletable" title="确定删除这条回复？" confirm-button-text="删除"
 												cancel-button-text="取消" confirm-button-type="danger" width="200"
 												@confirm="$emit('delete', reply.id)">
 												<template #reference>
@@ -115,11 +129,15 @@
 
 		<!-- 评论输入区 -->
 		<div v-if="!readonly && !loading" class="df-comment-composer">
-			<div class="df-comment-avatar" :style="{ background: currentUser.color || 'var(--df-primary)' }">
-				{{ currentUser.avatar || currentUser.name[0] }}
+			<div
+class="df-comment-avatar"
+				:style="{ background: currentUser.avatar ? 'none' : (currentUser.color || 'var(--df-primary)') }">
+				<img v-if="currentUser.avatar" :src="currentUser.avatar" :alt="currentUser.name" class="df-comment-avatar__img">
+				<template v-else>{{ currentUser.name[0] }}</template>
 			</div>
 			<div class="df-comment-composer-body">
-				<el-input v-model="newComment" type="textarea" :rows="3" :maxlength="1000" show-word-limit placeholder="输入评论…"
+				<el-input
+v-model="newComment" type="textarea" :rows="3" :maxlength="1000" show-word-limit placeholder="输入评论…"
 					resize="none" @keydown.ctrl.enter="submitComment" @keydown.meta.enter="submitComment" />
 				<div class="df-comment-composer-footer">
 					<span class="df-comment-composer-hint">Ctrl + Enter 发送</span>

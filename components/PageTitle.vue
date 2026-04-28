@@ -52,9 +52,10 @@ const onRefresh = () => {
 <style lang="scss" scoped>
 .page-title {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
-	gap: 16px;
+	flex-wrap: wrap;
+	gap: 12px 16px;
 	margin-bottom: 14px;
 
 	&-main {
@@ -78,6 +79,9 @@ const onRefresh = () => {
 	}
 
 	&-text {
+		min-width: 200px;
+		flex-shrink: 1;
+
 		h2 {
 			font-size: 20px;
 			font-weight: 700;
@@ -95,6 +99,7 @@ const onRefresh = () => {
 	&-actions {
 		display: flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 8px;
 	}
 }

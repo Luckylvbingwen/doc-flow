@@ -40,6 +40,13 @@
   font-size: 11px;
 }
 
+.df-comment-avatar__img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 /* ── 内容体 ── */
 .df-comment-body {
   flex: 1;
@@ -358,6 +365,7 @@ html.dark .df-bulk-bar {
 
 .df-comment-composer-body {
   flex: 1;
+  min-width: 0;
 }
 
 .df-comment-composer-footer {

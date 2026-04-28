@@ -179,7 +179,7 @@ class="df-skeleton-block"
 				</main>
 			</el-scrollbar>
 
-			<el-backtop v-if="!isFixedLayout" target=".pf-content-scrollbar .el-scrollbar__wrap" :right="28" :bottom="28" />
+			<el-backtop v-if="!isFixedLayout" target=".pf-content-scrollbar .el-scrollbar__wrap" :right="28" :bottom="80" />
 		</section>
 	</div>
 </template>

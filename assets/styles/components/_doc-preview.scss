@@ -591,10 +591,12 @@
   flex-direction: column;
   gap: 12px;
   padding: 14px 16px 18px;
+  overflow: hidden;
 }
 
 .df-file-tabs__panel {
   min-height: 160px;
+  min-width: 0;
 }
 
 .df-file-tabs__loading {

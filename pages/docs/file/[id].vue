@@ -261,7 +261,9 @@ v-if="detail?.groupId" v-model="movePickerVisible" v-model:loading="moveLoading"
 			:document-id="documentId" :exclude-group-id="detail.groupId" @confirm="onMoveConfirm" />
 
 		<!-- 分享链接弹窗 -->
-		<ShareLinkModal v-if="detail" v-model="shareModalVisible" :document-id="documentId" :file-name="detail.title" />
+		<ShareLinkModal
+v-if="detail" v-model="shareModalVisible" :document-id="documentId"
+			:file-name="`${detail.title}.${detail.ext}`" />
 
 		<!-- 底部 TAB 区（PRD §6.3.4：评论 / 飞书评论 / 审批记录） -->
 		<div class="pf-card df-file-tabs">
@@ -709,6 +711,7 @@ const commentsLoaded = ref(false)
 
 const commentCurrentUser = computed(() => ({
 	name: useAuthStore().user?.name || '我',
+	avatar: useAuthStore().user?.avatar || undefined,
 }))
 
 function toCommentItem(vo: CommentVO): CommentItem {

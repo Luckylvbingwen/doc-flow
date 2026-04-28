@@ -8,6 +8,11 @@
   z-index: 10000 !important;
 }
 
+/* ── ElMessage Toast 始终置顶（避免被 Dialog 遮罩挡住） ── */
+.el-message {
+  z-index: 10001 !important;
+}
+
 /* ── 弹窗 ── */
 .el-dialog.df-modal {
   border-radius: var(--df-radius-lg);
