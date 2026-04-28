@@ -1,16 +1,34 @@
 <template>
 	<section class="pf-page-stack">
-		<PageTitle :title="fileName || '加载中...'" :subtitle="subtitle">
-			<template #actions>
-				<el-button @click="backToGroup">
+		<!-- 顶栏：返回 + 文件标识 + 核心操作 + 更多菜单 -->
+		<div class="df-file-topbar">
+			<div class="df-file-topbar__left">
+				<el-button text @click="backToGroup">
 					<el-icon>
 						<Back />
 					</el-icon>
 					{{ backLabel }}
 				</el-button>
-				<el-tooltip v-if="detail" :content="detail.isFavorited ? '取消收藏' : '收藏'" placement="top">
+				<span class="df-file-topbar__sep" />
+				<div class="df-file-icon df-file-icon--sm" :class="`df-file-icon--${fileType}`">
+					{{ fileTypeAbbr }}
+				</div>
+				<h2 class="df-file-topbar__name">{{ fileName || '加载中...' }}</h2>
+				<span v-if="detail" class="file-status" :class="`file-status--${statusKey}`">
+					{{ statusText }}
+				</span>
+				<span v-if="currentVersion" class="df-file-topbar__ver">{{ currentVersion.versionNo }}</span>
+				<el-tooltip v-if="detail?.hasCustomPermissions" content="该文档已设置文档级权限" placement="top">
+					<el-icon class="df-file-info-lock" color="#f97316" :size="15">
+						<Lock />
+					</el-icon>
+				</el-tooltip>
+			</div>
+			<div v-if="detail" class="df-file-topbar__right">
+				<!-- 收藏 -->
+				<el-tooltip :content="detail.isFavorited ? '取消收藏' : '收藏'" placement="top">
 					<el-button
-circle :type="detail.isFavorited ? 'warning' : 'default'" :loading="favoritePending"
+circle size="small" :type="detail.isFavorited ? 'warning' : 'default'" :loading="favoritePending"
 						@click="onToggleFavorite">
 						<el-icon>
 							<StarFilled v-if="detail.isFavorited" />
@@ -18,86 +36,101 @@ circle :type="detail.isFavorited ? 'warning' : 'default'" :loading="favoritePend
 						</el-icon>
 					</el-button>
 				</el-tooltip>
-				<el-tooltip v-if="detail?.canPin" :content="detail.isPinned ? '取消置顶' : '置顶'" placement="top">
-					<el-button circle :type="detail.isPinned ? 'primary' : 'default'" :loading="pinPending" @click="onTogglePin">
+				<!-- 置顶 -->
+				<el-tooltip v-if="detail.canPin" :content="detail.isPinned ? '取消置顶' : '置顶'" placement="top">
+					<el-button
+circle size="small" :type="detail.isPinned ? 'primary' : 'default'" :loading="pinPending"
+						@click="onTogglePin">
 						<el-icon>
 							<Top />
 						</el-icon>
 					</el-button>
 				</el-tooltip>
+				<span class="df-file-topbar__sep" />
+				<!-- 核心按钮：编辑/下载/分享 -->
 				<el-button
-v-if="detail?.canSubmitApproval" type="primary" :loading="submitLoading"
+v-if="detail.canSubmitApproval" type="primary" size="small" :loading="submitLoading"
 					@click="handleSubmitApproval">
 					<el-icon>
 						<Promotion />
 					</el-icon>
 					提交审批
 				</el-button>
-				<el-button v-if="detail?.canUploadVersion" type="primary" @click="uploadVisible = true">
-					<el-icon>
-						<Upload />
-					</el-icon>
-					上传新版本
-				</el-button>
-				<el-button v-if="detail?.canManagePermissions" @click="permModalVisible = true">
-					<el-icon>
-						<Lock />
-					</el-icon>
-					权限设置
-				</el-button>
-				<el-button v-if="detail?.status === 4" @click="handleDownloadCurrent">
+				<el-button v-if="detail.status === 4" size="small" @click="handleDownloadCurrent">
 					<el-icon>
 						<Download />
 					</el-icon>
 					下载
 				</el-button>
-				<el-button v-if="detail?.status === 4 && detail?.groupId && canMove" @click="movePickerVisible = true">
-					<el-icon>
-						<Rank />
-					</el-icon>
-					跨组移动
-				</el-button>
-				<el-button v-if="detail?.status === 4" @click="shareModalVisible = true">
+				<el-button v-if="detail.status === 4" size="small" @click="shareModalVisible = true">
 					<el-icon>
 						<Share />
 					</el-icon>
 					分享
 				</el-button>
-				<el-button v-if="detail?.canRemove" type="danger" plain :loading="removing" @click="handleRemove">
-					<el-icon>
-						<Delete />
-					</el-icon>
-					从组移除
-				</el-button>
-			</template>
-		</PageTitle>
-
-		<!-- 文件信息卡 -->
-		<div v-if="detail" class="pf-card">
-			<div class="df-file-info-card">
-				<div class="df-file-icon" :class="`df-file-icon--${fileType}`">
-					{{ fileTypeAbbr }}
-				</div>
-				<div class="df-file-info-body">
-					<h4 class="df-file-info-name">
-						{{ fileName }}
-						<el-tooltip v-if="detail.hasCustomPermissions" content="该文档已设置文档级权限" placement="top">
-							<el-icon class="df-file-info-lock" color="#f97316">
-								<Lock />
-							</el-icon>
-						</el-tooltip>
-					</h4>
-					<p class="df-file-info-meta">
-						<span>{{ fileTypeText }} · {{ currentVersion?.versionNo || '-' }}</span>
-						<span class="file-status" :class="`file-status--${statusKey}`">
-							{{ statusText }}
-						</span>
-						<span v-if="detail.currentVersion?.publishedAt">
-							· 发布于 {{ formatTime(detail.currentVersion.publishedAt, 'YYYY-MM-DD HH:mm') }}
-						</span>
-					</p>
-				</div>
+				<!-- 更多菜单 -->
+				<el-dropdown trigger="click" @command="handleMoreCommand">
+					<el-button size="small" class="df-file-topbar__more">
+						<el-icon>
+							<MoreFilled />
+						</el-icon>
+					</el-button>
+					<template #dropdown>
+						<el-dropdown-menu>
+							<el-dropdown-item v-if="detail.canManagePermissions" command="permission">
+								<el-icon>
+									<Lock />
+								</el-icon>
+								权限设置
+							</el-dropdown-item>
+							<el-dropdown-item v-if="detail.status === 4 && detail.groupId && canMove" command="move">
+								<el-icon>
+									<Rank />
+								</el-icon>
+								跨组移动
+							</el-dropdown-item>
+							<el-dropdown-item v-if="detail.canUploadVersion" command="upload">
+								<el-icon>
+									<Upload />
+								</el-icon>
+								上传新版本
+							</el-dropdown-item>
+							<el-dropdown-item v-if="detail.canRemove" command="remove" divided>
+								<span style="color: var(--el-color-danger)">
+									<el-icon>
+										<Delete />
+									</el-icon>
+									从组移除
+								</span>
+							</el-dropdown-item>
+						</el-dropdown-menu>
+					</template>
+				</el-dropdown>
 			</div>
+		</div>
+
+		<!-- 文件元数据条 -->
+		<div v-if="detail" class="df-file-meta-bar">
+			<span class="df-file-meta-bar__item">
+				<span class="df-file-meta-bar__label">上传者</span>
+				{{ detail.ownerName }}
+			</span>
+			<span class="df-file-meta-bar__item">
+				<span class="df-file-meta-bar__label">更新</span>
+				{{ formatTime(detail.updatedAt, 'YYYY-MM-DD') }}
+			</span>
+			<span v-if="detail.currentVersion" class="df-file-meta-bar__item">
+				<span class="df-file-meta-bar__label">大小</span>
+				{{ formatBytes(detail.currentVersion.fileSize) }}
+			</span>
+			<span v-if="detail.groupName" class="df-file-meta-bar__item">
+				<span class="df-file-meta-bar__label">所属组</span>
+				{{ detail.groupName }}
+			</span>
+			<span class="df-file-meta-bar__item">
+				<span class="df-file-meta-bar__label">下载</span>
+				<span class="df-file-meta-bar__highlight">{{ detail.downloadCount }} 次</span>
+			</span>
 		</div>
 
 		<!-- 预览区 + 版本侧边栏 -->
@@ -321,6 +354,7 @@ import {
 	Lock,
 	Rank,
 	Share,
+	MoreFilled,
 } from '@element-plus/icons-vue'
 import type { VersionInfo, CompareResult } from '~/types/version'
 import type { ApiResponse, PaginatedData } from '~/types/api'
@@ -349,7 +383,7 @@ import { apiSubmitApproval, apiGetApproval } from '~/api/approvals'
 import { apiGetComments, apiCreateComment, apiDeleteComment } from '~/api/comments'
 import type { CommentVO } from '~/api/comments'
 import type { CommentItem } from '~/components/CommentThread.vue'
-import { formatTime } from '~/utils/format'
+import { formatTime, formatBytes } from '~/utils/format'
 
 definePageMeta({
 	layout: 'prototype',
@@ -381,13 +415,6 @@ const STATUS_KEY: Record<DocumentStatus, string> = {
 }
 const statusText = computed(() => detail.value ? STATUS_TEXT[detail.value.status] : '')
 const statusKey = computed(() => detail.value ? STATUS_KEY[detail.value.status] : 'draft')
-
-const subtitle = computed(() => {
-	if (!detail.value) return ''
-	const parts = ['预览、版本管理与对比']
-	if (detail.value.groupName) parts.unshift(`所属 ${detail.value.groupName}`)
-	return parts.join(' · ')
-})
 
 async function loadDetail() {
 	const res = await apiGetDocument(documentId.value)
@@ -911,6 +938,16 @@ function backToGroup() {
 		navigateTo(`/docs?groupId=${detail.value.groupId}`)
 	} else {
 		navigateTo('/docs')
+	}
+}
+
+// ── 更多菜单 ──
+function handleMoreCommand(command: string) {
+	switch (command) {
+		case 'permission': permModalVisible.value = true; break
+		case 'move': movePickerVisible.value = true; break
+		case 'upload': uploadVisible.value = true; break
+		case 'remove': handleRemove(); break
 	}
 }
 

@@ -282,6 +282,103 @@
   }
 }
 
+/* ── 文件详情顶栏（编辑器风格） ── */
+.df-file-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 0 12px;
+  min-height: 40px;
+}
+
+.df-file-topbar__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.df-file-topbar__sep {
+  width: 1px;
+  height: 18px;
+  background: var(--df-border);
+  flex-shrink: 0;
+}
+
+.df-file-topbar__name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--df-text);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+.df-file-topbar__ver {
+  font-size: 13px;
+  color: var(--df-subtext);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.df-file-topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.df-file-topbar__more {
+  padding: 6px 8px !important;
+}
+
+/* 小号文件图标（顶栏用） */
+.df-file-icon--sm {
+  width: 28px;
+  height: 28px;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+/* ── 文件元数据条 ── */
+.df-file-meta-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--df-subtext);
+  padding: 10px 16px;
+  background: var(--df-surface);
+  border-radius: var(--df-radius-md, 8px);
+  border: 1px solid var(--df-border);
+  margin-bottom: 14px;
+}
+
+.df-file-meta-bar__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--df-text);
+  font-weight: 500;
+}
+
+.df-file-meta-bar__label {
+  color: var(--df-subtext);
+  font-weight: 400;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.df-file-meta-bar__highlight {
+  color: var(--df-primary);
+  font-weight: 600;
+}
+
 /* ── 文件信息卡片 ── */
 .df-file-info-card {
   display: flex;
@@ -353,7 +450,8 @@
   gap: 8px;
 }
 
-.df-file-info-meta .file-status {
+.df-file-info-meta .file-status,
+.file-status {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -363,19 +461,32 @@
   font-weight: 600;
 }
 
-.df-file-info-meta .file-status--published {
+.df-file-info-meta .file-status--published,
+.file-status--published {
   background: #dcfce7;
   color: #166534;
 }
 
-.df-file-info-meta .file-status--reviewing {
+.df-file-info-meta .file-status--reviewing,
+.file-status--reviewing {
   background: #fef3c7;
   color: #854d0e;
 }
 
-.df-file-info-meta .file-status--draft {
+.df-file-info-meta .file-status--draft,
+.file-status--draft {
   background: var(--df-surface);
   color: var(--df-subtext);
+}
+
+.file-status--editing {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.file-status--rejected {
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 /* ── FileMetaHeader — 文件头信息条 ── */
