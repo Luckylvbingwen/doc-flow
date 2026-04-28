@@ -64,7 +64,7 @@
 - [x] ~~关键词 / 原仓库筛选~~ ✅ 2026-04-18（原仓库用 RemoteSelect 远程分页；删除时间范围按 PRD 未做）
 - [x] ~~按角色自动过滤数据范围~~ ✅ 2026-04-18（super/company 全站；dept/pl 范围内；其他仅自己+所在组）
 - [x] ~~查看按钮（PRD §6.6.2 “仅展示改版正文”）~~ ✅ 2026-04-28（回收站专用预览接口 `GET /api/recycle-bin/:id/preview` + 弹窗 DocPreview 集成）
-- [ ] 30 天过期自动清理（cron 任务，后续排期）
+- [x] ~~30 天过期自动清理~~ ✅ 2026-04-28（cron `recycle:auto-purge` 每天 3:00，分批 200 永久删除 + 级联清理收藏/置顶 + 操作日志）
 
 ### 2.5 共享文档（`pages/docs/index.vue` + `DocExplorerPanel` + `GroupFilesPanel`）
 
@@ -97,20 +97,20 @@
 - [x] ~~组设置 — 基础设置 tab~~ ✅ 2026-04-17（`GroupSettingsModal` 基本设置 Tab）
 - [x] ~~组设置 — 成员管理 tab~~ ✅ 2026-04-17（`GroupSettingsModal` 成员管理 Tab）
 - [x] ~~组设置 — 审批流配置 tab~~ ✅ 2026-04-17（`GroupApprovalPanel`，整包 PUT + 组创建时初始化默认模板）
-- [ ] 文件列表批量操作（勾选 + 批量删除/移动/下载）
+- [x] ~~文件列表批量操作（勾选 + 批量删除/移动/下载）~~ ✅ 2026-04-28（DataTable showSelection + BulkActionBar + batch-remove API + 批量下载）
 - [ ] 飞书导入入口接通后端
 
 ### 2.7 文件详情 (`pages/docs/file/[id].vue`)
 
-- [x] ~~评论区（CommentThread 集成）~~ 延迟，待评论模块
+- [x] ~~评论区（CommentThread 集成）~~ ✅ 2026-04-28（GET/POST/DELETE /api/documents/:id/comments + CommentThread 底部 Tab 集成 + 嵌套回复 + 软删除）
 - [x] ~~审批记录标签页~~ ✅ 2026-04-27（底部 TabBar + 审批记录列表 + ApprovalDrawer 只读模式 + `GET /api/documents/:id/approvals`）
 - [x] ~~权限设置弹窗（PermissionEditor 集成）~~ ✅ 2026-04-27（DocPermissionModal + GroupMemberPickerModal + GET/PUT /api/documents/:id/permissions + 4 值权限 enum 全栈对齐 + 文件信息卡橙锁图标）
-- [ ] 跨组移动弹窗（MoveTargetPicker 集成）
+- [x] ~~跨组移动弹窗（MoveTargetPicker 集成）~~ ✅ 2026-04-28（MoveTargetPicker + POST /api/documents/:id/move + PUT /api/documents/cross-move/:id/review + M12/M13 通知）
 - [ ] 上传新版本完整流程
 - [x] ~~全屏文件预览器~~ ✅ 2026-04-27（`FullscreenPreviewer` Teleport 全屏壳 + 顶栏标题/类型/版本徽章 + 左侧目录面板（H1-H3 自动抽取 + IntersectionObserver 高亮 + 可折叠）+ 主体 DocPreview 包裹（渲染字号 / 行距加大）+ 右侧批注面板占位 + ESC 关闭 + body scroll lock；附带修 DocPreview MD/TXT 分支，新增 `html` prop 优先使用服务端预渲染 HTML，原 `content` 客户端 markdown-it 路径作 fallback）
 - [x] ~~收藏 / 置顶图标按钮（PageTitle 圆形按钮，状态切换 + 乐观更新）~~ ✅ 2026-04-24
 - [x] ~~下载按钮~~ ✅ 2026-04-28（文件详情页操作栏新增下载当前版本按钮）
-- [ ] 文件级操作菜单（分享/删除等）
+- [x] ~~文件级操作菜单（分享/删除等）~~ ✅ 2026-04-28（分享按钮 + ShareLinkModal + 跨组移动按钮 + 从组移除按钮，均已集成到操作栏）
 
 ### 2.8 系统管理 (`pages/admin.vue`) — 对齐 PRD §6.9
 
@@ -132,7 +132,7 @@
 - [x] ~~操作矩阵 A 阶段：查看 / 下载 / 撤回 / 删除草稿~~ ✅ 2026-04-28（下载按钮激活，已发布文档可直接下载）
 - [x] ~~离职交接手风琴视图 + 仅部门负责人可见~~ ✅ 2026-04-18
 - [ ] 编辑（要文件编辑器）— 延迟
-- [ ] 分享（要 share-links 模块）— 延迟
+- [x] ~~分享（要 share-links 模块）~~ ✅ 2026-04-29（个人中心已发布文档增加"分享"按钮，复用 ShareLinkModal）
 - [x] ~~下载（要文件存储）~~ ✅ 2026-04-28（个人中心已发布文档可直接下载）
 - [ ] 提交发布（要审批发起）— 延迟
 - [ ] 转移归属人（要 ownership-transfer 模块）— 延迟
@@ -201,12 +201,12 @@
 | M9 | document-lifecycle | 管理员从组移除文件 — 通知归属人 | ✅ 2026-04-24（`documents/[id]/remove.put.ts`） |
 | M10 | ownership-transfer | 发起归属人转移 — 通知新归属人 | ⏳ 待接入 |
 | M11 | ownership-transfer | 转移同意/拒绝/过期 — 通知发起人 | ⏳ 待接入 |
-| M12 | cross-move | 发起跨组移动 — 通知目标组负责人 | ⏳ 待接入 |
-| M13 | cross-move | 移动同意/拒绝/过期 — 通知发起人 | ⏳ 待接入 |
+| M12 | cross-move | 发起跨组移动 — 通知目标组负责人 | ✅ 2026-04-28（`documents/[id]/move.post.ts`） |
+| M13 | cross-move | 移动同意/拒绝/过期 — 通知发起人 | ✅ 2026-04-28（`documents/cross-move/[id]/review.put.ts`） |
 | M14 | permission-request | 阅读权限申请 — 通知归属人 | ⏳ 待接入 |
 | M15 | permission-request | 编辑权限申请 — 通知归属人 | ⏳ 待接入 |
 | M16 | permission-request | 权限审批结果 — 通知申请人 | ⏳ 待接入 |
-| M17 | share | 分享文档 — 通知被分享人 | ⏳ 待接入 |
+| M17 | share | 分享文档 — 通知被分享人 | ✅ 2026-04-28（`share/[token].get.ts` 打开链接时通知创建者） |
 | M18 | group-member | 被加入组 — 通知被添加成员 | ✅ 2026-04-28（`groups/:id/members POST` handler） |
 | M19 | group-member | 成员权限变更 — 通知被变更成员 | ✅ 2026-04-28（`groups/:id/members/:memberId PUT` handler） |
 | M20 | group-member | 被移出组 — 通知被移出成员 | ✅ 2026-04-28（`groups/:id/members/:memberId DELETE` handler） |

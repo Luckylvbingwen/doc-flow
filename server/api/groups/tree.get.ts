@@ -16,6 +16,14 @@ interface TreeGroup {
 	scopeRefId: number | null
 	parentId: number | null
 	children: TreeGroup[]
+	files: Array<{ id: number; name: string; type: string }>
+}
+
+interface DocFileRow {
+	id: bigint
+	title: string
+	ext: string
+	group_id: bigint
 }
 
 export default defineEventHandler(async () => {
@@ -60,7 +68,23 @@ export default defineEventHandler(async () => {
 		ORDER BY pl.created_at ASC
 	`
 
-	// 4) 将平铺组列表构建为树
+	// 4) 查询所有已发布文档（用于树节点文件展示）
+	const docs = await prisma.$queryRaw<DocFileRow[]>`
+		SELECT id, title, ext, group_id
+		FROM doc_documents
+		WHERE status = 4 AND deleted_at IS NULL AND group_id IS NOT NULL
+		ORDER BY title ASC
+	`
+
+	// 按 group_id 分组
+	const docsByGroup = new Map<number, Array<{ id: number; name: string; type: string }>>()
+	for (const d of docs) {
+		const gid = Number(d.group_id)
+		if (!docsByGroup.has(gid)) docsByGroup.set(gid, [])
+		docsByGroup.get(gid)!.push({ id: Number(d.id), name: d.title, type: d.ext || '' })
+	}
+
+	// 5) 将平铺组列表构建为树
 	const flatGroups: TreeGroup[] = groups.map(g => ({
 		id: Number(g.id),
 		name: g.name,
@@ -71,6 +95,7 @@ export default defineEventHandler(async () => {
 		scopeRefId: g.scope_ref_id ? Number(g.scope_ref_id) : null,
 		parentId: g.parent_id ? Number(g.parent_id) : null,
 		children: [],
+		files: docsByGroup.get(Number(g.id)) || [],
 	}))
 
 	// 按 ID 索引，用于快速查找父节点

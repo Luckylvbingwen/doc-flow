@@ -6,7 +6,7 @@
  */
 import type { PersonalDocItem, ItemSource } from '~/types/personal'
 
-export type ActionKind = 'view' | 'download' | 'withdraw' | 'delete'
+export type ActionKind = 'view' | 'download' | 'share' | 'withdraw' | 'delete'
 
 export interface ActionSpec {
 	kind: ActionKind
@@ -37,6 +37,12 @@ export function getActions(doc: PersonalDocItem, currentUserId: number): ActionS
 	// PRD：已发布文档可下载
 	if (doc.status === 4) {
 		actions.push({ kind: 'download', label: '下载', type: 'default', inMenu: false })
+	}
+
+	// ── 分享按钮 ──
+	// PRD：已发布文档可分享
+	if (doc.status === 4) {
+		actions.push({ kind: 'share', label: '分享', type: 'default', inMenu: false })
 	}
 
 	// ── 撤回按钮（红色）──

@@ -219,6 +219,11 @@ function onOrgSelect(cat: NavTreeCategory, org: NavTreeOrgUnit) {
 }
 
 async function onGroupSelect(group: NavTreeGroup, _file?: NavTreeFile) {
+	// 点击文件节点 → 跳转文件详情
+	if (_file) {
+		navigateTo(`/docs/file/${_file.id}`)
+		return
+	}
 	selectedGroupId.value = group.id
 	selectedType.value = 'group'
 	// 同步预填 selectedData = 树节点本身（id 必为 number），避免 GroupFilesPanel

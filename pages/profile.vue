@@ -96,6 +96,11 @@ class="profile-status-badge"
 				</template>
 			</template>
 		</DataTable>
+
+		<!-- 分享链接弹窗 -->
+		<ShareLinkModal
+v-if="shareTarget" v-model="shareModalVisible" :document-id="shareTarget.id"
+			:file-name="`${shareTarget.title}.${shareTarget.ext || 'md'}`" />
 	</ListPageShell>
 </template>
 
@@ -291,12 +296,22 @@ function onView(doc: PersonalDocItem) {
 async function onActionClick(doc: PersonalDocItem, kind: ActionKind) {
 	if (kind === 'view') return onView(doc)
 	if (kind === 'download') return onDownload(doc)
+	if (kind === 'share') return onShare(doc)
 	if (kind === 'withdraw') return onWithdraw(doc)
 	if (kind === 'delete') return onDelete(doc)
 }
 
 function onDownload(doc: PersonalDocItem) {
 	window.location.href = apiDownloadDocumentUrl(doc.id)
+}
+
+// ── 分享 ──
+const shareModalVisible = ref(false)
+const shareTarget = ref<PersonalDocItem | null>(null)
+
+function onShare(doc: PersonalDocItem) {
+	shareTarget.value = doc
+	shareModalVisible.value = true
 }
 
 async function onWithdraw(doc: PersonalDocItem) {
