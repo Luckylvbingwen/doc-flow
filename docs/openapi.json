@@ -1,0 +1,2729 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "DocFlow API",
+    "description": "DocFlow 企业文档管理平台 API 文档\n\n## 通用约定\n- 统一响应格式: `{ success, code, message, data }`\n- 鉴权: 全局 JWT 中间件，白名单接口除外\n- 请求头: `Authorization: Bearer <accessToken>`",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "本地开发"
+    }
+  ],
+  "tags": [
+    { "name": "系统", "description": "健康检查" },
+    { "name": "认证", "description": "登录/登出/刷新令牌/修改密码" },
+    { "name": "飞书认证", "description": "飞书 OAuth 登录" },
+    { "name": "RBAC-权限", "description": "权限管理" },
+    { "name": "RBAC-角色", "description": "角色管理" },
+    { "name": "RBAC-用户角色", "description": "用户-角色分配" },
+    { "name": "飞书集成", "description": "飞书用户/消息/通讯录同步" },
+    { "name": "文档组", "description": "组的 CRUD 和树结构" },
+    { "name": "组成员", "description": "组成员管理" },
+    { "name": "审批模板", "description": "组审批流配置" },
+    { "name": "产品线", "description": "产品线管理" },
+    { "name": "文档", "description": "文档上传/列表/详情/版本/下载/预览" },
+    { "name": "文档评论", "description": "文档评论" },
+    { "name": "文档权限", "description": "文档级权限管理" },
+    { "name": "版本", "description": "版本比较" },
+    { "name": "审批", "description": "审批流程操作" },
+    { "name": "个人中心", "description": "个人文档聚合" },
+    { "name": "通知", "description": "通知管理" },
+    { "name": "回收站", "description": "回收站管理" },
+    { "name": "分享", "description": "文档分享" },
+    { "name": "日志", "description": "操作日志" },
+    { "name": "管理后台", "description": "系统管理-用户管理" },
+    { "name": "用户树", "description": "部门+用户树" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "data": {}
+        }
+      },
+      "PaginatedResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "code": { "type": "string", "example": "OK" },
+          "message": { "type": "string" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "list": { "type": "array", "items": {} },
+              "total": { "type": "integer" },
+              "page": { "type": "integer" },
+              "pageSize": { "type": "integer" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    { "BearerAuth": [] }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["系统"],
+        "summary": "健康检查",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "账密登录",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["account", "password", "captchaClicks", "captchaToken"],
+                "properties": {
+                  "account": { "type": "string", "description": "账号" },
+                  "password": { "type": "string", "description": "密码" },
+                  "captchaClicks": {
+                    "type": "array",
+                    "description": "验证码点击坐标",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "x": { "type": "number" },
+                        "y": { "type": "number" }
+                      }
+                    }
+                  },
+                  "captchaToken": { "type": "string", "description": "验证码 token" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录成功，返回 accessToken + refreshToken",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "退出登录",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "刷新令牌",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["refreshToken"],
+                "properties": {
+                  "refreshToken": { "type": "string", "description": "刷新令牌" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "返回新的 accessToken + refreshToken",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/captcha": {
+      "get": {
+        "tags": ["认证"],
+        "summary": "获取验证码",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "返回验证码图片和 token",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["认证"],
+        "summary": "获取当前用户信息",
+        "responses": {
+          "200": {
+            "description": "当前用户详细信息（含角色、权限）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/password": {
+      "put": {
+        "tags": ["认证"],
+        "summary": "修改密码",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["oldPassword", "newPassword"],
+                "properties": {
+                  "oldPassword": { "type": "string", "description": "旧密码" },
+                  "newPassword": { "type": "string", "minLength": 8, "maxLength": 72, "description": "新密码（8-72位）" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "修改成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/feishu/auth-url": {
+      "get": {
+        "tags": ["飞书认证"],
+        "summary": "获取飞书 OAuth URL",
+        "security": [],
+        "parameters": [
+          {
+            "name": "redirectUri",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "OAuth 回调地址"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "返回飞书授权跳转 URL",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/feishu/callback": {
+      "post": {
+        "tags": ["飞书认证"],
+        "summary": "飞书 OAuth 回调",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["code", "state"],
+                "properties": {
+                  "code": { "type": "string", "description": "飞书授权 code" },
+                  "state": { "type": "string", "description": "飞书授权 state" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录成功，返回 accessToken + refreshToken",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rbac/permissions": {
+      "get": {
+        "tags": ["RBAC-权限"],
+        "summary": "权限列表",
+        "description": "权限码: permission:read",
+        "responses": {
+          "200": {
+            "description": "所有权限列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rbac/users": {
+      "get": {
+        "tags": ["RBAC-用户角色"],
+        "summary": "用户列表（下拉搜索）",
+        "description": "权限码: role:assign",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": { "type": "string", "default": "" },
+            "description": "搜索关键词"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "用户列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rbac/roles": {
+      "get": {
+        "tags": ["RBAC-角色"],
+        "summary": "角色列表（分页）",
+        "description": "权限码: role:read",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1, "minimum": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20, "minimum": 1, "maximum": 100 }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": { "type": "string", "default": "" },
+            "description": "搜索关键词"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "分页角色列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["RBAC-角色"],
+        "summary": "创建角色",
+        "description": "权限码: role:create",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["code", "name"],
+                "properties": {
+                  "code": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,48}$", "description": "角色标识（小写字母、数字、下划线，2-49位）" },
+                  "name": { "type": "string", "description": "角色名称" },
+                  "description": { "type": "string", "default": "", "description": "角色描述" },
+                  "status": { "type": "integer", "enum": [0, 1], "default": 1, "description": "状态（0=禁用, 1=启用）" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rbac/roles/{id}": {
+      "get": {
+        "tags": ["RBAC-角色"],
+        "summary": "角色详情",
+        "description": "权限码: role:read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "角色 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "角色详情",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["RBAC-角色"],
+        "summary": "更新角色",
+        "description": "权限码: role:update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "description": "角色名称" },
+                  "description": { "type": "string", "default": "" },
+                  "status": { "type": "integer", "enum": [0, 1], "default": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["RBAC-角色"],
+        "summary": "删除角色",
+        "description": "权限码: role:delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rbac/roles/{id}/permissions": {
+      "put": {
+        "tags": ["RBAC-角色"],
+        "summary": "设置角色权限",
+        "description": "权限码: role:update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["permissionIds"],
+                "properties": {
+                  "permissionIds": {
+                    "type": "array",
+                    "items": { "type": "integer" },
+                    "description": "权限 ID 列表"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "设置成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rbac/user-roles": {
+      "get": {
+        "tags": ["RBAC-用户角色"],
+        "summary": "用户-角色列表（分页）",
+        "description": "权限码: role:read",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20, "maximum": 100 }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": { "type": "string", "default": "" }
+          },
+          {
+            "name": "roleId",
+            "in": "query",
+            "schema": { "type": "integer" },
+            "description": "按角色 ID 筛选"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "分页用户角色列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rbac/user-roles/assign": {
+      "post": {
+        "tags": ["RBAC-用户角色"],
+        "summary": "分配角色",
+        "description": "权限码: role:assign",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["userId", "roleId"],
+                "properties": {
+                  "userId": { "type": "integer", "description": "用户 ID" },
+                  "roleId": { "type": "integer", "description": "角色 ID" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "分配成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rbac/user-roles/revoke": {
+      "post": {
+        "tags": ["RBAC-用户角色"],
+        "summary": "撤销角色",
+        "description": "权限码: role:assign",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["userId", "roleId"],
+                "properties": {
+                  "userId": { "type": "integer" },
+                  "roleId": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "撤销成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/feishu/users": {
+      "get": {
+        "tags": ["飞书集成"],
+        "summary": "飞书用户列表",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": { "type": "string", "default": "normal" },
+            "description": "用户状态"
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": { "type": "string", "default": "" },
+            "description": "搜索关键词"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "飞书用户列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/feishu/notify": {
+      "post": {
+        "tags": ["飞书集成"],
+        "summary": "发送飞书消息",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["openId"],
+                "properties": {
+                  "openId": { "type": "string", "description": "飞书用户 openId" },
+                  "msgType": { "type": "string", "enum": ["text", "card"], "default": "text", "description": "消息类型" },
+                  "text": { "type": "string", "description": "文本消息内容（msgType=text 时必填）" },
+                  "card": { "type": "object", "description": "卡片消息内容（msgType=card 时必填）" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "发送成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/feishu/sync-contacts": {
+      "post": {
+        "tags": ["飞书集成"],
+        "summary": "同步飞书通讯录",
+        "responses": {
+          "200": {
+            "description": "同步成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups/tree": {
+      "get": {
+        "tags": ["文档组"],
+        "summary": "组树结构",
+        "responses": {
+          "200": {
+            "description": "返回组的树形结构",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups": {
+      "post": {
+        "tags": ["文档组"],
+        "summary": "创建组",
+        "description": "权限按 scope 判断",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "scopeType"],
+                "properties": {
+                  "name": { "type": "string", "minLength": 1, "maxLength": 150, "description": "组名称" },
+                  "description": { "type": "string", "maxLength": 500, "description": "组描述" },
+                  "scopeType": { "type": "integer", "enum": [1, 2, 3], "description": "作用域类型（1=公司, 2=产品线, 3=部门）" },
+                  "scopeRefId": { "type": "integer", "description": "作用域关联 ID" },
+                  "parentId": { "type": "integer", "description": "父组 ID" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups/{id}": {
+      "get": {
+        "tags": ["文档组"],
+        "summary": "组详情",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "组 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "组详情信息",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["文档组"],
+        "summary": "编辑组",
+        "description": "需组负责人权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "minLength": 1, "maxLength": 150, "description": "组名称" },
+                  "description": { "type": "string", "maxLength": 500, "description": "组描述" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "编辑成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["文档组"],
+        "summary": "删除组",
+        "description": "需组负责人权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups/{id}/members": {
+      "get": {
+        "tags": ["组成员"],
+        "summary": "成员列表",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "组 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "组成员列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["组成员"],
+        "summary": "批量添加成员",
+        "description": "需组管理权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["members"],
+                "properties": {
+                  "members": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "items": {
+                      "type": "object",
+                      "required": ["userId", "role"],
+                      "properties": {
+                        "userId": { "type": "integer", "description": "用户 ID" },
+                        "role": { "type": "integer", "enum": [1, 2, 3], "description": "角色（1=负责人, 2=管理员, 3=普通成员）" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "添加成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups/{id}/members/{memberId}": {
+      "put": {
+        "tags": ["组成员"],
+        "summary": "修改成员权限",
+        "description": "需组管理权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "组 ID"
+          },
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "成员 ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["role"],
+                "properties": {
+                  "role": { "type": "integer", "enum": [1, 2, 3], "description": "角色（1=负责人, 2=管理员, 3=普通成员）" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "修改成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["组成员"],
+        "summary": "移除成员",
+        "description": "需组管理权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "移除成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/tree": {
+      "get": {
+        "tags": ["用户树"],
+        "summary": "部门+用户树",
+        "responses": {
+          "200": {
+            "description": "部门和用户的树形结构",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups/{id}/approval-template": {
+      "get": {
+        "tags": ["审批模板"],
+        "summary": "读取审批配置",
+        "description": "需组管理权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "组 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "审批模板配置",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["审批模板"],
+        "summary": "保存审批配置",
+        "description": "需组管理权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["approvalEnabled", "mode", "approverUserIds"],
+                "properties": {
+                  "approvalEnabled": { "type": "integer", "enum": [0, 1], "description": "0=关闭, 1=开启" },
+                  "mode": { "type": "integer", "enum": [1, 2], "description": "1=依次审批, 2=会签审批" },
+                  "approverUserIds": {
+                    "type": "array",
+                    "items": { "type": "integer" },
+                    "maxItems": 20,
+                    "description": "审批人用户 ID 列表（开启时不能为空）"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "保存成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/product-lines": {
+      "get": {
+        "tags": ["产品线"],
+        "summary": "产品线列表",
+        "responses": {
+          "200": {
+            "description": "产品线列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["产品线"],
+        "summary": "创建产品线",
+        "description": "需 super_admin 权限",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "minLength": 1, "maxLength": 150, "description": "产品线名称" },
+                  "description": { "type": "string", "maxLength": 500, "description": "描述" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/product-lines/{id}": {
+      "put": {
+        "tags": ["产品线"],
+        "summary": "编辑产品线",
+        "description": "需 super_admin 权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "minLength": 1, "maxLength": 150, "description": "产品线名称" },
+                  "description": { "type": "string", "maxLength": 500 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "编辑成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["产品线"],
+        "summary": "删除产品线",
+        "description": "需 super_admin 权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents": {
+      "get": {
+        "tags": ["文档"],
+        "summary": "组文件列表",
+        "description": "权限码: doc:read",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "组 ID"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": { "type": "integer", "enum": [1, 2, 3, 4, 5, 6], "default": 4 },
+            "description": "文档状态（1=草稿, 2=编辑中, 3=审批中, 4=已发布, 5=已归档, 6=已删除）"
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": { "type": "string", "maxLength": 100 },
+            "description": "搜索关键词"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "分页文件列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/upload": {
+      "post": {
+        "tags": ["文档"],
+        "summary": "上传文件",
+        "description": "权限码: doc:create。multipart/form-data 上传",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file", "groupId"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary", "description": "文件" },
+                  "groupId": { "type": "integer", "description": "目标组 ID" },
+                  "title": { "type": "string", "maxLength": 255, "description": "文件标题（可选，默认用文件名）" },
+                  "changeNote": { "type": "string", "maxLength": 500, "description": "变更说明" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "上传成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/batch-remove": {
+      "post": {
+        "tags": ["文档"],
+        "summary": "批量移除文档",
+        "description": "权限码: doc:remove",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["ids"],
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": { "type": "integer" },
+                    "minItems": 1,
+                    "description": "文档 ID 列表"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "移除成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}": {
+      "get": {
+        "tags": ["文档"],
+        "summary": "文件详情",
+        "description": "权限码: doc:read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "文档 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "文档详情",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/remove": {
+      "put": {
+        "tags": ["文档"],
+        "summary": "从组移除文档",
+        "description": "权限码: doc:remove",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "移除成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/draft": {
+      "delete": {
+        "tags": ["文档"],
+        "summary": "删除草稿",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/versions": {
+      "get": {
+        "tags": ["文档"],
+        "summary": "版本列表",
+        "description": "权限码: doc:read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "文档 ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "版本列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["文档"],
+        "summary": "上传新版本",
+        "description": "权限码: doc:edit。multipart/form-data 上传",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary", "description": "新版本文件" },
+                  "changeNote": { "type": "string", "maxLength": 500, "description": "变更说明" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "上传成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/download": {
+      "get": {
+        "tags": ["文档"],
+        "summary": "下载文件",
+        "description": "权限码: doc:download",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "versionId",
+            "in": "query",
+            "schema": { "type": "integer" },
+            "description": "指定版本 ID（可选，默认最新版本）"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "文件二进制流",
+            "content": {
+              "application/octet-stream": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/preview": {
+      "get": {
+        "tags": ["文档"],
+        "summary": "预览文件",
+        "description": "权限码: doc:read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "versionId",
+            "in": "query",
+            "schema": { "type": "integer" },
+            "description": "指定版本 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "预览数据",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/rollback": {
+      "post": {
+        "tags": ["文档"],
+        "summary": "版本回滚",
+        "description": "需组管理员权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["versionId"],
+                "properties": {
+                  "versionId": { "type": "integer", "description": "目标版本 ID" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "回滚成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/move": {
+      "post": {
+        "tags": ["文档"],
+        "summary": "发起跨组移动",
+        "description": "权限码: doc:move",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["targetGroupId"],
+                "properties": {
+                  "targetGroupId": { "type": "integer", "description": "目标组 ID" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "发起成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/favorite": {
+      "post": {
+        "tags": ["文档"],
+        "summary": "收藏文档",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "收藏成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["文档"],
+        "summary": "取消收藏",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "取消成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/pin": {
+      "post": {
+        "tags": ["文档"],
+        "summary": "置顶文档",
+        "description": "需组管理员权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "置顶成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["文档"],
+        "summary": "取消置顶",
+        "description": "需组管理员权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "取消成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/approvals": {
+      "get": {
+        "tags": ["文档"],
+        "summary": "文档审批历史",
+        "description": "权限码: doc:read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "审批历史列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/permissions": {
+      "get": {
+        "tags": ["文档权限"],
+        "summary": "文档权限弹窗数据",
+        "description": "需组管理员权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "文档级权限列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["文档权限"],
+        "summary": "整包替换文档权限",
+        "description": "需组管理员权限。同一 userId 不可重复，permission 仅限 2(可编辑)/3(上传下载)，上限 200 条",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["perms"],
+                "properties": {
+                  "perms": {
+                    "type": "array",
+                    "maxItems": 200,
+                    "items": {
+                      "type": "object",
+                      "required": ["userId", "permission"],
+                      "properties": {
+                        "userId": { "type": "integer" },
+                        "permission": { "type": "integer", "enum": [2, 3], "description": "2=可编辑, 3=上传下载" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/comments": {
+      "get": {
+        "tags": ["文档评论"],
+        "summary": "评论列表",
+        "description": "权限码: doc:read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "文档 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "评论列表（含嵌套回复）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["文档评论"],
+        "summary": "新增评论/回复",
+        "description": "权限码: doc:read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["content"],
+                "properties": {
+                  "content": { "type": "string", "minLength": 1, "maxLength": 2000, "description": "评论内容" },
+                  "parentId": { "type": "integer", "description": "父评论 ID（回复时传）" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/comments/{commentId}": {
+      "delete": {
+        "tags": ["文档评论"],
+        "summary": "删除评论",
+        "description": "权限码: doc:read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "文档 ID"
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "评论 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/cross-move/{id}/review": {
+      "put": {
+        "tags": ["文档"],
+        "summary": "审核跨组移动",
+        "description": "权限码: doc:move",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "跨组移动记录 ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action"],
+                "properties": {
+                  "action": { "type": "string", "enum": ["approve", "reject"], "description": "审核操作" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "审核成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/version/compare": {
+      "post": {
+        "tags": ["版本"],
+        "summary": "版本比较",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["documentId", "fromVersionId", "toVersionId"],
+                "properties": {
+                  "documentId": { "type": "integer", "description": "文档 ID" },
+                  "fromVersionId": { "type": "integer", "description": "起始版本 ID" },
+                  "toVersionId": { "type": "integer", "description": "目标版本 ID" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "版本差异数据",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/approvals": {
+      "get": {
+        "tags": ["审批"],
+        "summary": "审批列表（三 tab）",
+        "parameters": [
+          {
+            "name": "tab",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "enum": ["pending", "submitted", "handled"] },
+            "description": "pending=待我审批, submitted=我发起的, handled=我已处理"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": { "type": "integer", "enum": [2, 3, 4, 5] },
+            "description": "2=审批中, 3=已通过, 4=已驳回, 5=已撤回"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "分页审批列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["审批"],
+        "summary": "发起审批",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["documentId", "versionId"],
+                "properties": {
+                  "documentId": { "type": "integer", "description": "文档 ID" },
+                  "versionId": { "type": "integer", "description": "版本 ID" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "发起成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/approvals/{id}": {
+      "get": {
+        "tags": ["审批"],
+        "summary": "审批详情",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "审批 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "审批详情",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/approvals/{id}/approve": {
+      "post": {
+        "tags": ["审批"],
+        "summary": "审批通过",
+        "description": "需审批人权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "comment": { "type": "string", "maxLength": 500, "description": "审批意见（可选）" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "审批通过",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/approvals/{id}/reject": {
+      "post": {
+        "tags": ["审批"],
+        "summary": "审批驳回",
+        "description": "需审批人权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["comment"],
+                "properties": {
+                  "comment": { "type": "string", "minLength": 1, "maxLength": 500, "description": "驳回意见（必填）" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "驳回成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/approvals/{id}/withdraw": {
+      "post": {
+        "tags": ["审批"],
+        "summary": "撤回审批",
+        "description": "需发起人权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "撤回成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/personal/documents": {
+      "get": {
+        "tags": ["个人中心"],
+        "summary": "个人文档聚合（五 tab）",
+        "parameters": [
+          {
+            "name": "tab",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "enum": ["all", "mine", "shared", "favorite", "handover"] },
+            "description": "all=全部, mine=我的, shared=共享给我, favorite=收藏, handover=交接给我"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": { "type": "integer", "enum": [1, 2, 3, 4] },
+            "description": "1=草稿, 2=编辑中, 3=审批中, 4=已发布"
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": { "type": "string", "maxLength": 100 },
+            "description": "文件名搜索"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "分页文档列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "tags": ["通知"],
+        "summary": "通知列表",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "schema": { "type": "integer", "enum": [1, 2, 3] },
+            "description": "通知类别"
+          },
+          {
+            "name": "onlyUnread",
+            "in": "query",
+            "schema": { "type": "boolean", "default": false },
+            "description": "仅未读"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "通知列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "tags": ["通知"],
+        "summary": "未读通知数",
+        "responses": {
+          "200": {
+            "description": "未读数量",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "put": {
+        "tags": ["通知"],
+        "summary": "标记已读",
+        "description": "需本人权限",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "通知 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "标记成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/read-all": {
+      "put": {
+        "tags": ["通知"],
+        "summary": "全部已读",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "category": { "type": "integer", "enum": [1, 2, 3], "description": "指定类别全部已读（可选，不传则全部类别）" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recycle-bin": {
+      "get": {
+        "tags": ["回收站"],
+        "summary": "回收站列表",
+        "description": "权限码: recycle:read",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": { "type": "string", "maxLength": 100 },
+            "description": "搜索文件名"
+          },
+          {
+            "name": "groupId",
+            "in": "query",
+            "schema": { "type": "integer" },
+            "description": "按原组筛选"
+          },
+          {
+            "name": "deletedBy",
+            "in": "query",
+            "schema": { "type": "integer" },
+            "description": "按删除人筛选（user.id）"
+          },
+          {
+            "name": "startAt",
+            "in": "query",
+            "schema": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+            "description": "删除时间起始（YYYY-MM-DD）"
+          },
+          {
+            "name": "endAt",
+            "in": "query",
+            "schema": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+            "description": "删除时间结束（YYYY-MM-DD）"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "回收站文件列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recycle-bin/filter-groups": {
+      "get": {
+        "tags": ["回收站"],
+        "summary": "组筛选下拉",
+        "description": "权限码: recycle:read",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": { "type": "string", "maxLength": 100 },
+            "description": "组名关键词"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "组列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recycle-bin/restore": {
+      "post": {
+        "tags": ["回收站"],
+        "summary": "批量恢复",
+        "description": "权限码: recycle:restore",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["ids"],
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": { "type": "integer" },
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "description": "文档 ID 列表（1-50）"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "恢复成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recycle-bin/purge": {
+      "post": {
+        "tags": ["回收站"],
+        "summary": "批量永久删除",
+        "description": "权限码: recycle:delete",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["ids"],
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": { "type": "integer" },
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "description": "文档 ID 列表（1-50）"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recycle-bin/{id}/preview": {
+      "get": {
+        "tags": ["回收站"],
+        "summary": "预览已删文件",
+        "description": "权限码: recycle:read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "文档 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "预览数据",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/share/create": {
+      "post": {
+        "tags": ["分享"],
+        "summary": "创建分享链接",
+        "description": "权限码: doc:read",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["documentId", "permission"],
+                "properties": {
+                  "documentId": { "type": "integer", "description": "文档 ID" },
+                  "permission": { "type": "integer", "enum": [2, 4], "description": "2=可编辑, 4=可阅读" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "返回分享链接 token",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/share/{token}": {
+      "get": {
+        "tags": ["分享"],
+        "summary": "打开分享链接",
+        "description": "权限码: doc:read",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "分享 token"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "分享内容",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/logs": {
+      "get": {
+        "tags": ["日志"],
+        "summary": "操作日志列表",
+        "description": "权限码: log:read",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "日志类型（14 大类之一）"
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": { "type": "string", "maxLength": 100 },
+            "description": "搜索操作人/描述/组名"
+          },
+          {
+            "name": "startAt",
+            "in": "query",
+            "schema": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+            "description": "起始日期（YYYY-MM-DD）"
+          },
+          {
+            "name": "endAt",
+            "in": "query",
+            "schema": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+            "description": "结束日期（YYYY-MM-DD）"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作日志列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": ["管理后台"],
+        "summary": "用户管理列表",
+        "description": "权限码: admin:user_read",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": { "type": "string", "maxLength": 100 },
+            "description": "搜索关键词"
+          },
+          {
+            "name": "roles",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "角色筛选，逗号分隔（如 company_admin,pl_head 或 none）"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["all", "active", "deactivated"], "default": "all" },
+            "description": "用户状态筛选"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "分页用户列表",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/roles": {
+      "put": {
+        "tags": ["管理后台"],
+        "summary": "更新用户角色",
+        "description": "权限码: admin:role_assign",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "用户 ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["companyAdmin", "plHead"],
+                "properties": {
+                  "companyAdmin": { "type": "boolean", "description": "是否公司层管理员" },
+                  "plHead": { "type": "boolean", "description": "是否产品线负责人" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
