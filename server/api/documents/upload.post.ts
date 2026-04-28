@@ -6,7 +6,7 @@
  *   - groupId:    number     （必填）
  *   - title:      string?    （可选，默认用原文件名去扩展名）
  *   - changeNote: string?    （可选，变更说明）
- *   - file:       binary     （必填，当前仅支持 .md，50MB 上限）
+ *   - file:       binary     （必填，支持 .md/.docx/.xlsx/.pdf，50MB 上限）
  *
  * 业务：
  *   1. 权限 doc:create
@@ -26,6 +26,7 @@ import {
 	INVALID_PARAMS,
 	FILE_TOO_LARGE,
 	FILE_FORMAT_UNSUPPORTED,
+	FILE_CONVERT_FAILED,
 	DOCUMENT_DUPLICATE_NAME,
 	STORAGE_PUT_FAILED,
 } from '~/server/constants/error-codes'
@@ -66,22 +67,23 @@ export default defineEventHandler(async (event) => {
 		return fail(event, 413, FILE_TOO_LARGE, '文件超过 50MB 限制')
 	}
 
-	// 4. 扩展名 + 格式转换（A 阶段只认 .md）
+	// 4. 扩展名 + 格式转换
 	const ext = originalFilename.split('.').pop()?.toLowerCase() || ''
-	const contentBuf = fileBuf
-	const finalExt = ext
+	let contentBuf = fileBuf
+	let finalExt = ext
 	const mimeType = 'text/markdown'
 	if (ext !== 'md') {
 		if (!converter.canConvert(ext)) {
-			return fail(event, 400, FILE_FORMAT_UNSUPPORTED, '当前仅支持 Markdown (.md)，其他格式转换能力建设中')
+			return fail(event, 400, FILE_FORMAT_UNSUPPORTED, '当前仅支持 .md / .docx / .xlsx / .pdf 格式')
 		}
-		// B 阶段：const { content } = await converter.convert({ buffer: fileBuf, ext, filename: originalFilename })
-		// contentBuf = Buffer.from(content, 'utf-8')
-		// finalExt = 'md'
-		// mimeType = 'text/markdown'
-		void contentBuf
-		void finalExt
-		void mimeType
+		try {
+			const { content } = await converter.convert({ buffer: fileBuf, ext, filename: originalFilename })
+			contentBuf = Buffer.from(content, 'utf-8')
+			finalExt = 'md'
+		} catch (e: any) {
+			console.error('[upload] converter.convert failed', e)
+			return fail(event, 500, FILE_CONVERT_FAILED, '文件格式转换失败，请稍后重试')
+		}
 	}
 
 	// 5. 标题（默认去掉扩展名的原文件名）

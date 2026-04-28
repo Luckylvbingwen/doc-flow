@@ -2,6 +2,7 @@ import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-03-23',
+  devServer: { port: 3001 },
   app: {
     pageTransition: { name: 'page-fade' },
     head: {

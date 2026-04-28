@@ -43,10 +43,10 @@ v-for="doc in publishedFiles" :key="doc.id" :label="`${doc.title} · ${doc.versi
 		<div class="ufm-section">
 			<label class="ufm-label">
 				选择文件
-				<span class="ufm-hint">（仅支持 Markdown .md，单文件 ≤ 50MB）</span>
+				<span class="ufm-hint">（支持 .md / .docx / .xlsx / .pdf，单文件 ≤ 50MB）</span>
 			</label>
 			<el-upload
-ref="uploaderRef" drag :auto-upload="false" :multiple="false" :limit="1" accept=".md"
+ref="uploaderRef" drag :auto-upload="false" :multiple="false" :limit="1" accept=".md,.docx,.xlsx,.pdf"
 				:show-file-list="true" :on-change="onFileChange" :on-remove="onFileRemove" :on-exceed="onExceed">
 				<el-icon :size="40" color="var(--df-primary)">
 					<UploadFilled />
@@ -56,7 +56,7 @@ ref="uploaderRef" drag :auto-upload="false" :multiple="false" :limit="1" accept=
 				</div>
 				<template #tip>
 					<div class="ufm-drop-tip">
-						当前仅支持 Markdown（.md）。其他格式转换能力开发中。
+						支持 Markdown、Word、Excel、PDF，非 .md 文件将自动转换为 Markdown。
 					</div>
 				</template>
 			</el-upload>
@@ -157,8 +157,8 @@ async function loadPublishedFiles() {
 function onFileChange(file: UploadFile, _fileList: UploadFiles) {
 	const raw = file.raw as UploadRawFile | undefined
 	if (!raw) return
-	if (!/\.md$/i.test(raw.name)) {
-		msgError('仅支持 Markdown（.md）文件')
+	if (!/\.(md|docx|xlsx|pdf)$/i.test(raw.name)) {
+		msgError('仅支持 .md / .docx / .xlsx / .pdf 文件')
 		uploaderRef.value?.clearFiles()
 		selectedFile.value = null
 		return

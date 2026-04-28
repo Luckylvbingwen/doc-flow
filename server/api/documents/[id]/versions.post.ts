@@ -4,7 +4,7 @@
  *
  * multipart/form-data：
  *   - changeNote: string?   （可选）
- *   - file:       binary    （必填，当前仅 .md，50MB 上限）
+ *   - file:       binary    （必填，支持 .md/.docx/.xlsx/.pdf，50MB 上限）
  *
  * 业务：
  *   1. 权限 doc:update + 组内 role ∈ {1 管理员, 2 可编辑}
@@ -27,6 +27,7 @@ import {
 	DOCUMENT_STATUS_INVALID,
 	FILE_TOO_LARGE,
 	FILE_FORMAT_UNSUPPORTED,
+	FILE_CONVERT_FAILED,
 	STORAGE_PUT_FAILED,
 } from '~/server/constants/error-codes'
 
@@ -101,16 +102,21 @@ export default defineEventHandler(async (event) => {
 	}
 
 	const ext = originalFilename.split('.').pop()?.toLowerCase() || ''
-	const contentBuf = fileBuf
-	const finalExt = ext
+	let contentBuf = fileBuf
+	let finalExt = ext
 	const mimeType = 'text/markdown'
 	if (ext !== 'md') {
 		if (!converter.canConvert(ext)) {
-			return fail(event, 400, FILE_FORMAT_UNSUPPORTED, '当前仅支持 Markdown (.md)，其他格式转换能力建设中')
+			return fail(event, 400, FILE_FORMAT_UNSUPPORTED, '当前仅支持 .md / .docx / .xlsx / .pdf 格式')
 		}
-		void contentBuf
-		void finalExt
-		void mimeType
+		try {
+			const { content } = await converter.convert({ buffer: fileBuf, ext, filename: originalFilename })
+			contentBuf = Buffer.from(content, 'utf-8')
+			finalExt = 'md'
+		} catch (e: any) {
+			console.error('[versions] converter.convert failed', e)
+			return fail(event, 500, FILE_CONVERT_FAILED, '文件格式转换失败，请稍后重试')
+		}
 	}
 
 	// 4. 取最新版本号，计算 next
