@@ -10,6 +10,8 @@ import { GROUP_NOT_FOUND, INVALID_PARAMS } from '~/server/constants/error-codes'
 import { createNotifications } from '~/server/utils/notify'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import { PERMISSION_LABEL } from '~/utils/permission-meta'
+import { writeLogs } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 
 export default defineEventHandler(async (event) => {
 	const id = Number(getRouterParam(event, 'id'))
@@ -65,6 +67,22 @@ export default defineEventHandler(async (event) => {
 			groupName: group!.name,
 			groupId: id,
 			permLabel: PERMISSION_LABEL[m.role as keyof typeof PERMISSION_LABEL] || '成员',
+		})))
+	}
+
+	// 操作日志
+	if (toAdd.length > 0) {
+		await writeLogs(toAdd.map(m => ({
+			actorUserId: userId,
+			action: LOG_ACTIONS.MEMBER_ADD,
+			targetType: 'group',
+			targetId: id,
+			groupId: id,
+			detail: {
+				desc: `向组「${group!.name}」添加成员（用户ID: ${m.userId}，角色: ${PERMISSION_LABEL[m.role as keyof typeof PERMISSION_LABEL] || '成员'}）`,
+				userId: m.userId,
+				role: m.role,
+			},
 		})))
 	}
 

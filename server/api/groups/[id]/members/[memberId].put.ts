@@ -9,6 +9,8 @@ import { GROUP_NOT_FOUND, INVALID_PARAMS, MEMBER_IMMUTABLE } from '~/server/cons
 import { createNotification } from '~/server/utils/notify'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import { PERMISSION_LABEL } from '~/utils/permission-meta'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 
 export default defineEventHandler(async (event) => {
 	const groupId = Number(getRouterParam(event, 'id'))
@@ -57,6 +59,21 @@ export default defineEventHandler(async (event) => {
 			newLabel: PERMISSION_LABEL[body.role as keyof typeof PERMISSION_LABEL] || '未知',
 		}))
 	}
+
+	// 操作日志
+	await writeLog({
+		actorUserId: event.context.user!.id,
+		action: LOG_ACTIONS.PERMISSION_GROUP_UPDATE,
+		targetType: 'group',
+		targetId: groupId,
+		groupId,
+		detail: {
+			desc: `修改组「${group!.name}」成员权限（用户ID: ${Number(member!.user_id)}，${PERMISSION_LABEL[oldRole] || '未知'} → ${PERMISSION_LABEL[body.role as keyof typeof PERMISSION_LABEL] || '未知'}）`,
+			userId: Number(member!.user_id),
+			oldRole,
+			newRole: body.role,
+		},
+	})
 
 	return ok(null, '权限已更新')
 })

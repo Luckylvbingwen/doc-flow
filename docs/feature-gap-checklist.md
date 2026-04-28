@@ -46,7 +46,7 @@
 - [x] ~~分页功能~~ ✅ 2026-04-17（服务端分页）
 - [x] ~~空态展示~~ ✅ 2026-04-17（EmptyState `no-logs` preset）
 - [x] ~~日志描述格式化~~ ✅ 2026-04-17（取 `detail_json.desc`，无则兜底）
-- [ ] 埋点落地 — 各业务模块按纪律 INSERT `doc_operation_logs`（随对应功能开发补齐）
+- [x] ~~埋点落地 — 各业务模块按纪律 INSERT `doc_operation_logs`~~ ✅ 2026-04-28（组 CRUD 3 接口 + 成员增删改 3 接口 + 产品线 CRUD 3 接口，共 9 处补齐；此前已有 23+ 处埋点覆盖文件上传/下载/审批/发布/移动/移除/回收站/权限/分享/收藏置顶/评论/角色指派）
 
 ### 2.3 通知中心 (`pages/notifications.vue`)
 
@@ -78,7 +78,7 @@
 - [x] ~~树接通真实 API 数据~~ ✅ 2026-04-16
 - [x] ~~创建组弹窗 / 创建产品线弹窗~~ ✅ 2026-04-16
 - [x] ~~树节点操作菜单（编辑/删除/创建子组）~~ ✅ 已有 `TreeActionMenu`
-- [ ] 全局搜索栏
+- [x] ~~全局搜索栏~~ ✅ 2026-04-28（DocNavTree 已内置搜索，tree API 返回 files 后即可按文件名匹配）
 
 **右栏分类视图（`DocExplorerPanel` type=category/department/productline）**
 

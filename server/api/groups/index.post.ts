@@ -11,6 +11,8 @@ import {
 	GROUP_NAME_EXISTS,
 	PARENT_GROUP_NOT_FOUND,
 } from '~/server/constants/error-codes'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 
 export default defineEventHandler(async (event) => {
 	const body = await readValidatedBody(event, groupCreateSchema.parse)
@@ -116,6 +118,19 @@ export default defineEventHandler(async (event) => {
 		}
 		throw error
 	}
+
+	await writeLog({
+		actorUserId: userId,
+		action: LOG_ACTIONS.GROUP_CREATE,
+		targetType: 'group',
+		targetId: Number(groupId),
+		groupId: Number(groupId),
+		detail: {
+			desc: `创建组「${name}」`,
+			parentId: parentId || null,
+			scopeType: effectiveScopeType,
+		},
+	})
 
 	return ok({ id: Number(groupId) }, '组创建成功')
 })

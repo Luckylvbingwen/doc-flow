@@ -14,6 +14,8 @@ import {
 } from '~/server/constants/error-codes'
 import { grantRole } from '~/server/utils/system-role'
 import { SYSTEM_ROLE_CODES } from '~/server/constants/system-roles'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'super_admin')
@@ -61,6 +63,17 @@ export default defineEventHandler(async (event) => {
 		}
 		throw error
 	}
+
+	await writeLog({
+		actorUserId: operatorId,
+		action: LOG_ACTIONS.PL_UPDATE,
+		targetType: 'product_line',
+		targetId: id,
+		detail: {
+			desc: `编辑产品线「${body.name?.trim() || ''}」信息`,
+			changes: data,
+		},
+	})
 
 	return ok(null, '产品线更新成功')
 })

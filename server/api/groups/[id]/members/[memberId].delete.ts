@@ -7,6 +7,8 @@ import { requireMemberPermission } from '~/server/utils/group-permission'
 import { GROUP_NOT_FOUND, INVALID_PARAMS, MEMBER_IMMUTABLE, MEMBER_SELF_REMOVE } from '~/server/constants/error-codes'
 import { createNotification } from '~/server/utils/notify'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 
 export default defineEventHandler(async (event) => {
 	const groupId = Number(getRouterParam(event, 'id'))
@@ -55,6 +57,19 @@ export default defineEventHandler(async (event) => {
 		toUserId: Number(member!.user_id),
 		groupName: group!.name,
 	}))
+
+	// 操作日志
+	await writeLog({
+		actorUserId: userId,
+		action: LOG_ACTIONS.MEMBER_REMOVE,
+		targetType: 'group',
+		targetId: groupId,
+		groupId,
+		detail: {
+			desc: `从组「${group!.name}」移除成员（用户ID: ${Number(member!.user_id)}）`,
+			userId: Number(member!.user_id),
+		},
+	})
 
 	return ok(null, '成员已移除')
 })

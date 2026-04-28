@@ -11,6 +11,8 @@ import { isDuplicateKeyError } from '~/server/utils/db-errors'
 import { PRODUCT_LINE_NAME_EXISTS } from '~/server/constants/error-codes'
 import { grantRole } from '~/server/utils/system-role'
 import { SYSTEM_ROLE_CODES } from '~/server/constants/system-roles'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'super_admin')
@@ -45,6 +47,16 @@ export default defineEventHandler(async (event) => {
 		}
 		throw error
 	}
+
+	await writeLog({
+		actorUserId: userId,
+		action: LOG_ACTIONS.PL_CREATE,
+		targetType: 'product_line',
+		targetId: Number(id),
+		detail: {
+			desc: `创建产品线「${name}」`,
+		},
+	})
 
 	return ok({ id: Number(id) }, '产品线创建成功')
 })

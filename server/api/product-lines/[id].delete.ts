@@ -8,6 +8,8 @@ import {
 	PRODUCT_LINE_HAS_GROUPS,
 	INVALID_PARAMS,
 } from '~/server/constants/error-codes'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'super_admin')
@@ -19,7 +21,7 @@ export default defineEventHandler(async (event) => {
 	// 校验存在
 	const existing = await prisma.doc_product_lines.findFirst({
 		where: { id: BigInt(id), deleted_at: null },
-		select: { id: true },
+		select: { id: true, name: true },
 	})
 	if (!existing) return fail(event, 404, PRODUCT_LINE_NOT_FOUND, '产品线不存在')
 
@@ -35,6 +37,16 @@ export default defineEventHandler(async (event) => {
 	await prisma.doc_product_lines.update({
 		where: { id: BigInt(id) },
 		data: { deleted_at: new Date() },
+	})
+
+	await writeLog({
+		actorUserId: event.context.user!.id,
+		action: LOG_ACTIONS.PL_DELETE,
+		targetType: 'product_line',
+		targetId: id,
+		detail: {
+			desc: `删除产品线「${existing.name}」`,
+		},
 	})
 
 	return ok(null, '产品线已删除')

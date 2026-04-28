@@ -10,6 +10,8 @@ import {
 	GROUP_HAS_CHILDREN,
 	INVALID_PARAMS,
 } from '~/server/constants/error-codes'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 
 export default defineEventHandler(async (event) => {
 	const id = Number(getRouterParam(event, 'id'))
@@ -18,7 +20,7 @@ export default defineEventHandler(async (event) => {
 	// 校验组存在
 	const group = await prisma.doc_groups.findFirst({
 		where: { id: BigInt(id), deleted_at: null },
-		select: { id: true, scope_type: true, scope_ref_id: true, owner_user_id: true },
+		select: { id: true, name: true, scope_type: true, scope_ref_id: true, owner_user_id: true },
 	})
 	if (!group) return fail(event, 404, GROUP_NOT_FOUND, '组不存在')
 
@@ -50,6 +52,15 @@ export default defineEventHandler(async (event) => {
 	await prisma.doc_groups.update({
 		where: { id: BigInt(id) },
 		data: { deleted_at: new Date() },
+	})
+
+	await writeLog({
+		actorUserId: event.context.user!.id,
+		action: LOG_ACTIONS.GROUP_DELETE,
+		targetType: 'group',
+		targetId: id,
+		groupId: id,
+		detail: { desc: `删除组「${group.name}」` },
 	})
 
 	return ok(null, '组已删除')

@@ -7,6 +7,8 @@ import { requireGroupPermission } from '~/server/utils/group-permission'
 import { groupUpdateSchema } from '~/server/schemas/group'
 import { isDuplicateKeyError } from '~/server/utils/db-errors'
 import { GROUP_NOT_FOUND, GROUP_NAME_EXISTS, INVALID_PARAMS } from '~/server/constants/error-codes'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 
 export default defineEventHandler(async (event) => {
 	const id = Number(getRouterParam(event, 'id'))
@@ -47,6 +49,18 @@ export default defineEventHandler(async (event) => {
 		}
 		throw error
 	}
+
+	await writeLog({
+		actorUserId: event.context.user!.id,
+		action: LOG_ACTIONS.GROUP_UPDATE,
+		targetType: 'group',
+		targetId: id,
+		groupId: id,
+		detail: {
+			desc: `编辑组「${body.name?.trim() || ''}」信息`,
+			changes: data,
+		},
+	})
 
 	return ok(null, '组更新成功')
 })
