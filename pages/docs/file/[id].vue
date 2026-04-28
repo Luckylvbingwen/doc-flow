@@ -47,7 +47,15 @@ circle size="small" :type="detail.isPinned ? 'primary' : 'default'" :loading="pi
 					</el-button>
 				</el-tooltip>
 				<span class="df-file-topbar__sep" />
+				<!-- 协作者头像叠层 -->
+				<AvatarStack :users="collaborators" :max="3" />
 				<!-- 核心按钮：编辑/下载/分享 -->
+				<el-button v-if="detail.canEdit" size="small" @click="handleEdit">
+					<el-icon>
+						<Edit />
+					</el-icon>
+					编辑
+				</el-button>
 				<el-button
 v-if="detail.canSubmitApproval" type="primary" size="small" :loading="submitLoading"
 					@click="handleSubmitApproval">
@@ -69,7 +77,7 @@ v-if="detail.canSubmitApproval" type="primary" size="small" :loading="submitLoad
 					分享
 				</el-button>
 				<!-- 更多菜单 -->
-				<el-dropdown trigger="click" @command="handleMoreCommand">
+				<el-dropdown trigger="click" placement="bottom-end" @command="handleMoreCommand">
 					<el-button size="small" class="df-file-topbar__more">
 						<el-icon>
 							<MoreFilled />
@@ -94,6 +102,12 @@ v-if="detail.canSubmitApproval" type="primary" size="small" :loading="submitLoad
 									<Upload />
 								</el-icon>
 								上传新版本
+							</el-dropdown-item>
+							<el-dropdown-item command="history" divided>
+								<el-icon>
+									<List />
+								</el-icon>
+								历史记录
 							</el-dropdown-item>
 							<el-dropdown-item v-if="detail.canRemove" command="remove" divided>
 								<span style="color: var(--el-color-danger)">
@@ -333,6 +347,9 @@ v-for="item in approvalRecords" :key="item.id" :item="item" tab="submitted"
 
 		<!-- 审批详情抽屉（只读：当前用户从文件详情页打开，不暴露通过 / 驳回操作） -->
 		<ApprovalDrawer v-model="approvalDrawerVisible" :approval="currentApproval" @view-file="onDrawerViewFile" />
+
+		<!-- 历史记录抽屉 -->
+		<HistoryDrawer v-model="historyDrawerVisible" :document-id="documentId" />
 	</section>
 </template>
 
@@ -346,6 +363,7 @@ import {
 	Switch,
 	FullScreen,
 	Loading,
+	Edit,
 	DataAnalysis,
 	List,
 	Star,
@@ -480,6 +498,20 @@ async function onTogglePin() {
 // ── 版本列表 ──
 const versions = ref<VersionInfo[]>([])
 const currentVersion = computed(() => versions.value.find(v => v.isCurrent))
+
+/** 协作者：从版本上传者 + 文档归属人去重 */
+const collaborators = computed(() => {
+	const map = new Map<number, { id: number; name: string }>()
+	if (detail.value) {
+		map.set(detail.value.ownerId, { id: detail.value.ownerId, name: detail.value.ownerName })
+	}
+	for (const v of versions.value) {
+		if (!map.has(v.uploadedBy)) {
+			map.set(v.uploadedBy, { id: v.uploadedBy, name: v.uploaderName })
+		}
+	}
+	return Array.from(map.values())
+})
 
 async function fetchVersions() {
 	try {
@@ -941,12 +973,20 @@ function backToGroup() {
 	}
 }
 
+// ── 编辑（TODO: 对接在线编辑器） ──
+function handleEdit() {
+	msgSuccess('编辑功能开发中，敬请期待')
+}
+
 // ── 更多菜单 ──
+const historyDrawerVisible = ref(false)
+
 function handleMoreCommand(command: string) {
 	switch (command) {
 		case 'permission': permModalVisible.value = true; break
 		case 'move': movePickerVisible.value = true; break
 		case 'upload': uploadVisible.value = true; break
+		case 'history': historyDrawerVisible.value = true; break
 		case 'remove': handleRemove(); break
 	}
 }

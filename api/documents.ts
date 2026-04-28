@@ -134,3 +134,21 @@ export function apiReviewCrossMove(moveId: number, action: 'approve' | 'reject')
 		body: { action },
 	})
 }
+
+/** 文档级操作历史 */
+export interface DocHistoryItem {
+	id: number
+	type: string | null
+	action: string
+	actorId: number
+	actorName: string
+	description: string
+	createdAt: number
+}
+
+export function apiGetDocumentHistory(id: number, params?: { page?: number; pageSize?: number }) {
+	return useAuthFetch<ApiResult<{ list: DocHistoryItem[]; total: number; page: number; pageSize: number }>>(
+		`/api/documents/${id}/history`,
+		{ query: params },
+	)
+}

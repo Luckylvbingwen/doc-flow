@@ -635,3 +635,36 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
 ### docs: README.md 重写
 
 - 完整重写为从零启动指南：环境准备 → Docker 启动 → 数据库初始化 → MinIO 存储桶创建 → Prisma 生成 → 启动开发服务器
+
+### style: 全局表格列宽优化 + DataTable border 默认开启
+
+- **DataTable.vue** — `border` prop 默认值 `false` → `true`，启用列边框方便拖拽调整列宽
+- **列宽分布调整**（将唯一 minWidth 列拆分为多 minWidth 列消除右侧大片空白）
+  - `profile.vue` — 文件名 260、来源 120、创建人 100、所属组 120
+  - `recycle-bin.vue` — 文件名 240、原组 120、删除人 100
+  - `logs.vue` — 操作人 100、操作描述 280、所属组 120
+  - `admin.vue` — 姓名 140、邮箱 180、角色 180、管理范围 220
+  - `user-roles.vue` — 用户名 120、邮箱 180、角色 120
+  - `GroupFilesPanel.vue` — 文件名 240、版本 80、归属人 100
+
+### feat: 文件详情页 topbar 重构 + 新增组件
+
+- **页面重构** — `pages/docs/file/[id].vue`
+  - 旧方案：PageTitle + 8 个平铺按钮 → 新方案：编辑器风格 topbar（返回 + 图标 + 文件名 + 状态 + 版本号 + 协作者头像 + 核心按钮 + ··· 更多菜单）
+  - 底部元信息条：上传者 / 更新时间 / 文件大小 / 所属组 / 下载次数
+  - 核心按钮：收藏、置顶、全屏预览、下载、编辑（占位）
+  - 更多菜单（el-dropdown）：权限设置、跨组移动、上传新版本、操作历史、从组移除
+  - el-dropdown 添加 `placement="bottom-end"` 防止水平滚动条
+- **新增组件 `RollbackConfirmModal.vue`** — 富确认弹窗：警示色头部 + Sort 图标 + 版本方向信息卡 + el-alert 提示
+- **新增组件 `AvatarStack.vue`** — 协作者头像重叠展示：名字哈希色 + 最多 3 个 + 溢出 "+N" 指示器
+- **新增组件 `HistoryDrawer.vue`** — 文档操作历史抽屉：时间线 + 操作人/时间/描述 + 分页
+- **新增样式** — `_doc-preview.scss` 新增 `.df-file-topbar`、`.df-file-meta-bar`、`.df-avatar-stack`、`.df-history-timeline`、`.file-status` 等
+
+### feat: 文档级操作历史 API
+
+- **后端** — `GET /api/documents/:id/history`
+  - 权限：`doc:read`
+  - 查询 `doc_operation_logs` 按 `document_id` 过滤 + JOIN `doc_users` 获取操作人姓名
+  - 支持 page/pageSize 分页，按时间倒序
+  - 响应：`{ list: DocHistoryItem[], total, page, pageSize }`
+- **前端** — `api/documents.ts` 新增 `apiGetDocumentHistory()`

@@ -629,6 +629,122 @@
 }
 
 /* =============================================
+   AvatarStack — 协作者头像叠层
+   ============================================= */
+.df-avatar-stack {
+  display: flex;
+  align-items: center;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.df-avatar-stack__item {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  border: 2px solid var(--df-panel);
+  position: relative;
+  cursor: default;
+}
+
+.df-avatar-stack__item + .df-avatar-stack__item {
+  margin-left: -8px;
+}
+
+.df-avatar-stack__overflow {
+  background: var(--df-subtext) !important;
+  font-size: 10px;
+}
+
+/* =============================================
+   HistoryDrawer — 历史记录时间线
+   ============================================= */
+.df-history-body {
+  height: 100%;
+  padding: 0 4px;
+}
+
+.df-history-timeline {
+  position: relative;
+  padding: 8px 0 8px 20px;
+}
+
+.df-history-timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 16px;
+  bottom: 16px;
+  width: 2px;
+  background: var(--df-border);
+  border-radius: 1px;
+}
+
+.df-history-item {
+  position: relative;
+  padding-bottom: 20px;
+}
+
+.df-history-item:last-child {
+  padding-bottom: 0;
+}
+
+.df-history-item__dot {
+  position: absolute;
+  left: -18px;
+  top: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--df-primary);
+  border: 2px solid var(--df-panel);
+  z-index: 1;
+}
+
+.df-history-item__content {
+  min-width: 0;
+}
+
+.df-history-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.df-history-item__actor {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--df-text);
+}
+
+.df-history-item__time {
+  font-size: 12px;
+  color: var(--df-subtext);
+  flex-shrink: 0;
+}
+
+.df-history-item__desc {
+  font-size: 13px;
+  color: var(--df-subtext);
+  line-height: 1.5;
+}
+
+.df-history-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--df-border);
+  display: flex;
+  justify-content: center;
+}
+
+/* =============================================
    EmptyState — 缺省页 / 空状态
    ============================================= */
 .df-empty-state {

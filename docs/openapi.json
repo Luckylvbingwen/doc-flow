@@ -1907,6 +1907,75 @@
         }
       }
     },
+    "/api/documents/{id}/history": {
+      "get": {
+        "tags": ["文档"],
+        "summary": "文档操作历史",
+        "description": "权限码: doc:read。按 document_id 过滤 doc_operation_logs，按时间倒序分页返回",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "文档 ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1, "minimum": 1 },
+            "description": "页码"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20, "minimum": 1, "maximum": 100 },
+            "description": "每页条数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作历史列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "list": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": { "type": "integer" },
+                                  "actorName": { "type": "string", "description": "操作人姓名" },
+                                  "action": { "type": "string", "description": "操作类型（如 upload, rollback, publish 等）" },
+                                  "type": { "type": "string", "description": "操作分类（如 upload, version, status 等）" },
+                                  "description": { "type": "string", "description": "操作描述" },
+                                  "createdAt": { "type": "integer", "description": "毫秒时间戳" }
+                                }
+                              }
+                            },
+                            "total": { "type": "integer" },
+                            "page": { "type": "integer" },
+                            "pageSize": { "type": "integer" }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/documents/cross-move/{id}/review": {
       "put": {
         "tags": ["文档"],
