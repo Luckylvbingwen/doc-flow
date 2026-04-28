@@ -30,7 +30,7 @@ v-model="filterGroupId" :fetch-fn="fetchFilterGroups" placeholder="全部组" it
 		<DataTable
 ref="tableRef" v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list"
 			:columns="columns" :total="total" :loading="loading" :page-sizes="[10, 15, 30, 50]" empty-preset="no-trash"
-			row-key="id" show-selection fill-height :action-width="200" @page-change="onPageChange"
+			row-key="id" show-selection fill-height :action-width="230" @page-change="onPageChange"
 			@selection-change="onSelectionChange">
 			<template #title="{ row }">
 				<div class="recycle-title">
@@ -53,6 +53,9 @@ ref="tableRef" v-model:page="currentPage" v-model:page-size="currentPageSize" :d
 				<span class="recycle-size">{{ formatBytes(row.fileSize) }}</span>
 			</template>
 			<template #action="{ row }">
+				<el-button type="primary" text size="small" :loading="previewingId === row.id" @click="onPreview(row)">
+					查看
+				</el-button>
 				<el-button
 v-if="canRestore" type="primary" text size="small" :loading="restoringId === row.id"
 					:disabled="busy && restoringId !== row.id" @click="onRestore(row)">
@@ -70,11 +73,26 @@ v-if="canPurge" type="danger" text size="small" :loading="purgingId === row.id"
 			<el-button v-if="canRestore" type="primary" :loading="bulkRestoring" @click="onBulkRestore">批量恢复</el-button>
 			<el-button v-if="canPurge" type="danger" :loading="bulkPurging" @click="onBulkPurge">批量永久删除</el-button>
 		</BulkActionBar>
+
+		<!-- 回收站文件预览弹窗（PRD §6.6.2 “仅展示改版正文”） -->
+		<Modal v-model="previewVisible" :title="previewTitle" width="800px" destroy-on-close :show-footer="false">
+			<div
+v-if="previewLoading"
+				style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 40px 0; color: var(--df-subtext)">
+				<el-icon class="is-loading">
+					<Loading />
+				</el-icon>
+				<span>加载中…</span>
+			</div>
+			<el-scrollbar v-else max-height="60vh">
+				<DocPreview file-type="md" :html="previewHtml" />
+			</el-scrollbar>
+		</Modal>
 	</ListPageShell>
 </template>
 
 <script setup lang="ts">
-import { Search } from '@element-plus/icons-vue'
+import { Search, Loading } from '@element-plus/icons-vue'
 import type { TableColumn } from '~/components/DataTable.vue'
 import { formatTime, formatBytes } from '~/utils/format'
 import {
@@ -82,6 +100,7 @@ import {
 	apiGetRecycleFilterGroups,
 	apiRestoreRecycle,
 	apiPurgeRecycle,
+	apiPreviewRecycleItem,
 	type RecycleListQuery,
 } from '~/api/recycle-bin'
 import type {
@@ -134,6 +153,7 @@ function clearSelection() {
 // ── 行级 loading 追踪 ──
 const restoringId = ref<number | null>(null)
 const purgingId = ref<number | null>(null)
+const previewingId = ref<number | null>(null)
 const bulkRestoring = ref(false)
 const bulkPurging = ref(false)
 const busy = computed(() => restoringId.value != null || purgingId.value != null || bulkRestoring.value || bulkPurging.value)
@@ -198,6 +218,31 @@ async function fetchFilterGroups(params: { keyword: string; page: number; pageSi
 }
 
 // ── 行操作 ──
+// ── 预览 ──
+const previewVisible = ref(false)
+const previewLoading = ref(false)
+const previewHtml = ref('')
+const previewTitle = ref('文件预览')
+
+async function onPreview(row: RecycleItem) {
+	previewingId.value = row.id
+	previewHtml.value = ''
+	previewTitle.value = `预览「${row.title}」`
+	try {
+		const res = await apiPreviewRecycleItem(row.id)
+		if (res.success) {
+			previewHtml.value = res.data.html
+			previewVisible.value = true
+		} else {
+			msgError(res.message || '预览失败')
+		}
+	} catch {
+		msgError('预览失败')
+	} finally {
+		previewingId.value = null
+	}
+}
+
 async function onRestore(row: RecycleItem) {
 	const ok = await msgConfirm(`确定将「${row.title}」恢复到原组「${row.groupName}」？`)
 	if (!ok) return

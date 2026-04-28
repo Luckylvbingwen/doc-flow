@@ -111,6 +111,7 @@ import {
 } from '~/utils/doc-meta'
 import { getActions, type ActionKind } from '~/utils/personal-matrix'
 import { apiGetPersonalDocs, apiGetPersonalHandover, apiDeleteDraft } from '~/api/personal'
+import { apiDownloadDocumentUrl } from '~/api/documents'
 import type {
 	PersonalDocItem,
 	HandoverGroup,
@@ -289,8 +290,13 @@ function onView(doc: PersonalDocItem) {
 
 async function onActionClick(doc: PersonalDocItem, kind: ActionKind) {
 	if (kind === 'view') return onView(doc)
+	if (kind === 'download') return onDownload(doc)
 	if (kind === 'withdraw') return onWithdraw(doc)
 	if (kind === 'delete') return onDelete(doc)
+}
+
+function onDownload(doc: PersonalDocItem) {
+	window.location.href = apiDownloadDocumentUrl(doc.id)
 }
 
 async function onWithdraw(doc: PersonalDocItem) {

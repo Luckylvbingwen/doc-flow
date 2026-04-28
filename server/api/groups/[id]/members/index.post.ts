@@ -7,6 +7,9 @@ import { generateId } from '~/server/utils/snowflake'
 import { requireMemberPermission } from '~/server/utils/group-permission'
 import { addMembersSchema } from '~/server/schemas/group-member'
 import { GROUP_NOT_FOUND, INVALID_PARAMS } from '~/server/constants/error-codes'
+import { createNotifications } from '~/server/utils/notify'
+import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
+import { PERMISSION_LABEL } from '~/utils/permission-meta'
 
 export default defineEventHandler(async (event) => {
 	const id = Number(getRouterParam(event, 'id'))
@@ -17,7 +20,7 @@ export default defineEventHandler(async (event) => {
 
 	const group = await prisma.doc_groups.findFirst({
 		where: { id: BigInt(id), deleted_at: null },
-		select: { id: true, scope_type: true, scope_ref_id: true, owner_user_id: true },
+		select: { id: true, name: true, scope_type: true, scope_ref_id: true, owner_user_id: true },
 	})
 	if (!group) return fail(event, 404, GROUP_NOT_FOUND, '组不存在')
 
@@ -53,6 +56,16 @@ export default defineEventHandler(async (event) => {
 				created_by: BigInt(userId),
 			})),
 		})
+	}
+
+	// M18 通知：通知被添加的成员
+	if (toAdd.length > 0) {
+		await createNotifications(toAdd.map(m => NOTIFICATION_TEMPLATES.M18.build({
+			toUserId: m.userId,
+			groupName: group!.name,
+			groupId: id,
+			permLabel: PERMISSION_LABEL[m.role as keyof typeof PERMISSION_LABEL] || '成员',
+		})))
 	}
 
 	return ok(

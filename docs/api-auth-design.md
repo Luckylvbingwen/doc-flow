@@ -171,6 +171,7 @@
 | GET | /api/recycle-bin/filter-groups | 是 | recycle:read | "按组筛选"下拉源（远程分页，只返回回收站里有数据的组） |
 | POST | /api/recycle-bin/restore | 是 | recycle:restore | 批量恢复（1-50 条，原组被删的条目放入 failed 列表） |
 | POST | /api/recycle-bin/purge | 是 | recycle:delete | 批量永久删除（软删 `deleted_at` 标记，不可恢复） |
+| GET | /api/recycle-bin/:id/preview | 是 | recycle:read | 回收站文件预览（PRD §6.6.2 “仅展示改版正文”，支持已删除文档 + 数据范围校验） |
 
 ### 审批中心 (approvals)
 
@@ -1655,6 +1656,36 @@
     "versionId": 60003,
     "versionNo": "v3.0",
     "rollbackFrom": "v1.0"
+  }
+}
+```
+
+---
+
+## 4. 数据与安全说明
+
+### 3.68 GET /api/recycle-bin/:id/preview
+
+**路径**：`GET /api/recycle-bin/:id/preview`
+
+**鉴权**：登录 + `recycle:read` 权限 + 数据范围校验（同回收站列表口径）
+
+**用途**：PRD §6.6.2 回收站“查看”按钮，仅展示已删除文档的 Markdown 渲染正文。
+
+**业务规则**：
+- 仅对已删除文档有效（`deleted_at IS NOT NULL`）
+- 数据范围校验复用 `buildRecycleScopeFilter`
+- 非 MD 格式返回“暂不支持预览”占位
+- MinIO 对象已过期时返回“文件存储已过期”
+
+**响应**：
+```json
+{
+  "success": true,
+  "data": {
+    "html": "<h1>文档标题</h1><p>正文内容...</p>",
+    "title": "文档标题",
+    "versionNo": "v1.2"
   }
 }
 ```

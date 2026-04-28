@@ -53,3 +53,10 @@ export function apiPurgeRecycle(ids: number[]) {
 		body: { ids },
 	})
 }
+
+/** 回收站文件预览（PRD §6.6.2 "仅展示改版正文"） */
+export function apiPreviewRecycleItem(id: number) {
+	return useAuthFetch<ApiResult<{ html: string; title: string; versionNo: string }>>(`/api/recycle-bin/${id}/preview`, {
+		method: 'GET',
+	})
+}

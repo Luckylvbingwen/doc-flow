@@ -1,13 +1,12 @@
 /**
  * 个人中心操作矩阵（PRD §6.5.2 操作矩阵）
  *
- * A 阶段范围：只返回本轮可做的 3 种动作（查看 / 撤回 / 删除草稿）
- * 其他 PRD 所列按钮（编辑 / 分享 / 下载 / 提交发布 / 转移归属人 / 申请编辑权限）
- * 目前依赖模块未就绪 —— **一律不渲染**（隐藏），等对应模块完成后这里扩展。
+ * 已激活动作：查看 / 下载 / 撤回 / 删除草稿
+ * 待后续模块：编辑 / 分享 / 提交发布 / 转移归属人 / 申请编辑权限
  */
 import type { PersonalDocItem, ItemSource } from '~/types/personal'
 
-export type ActionKind = 'view' | 'withdraw' | 'delete'
+export type ActionKind = 'view' | 'download' | 'withdraw' | 'delete'
 
 export interface ActionSpec {
 	kind: ActionKind
@@ -33,6 +32,12 @@ export function getActions(doc: PersonalDocItem, currentUserId: number): ActionS
 	// PRD：审批中 + 我创建的 → 查看；已发布 + 分享可阅读 → 查看
 	// A 阶段简化：所有项都有"查看"按钮（跳文件详情占位页）
 	actions.push({ kind: 'view', label: '查看', type: 'primary', inMenu: false })
+
+	// ── 下载按钮 ──
+	// PRD：已发布文档可下载
+	if (doc.status === 4) {
+		actions.push({ kind: 'download', label: '下载', type: 'default', inMenu: false })
+	}
 
 	// ── 撤回按钮（红色）──
 	// PRD：审批中 + 我创建的

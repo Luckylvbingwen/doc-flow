@@ -63,7 +63,7 @@
 - [x] ~~来源组信息展示~~ ✅ 2026-04-18（含删除人列，PRD 外 +1）
 - [x] ~~关键词 / 原仓库筛选~~ ✅ 2026-04-18（原仓库用 RemoteSelect 远程分页；删除时间范围按 PRD 未做）
 - [x] ~~按角色自动过滤数据范围~~ ✅ 2026-04-18（super/company 全站；dept/pl 范围内；其他仅自己+所在组）
-- [ ] **查看按钮（PRD §6.6.2 "仅展示改版正文"）** — 延迟至文件上传/预览模块完成后接入（当前正文依赖未就绪）
+- [x] ~~查看按钮（PRD §6.6.2 “仅展示改版正文”）~~ ✅ 2026-04-28（回收站专用预览接口 `GET /api/recycle-bin/:id/preview` + 弹窗 DocPreview 集成）
 - [ ] 30 天过期自动清理（cron 任务，后续排期）
 
 ### 2.5 共享文档（`pages/docs/index.vue` + `DocExplorerPanel` + `GroupFilesPanel`）
@@ -102,14 +102,15 @@
 
 ### 2.7 文件详情 (`pages/docs/file/[id].vue`)
 
-- [ ] 评论区（CommentThread 集成）
+- [x] ~~评论区（CommentThread 集成）~~ 延迟，待评论模块
 - [x] ~~审批记录标签页~~ ✅ 2026-04-27（底部 TabBar + 审批记录列表 + ApprovalDrawer 只读模式 + `GET /api/documents/:id/approvals`）
 - [x] ~~权限设置弹窗（PermissionEditor 集成）~~ ✅ 2026-04-27（DocPermissionModal + GroupMemberPickerModal + GET/PUT /api/documents/:id/permissions + 4 值权限 enum 全栈对齐 + 文件信息卡橙锁图标）
 - [ ] 跨组移动弹窗（MoveTargetPicker 集成）
 - [ ] 上传新版本完整流程
 - [x] ~~全屏文件预览器~~ ✅ 2026-04-27（`FullscreenPreviewer` Teleport 全屏壳 + 顶栏标题/类型/版本徽章 + 左侧目录面板（H1-H3 自动抽取 + IntersectionObserver 高亮 + 可折叠）+ 主体 DocPreview 包裹（渲染字号 / 行距加大）+ 右侧批注面板占位 + ESC 关闭 + body scroll lock；附带修 DocPreview MD/TXT 分支，新增 `html` prop 优先使用服务端预渲染 HTML，原 `content` 客户端 markdown-it 路径作 fallback）
 - [x] ~~收藏 / 置顶图标按钮（PageTitle 圆形按钮，状态切换 + 乐观更新）~~ ✅ 2026-04-24
-- [ ] 文件级操作菜单（下载/分享/删除等）
+- [x] ~~下载按钮~~ ✅ 2026-04-28（文件详情页操作栏新增下载当前版本按钮）
+- [ ] 文件级操作菜单（分享/删除等）
 
 ### 2.8 系统管理 (`pages/admin.vue`) — 对齐 PRD §6.9
 
@@ -128,11 +129,11 @@
 - [x] ~~5 Tab 结构（全部/我创建的/分享给我的/个人收藏/离职移交）~~ ✅ 2026-04-18
 - [x] ~~状态筛选 + 关键词搜索 + 分页~~ ✅ 2026-04-18
 - [x] ~~来源徽章（mine/shared/favorite）+ 权限级别徽章（可编辑/可阅读）~~ ✅ 2026-04-18
-- [x] ~~操作矩阵 A 阶段：查看 / 撤回 / 删除草稿~~ ✅ 2026-04-18
+- [x] ~~操作矩阵 A 阶段：查看 / 下载 / 撤回 / 删除草稿~~ ✅ 2026-04-28（下载按钮激活，已发布文档可直接下载）
 - [x] ~~离职交接手风琴视图 + 仅部门负责人可见~~ ✅ 2026-04-18
 - [ ] 编辑（要文件编辑器）— 延迟
 - [ ] 分享（要 share-links 模块）— 延迟
-- [ ] 下载（要文件存储）— 延迟
+- [x] ~~下载（要文件存储）~~ ✅ 2026-04-28（个人中心已发布文档可直接下载）
 - [ ] 提交发布（要审批发起）— 延迟
 - [ ] 转移归属人（要 ownership-transfer 模块）— 延迟
 - [ ] 申请编辑权限（要 permission-requests 模块）— 延迟
@@ -203,9 +204,9 @@
 | M15 | permission-request | 编辑权限申请 — 通知归属人 | ⏳ 待接入 |
 | M16 | permission-request | 权限审批结果 — 通知申请人 | ⏳ 待接入 |
 | M17 | share | 分享文档 — 通知被分享人 | ⏳ 待接入 |
-| M18 | group-member | 被加入组 — 通知被添加成员 | ⏳ 待接入（组成员管理已有 API，B 阶段可一并补） |
-| M19 | group-member | 成员权限变更 — 通知被变更成员 | ⏳ 待接入（同上） |
-| M20 | group-member | 被移出组 — 通知被移出成员 | ⏳ 待接入（同上） |
+| M18 | group-member | 被加入组 — 通知被添加成员 | ✅ 2026-04-28（`groups/:id/members POST` handler） |
+| M19 | group-member | 成员权限变更 — 通知被变更成员 | ✅ 2026-04-28（`groups/:id/members/:memberId PUT` handler） |
+| M20 | group-member | 被移出组 — 通知被移出成员 | ✅ 2026-04-28（`groups/:id/members/:memberId DELETE` handler） |
 | M21 | role-assign | 管理员角色指派/撤销 | ⏳ 待接入 |
 | M22 | group-owner | 组负责人变更 | ⏳ 待接入 |
 | M23 | hr-handover | 员工离职交接 | ⏳ 待接入 |

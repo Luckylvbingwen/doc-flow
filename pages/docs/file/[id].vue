@@ -45,6 +45,12 @@ v-if="detail?.canSubmitApproval" type="primary" :loading="submitLoading"
 					</el-icon>
 					权限设置
 				</el-button>
+				<el-button v-if="detail?.status === 4" @click="handleDownloadCurrent">
+					<el-icon>
+						<Download />
+					</el-icon>
+					下载
+				</el-button>
 				<el-button v-if="detail?.canRemove" type="danger" plain :loading="removing" @click="handleRemove">
 					<el-icon>
 						<Delete />
@@ -270,6 +276,7 @@ import {
 	Promotion,
 	Upload,
 	Delete,
+	Download,
 	Switch,
 	FullScreen,
 	Loading,
@@ -484,6 +491,10 @@ function openFullscreenCompare() {
 // ── 下载 ──
 function handleDownloadVersion(version: VersionInfo) {
 	window.location.href = apiDownloadDocumentUrl(documentId.value, version.id)
+}
+
+function handleDownloadCurrent() {
+	window.location.href = apiDownloadDocumentUrl(documentId.value)
 }
 
 // ── 版本回滚（PRD §6.3.4 — 回滚生成新版本，不删除中间版本） ──

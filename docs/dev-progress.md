@@ -590,3 +590,48 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
 | P2 | 收藏 / 置顶 | ✅ B 阶段完成于 2026-04-24（读端 A 阶段 + 写端 B 阶段 + UI + 级联清理）|
 | P2 | 评论 / 批注、文档引用、搜索、分享 | ⏳ 待排期 |
 | P3 | M24 审批链成员因离职/调岗移除 | 🕓 待产品讨论（归"离职交接运行时"整体设计）|
+
+---
+
+## 2026-04-28
+
+### feat: 文件格式转换接入（office2md 外部服务对接）
+
+- **后端**
+  - 新增 `server/utils/format-converter/external.ts` — `ExternalConverter` 实现，通过 HTTP POST 调用外部 office2md 服务
+  - `server/utils/format-converter/index.ts` — 当 `FORMAT_CONVERTER_ENDPOINT` + `FORMAT_CONVERTER_TOKEN` 环境变量配置时自动启用 ExternalConverter；否则回退 NoopConverter
+  - `server/api/documents/upload.post.ts` + `server/api/documents/[id]/versions.post.ts` — 非 md 文件调用 `converter.convert()` 转换后再存储
+- **前端**
+  - `components/UploadFileModal.vue` — accept 扩展为 `.md,.docx,.xlsx,.pdf`，提示文案更新
+- **环境变量**
+  - `.env` / `.env.example` — 配置 `FORMAT_CONVERTER_ENDPOINT` + `FORMAT_CONVERTER_TOKEN`
+- **转换流程**：上传 docx/xlsx/pdf → 后端 POST `/convert` → 获取返回的 md 下载链接 → 下载 md 内容 → 以 `.md` 格式存入 MinIO
+
+### feat: M18/M19/M20 组成员变更通知接入
+
+- **后端**
+  - `server/api/groups/[id]/members/index.post.ts` — 批量添加成员后触发 M18 通知（通知每个被添加的成员，含组名+权限标签）
+  - `server/api/groups/[id]/members/[memberId].put.ts` — 修改权限后触发 M19 通知（通知被变更成员，含旧→新权限标签）
+  - `server/api/groups/[id]/members/[memberId].delete.ts` — 移除成员后触发 M20 通知（通知被移出成员，含组名）
+- **规格依据**：PRD §6.8 站内通知 + `feature-gap-checklist.md` §七 通知触发点接入清单
+
+### feat: 个人中心下载按钮激活
+
+- `utils/personal-matrix.ts` — ActionKind 扩展 `download`，已发布文档显示下载按钮
+- `pages/profile.vue` — `onDownload` 通过 `apiDownloadDocumentUrl` 触发浏览器下载
+
+### feat: 文件详情页下载按钮
+
+- `pages/docs/file/[id].vue` — 操作栏新增「下载」按钮（仅已发布文档显示），调用 `apiDownloadDocumentUrl` 下载当前版本
+
+### feat: 回收站查看按钮（PRD §6.6.2）
+
+- **后端**
+  - 新增 `GET /api/recycle-bin/:id/preview` — 回收站专用预览接口，支持已删除文档（`deleted_at IS NOT NULL`），需 `recycle:read` 权限 + 数据范围校验
+- **前端**
+  - `api/recycle-bin.ts` — 新增 `apiPreviewRecycleItem`
+  - `pages/recycle-bin.vue` — 每行新增「查看」按钮 + 弹窗内 DocPreview 渲染 Markdown 正文
+
+### docs: README.md 重写
+
+- 完整重写为从零启动指南：环境准备 → Docker 启动 → 数据库初始化 → MinIO 存储桶创建 → Prisma 生成 → 启动开发服务器

@@ -5,6 +5,8 @@
 import { prisma } from '~/server/utils/prisma'
 import { requireMemberPermission } from '~/server/utils/group-permission'
 import { GROUP_NOT_FOUND, INVALID_PARAMS, MEMBER_IMMUTABLE, MEMBER_SELF_REMOVE } from '~/server/constants/error-codes'
+import { createNotification } from '~/server/utils/notify'
+import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 
 export default defineEventHandler(async (event) => {
 	const groupId = Number(getRouterParam(event, 'id'))
@@ -17,7 +19,7 @@ export default defineEventHandler(async (event) => {
 
 	const group = await prisma.doc_groups.findFirst({
 		where: { id: BigInt(groupId), deleted_at: null },
-		select: { id: true, scope_type: true, scope_ref_id: true, owner_user_id: true },
+		select: { id: true, name: true, scope_type: true, scope_ref_id: true, owner_user_id: true },
 	})
 	if (!group) return fail(event, 404, GROUP_NOT_FOUND, '组不存在')
 
@@ -47,6 +49,12 @@ export default defineEventHandler(async (event) => {
 		where: { id: BigInt(memberId) },
 		data: { deleted_at: new Date() },
 	})
+
+	// M20 通知：通知被移出的成员
+	await createNotification(NOTIFICATION_TEMPLATES.M20.build({
+		toUserId: Number(member!.user_id),
+		groupName: group!.name,
+	}))
 
 	return ok(null, '成员已移除')
 })
