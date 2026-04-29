@@ -48,6 +48,24 @@ export const documentDownloadQuerySchema = z.object({
 })
 export type DocumentDownloadQuery = z.infer<typeof documentDownloadQuerySchema>
 
+/**
+ * POST /api/documents/:id/publish 草稿发布到组
+ *
+ * mode:
+ *   - 'new'      首次发布 → 文档归组 + 走审批/直发布
+ *   - 'update'   版本迭代 → 关联已有文档为新版本
+ */
+export const documentPublishSchema = z.object({
+	mode: z.enum(['new', 'update']),
+	/** 目标组 ID */
+	targetGroupId: z.coerce.number().int().positive(),
+	/** 版本迭代模式下：目标已有文档 ID */
+	targetDocId: z.coerce.number().int().positive().optional(),
+	/** 备注 */
+	remark: z.string().trim().max(500).optional(),
+})
+export type DocumentPublishBody = z.infer<typeof documentPublishSchema>
+
 /** GET /api/documents/:id/preview 查询参数 */
 export const documentPreviewQuerySchema = z.object({
 	versionId: z.coerce.number().int().positive().optional(),

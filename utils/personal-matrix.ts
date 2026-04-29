@@ -1,12 +1,12 @@
 /**
  * 个人中心操作矩阵（PRD §6.5.2 操作矩阵）
  *
- * 已激活动作：查看 / 下载 / 撤回 / 删除草稿
- * 待后续模块：编辑 / 分享 / 提交发布 / 转移归属人 / 申请编辑权限
+ * 已激活动作：查看 / 下载 / 分享 / 撤回 / 删除草稿 / 提交发布
+ * 待后续模块：编辑 / 转移归属人 / 申请编辑权限
  */
 import type { PersonalDocItem, ItemSource } from '~/types/personal'
 
-export type ActionKind = 'view' | 'download' | 'share' | 'withdraw' | 'delete'
+export type ActionKind = 'view' | 'download' | 'share' | 'publish' | 'withdraw' | 'delete'
 
 export interface ActionSpec {
 	kind: ActionKind
@@ -43,6 +43,12 @@ export function getActions(doc: PersonalDocItem, currentUserId: number): ActionS
 	// PRD：已发布文档可分享
 	if (doc.status === 4) {
 		actions.push({ kind: 'share', label: '分享', type: 'default', inMenu: false })
+	}
+
+	// ── 提交发布按钮 ──
+	// PRD：草稿(1)/已驳回(5) + 我创建的 → 提交发布
+	if ((doc.status === 1 || doc.status === 5) && isOwner) {
+		actions.push({ kind: 'publish', label: '提交发布', type: 'default', inMenu: true })
 	}
 
 	// ── 撤回按钮（红色）──

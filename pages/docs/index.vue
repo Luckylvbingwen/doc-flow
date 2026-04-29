@@ -46,6 +46,12 @@ v-model:visible="plModalVisible" :mode="plModalMode" :product-line="plModalData"
 v-model:visible="settingsModalVisible" :group-id="settingsModalGroupId"
 			:group-name="settingsModalGroupName" :group="settingsModalGroup" @success="onGroupSettingsSuccess" />
 
+		<CompanyAdminDrawer v-model:visible="companyAdminDrawerVisible" />
+
+		<ProductLineManageDrawer
+v-model:visible="plManageDrawerVisible" :pl-id="plManageId" :pl-name="plManageName"
+			@success="refreshTree" @navigate-group="onPLNavigateGroup" />
+
 		<!-- Context menu -->
 		<TreeActionMenu
 ref="actionMenuRef" @edit-group="onEditGroup" @create-child="onCreateChild"
@@ -445,14 +451,34 @@ function onCreateProductLine() {
 	plModalVisible.value = true
 }
 
+// ── Company admin drawer ──
+const companyAdminDrawerVisible = ref(false)
+
 function onAdminSettings() {
-	// TODO: 管理员设置功能（后续迭代实现）
-	msgWarning('管理员设置功能即将上线')
+	companyAdminDrawerVisible.value = true
 }
 
+// ── Product line manage drawer ──
+const plManageDrawerVisible = ref(false)
+const plManageId = ref(0)
+const plManageName = ref('')
+
 function onManageEntity() {
-	// TODO: 部门管理/产品线管理功能（后续迭代实现）
-	msgWarning('管理功能即将上线')
+	const data = selectedData.value
+	if (!data) return
+	// 仅产品线类型支持管理面板，部门暂不支持
+	if (selectedType.value === 'productline') {
+		plManageId.value = typeof data.id === 'number' ? data.id : Number(data.id)
+		plManageName.value = data.label || data.name || ''
+		plManageDrawerVisible.value = true
+	} else {
+		msgWarning('部门管理功能即将上线')
+	}
+}
+
+function onPLNavigateGroup(groupId: number) {
+	// 从产品线管理抽屉点击组名跳转到组视图
+	if (treeRef.value) treeRef.value.activateGroup(groupId)
 }
 
 // ── GroupSettingsModal state ──

@@ -110,6 +110,9 @@ class="profile-status-badge"
 		<ShareLinkModal
 v-if="shareTarget" v-model="shareModalVisible" :document-id="shareTarget.id"
 			:file-name="`${shareTarget.title}.${shareTarget.ext || 'md'}`" />
+
+		<!-- 提交发布弹窗 -->
+		<PublishModal v-model="publishModalVisible" :doc="publishTarget" @success="load" />
 	</ListPageShell>
 </template>
 
@@ -337,6 +340,7 @@ async function onActionClick(doc: PersonalDocItem, kind: ActionKind) {
 	if (kind === 'view') return onView(doc)
 	if (kind === 'download') return onDownload(doc)
 	if (kind === 'share') return onShare(doc)
+	if (kind === 'publish') return onPublish(doc)
 	if (kind === 'withdraw') return onWithdraw(doc)
 	if (kind === 'delete') return onDelete(doc)
 }
@@ -352,6 +356,15 @@ const shareTarget = ref<PersonalDocItem | null>(null)
 function onShare(doc: PersonalDocItem) {
 	shareTarget.value = doc
 	shareModalVisible.value = true
+}
+
+// ── 提交发布 ──
+const publishModalVisible = ref(false)
+const publishTarget = ref<PersonalDocItem | null>(null)
+
+function onPublish(doc: PersonalDocItem) {
+	publishTarget.value = doc
+	publishModalVisible.value = true
 }
 
 async function onWithdraw(doc: PersonalDocItem) {

@@ -152,3 +152,11 @@ export function apiGetDocumentHistory(id: number, params?: { page?: number; page
 		{ query: params },
 	)
 }
+
+/** 草稿发布到组（个人中心提交发布） */
+export function apiPublishDocument(id: number, body: { mode: 'new' | 'update'; targetGroupId: number; targetDocId?: number; remark?: string }) {
+	return useAuthFetch<ApiResult<{ documentId: number; path: string; approvalInstanceId: number | null }>>(
+		`/api/documents/${id}/publish`,
+		{ method: 'POST', body },
+	)
+}

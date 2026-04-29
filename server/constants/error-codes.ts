@@ -81,6 +81,8 @@ export const PRODUCT_LINE_NOT_FOUND = 'PRODUCT_LINE_NOT_FOUND'
 export const PRODUCT_LINE_NAME_EXISTS = 'PRODUCT_LINE_NAME_EXISTS'
 /** 产品线下含组，无法删除 (400) */
 export const PRODUCT_LINE_HAS_GROUPS = 'PRODUCT_LINE_HAS_GROUPS'
+/** 产品线管理员已存在 (409) */
+export const PRODUCT_LINE_ADMIN_EXISTS = 'PRODUCT_LINE_ADMIN_EXISTS'
 
 // ─── 组成员 ───
 /** 该成员不可修改/移除（组负责人或继承成员） (403) */

@@ -99,6 +99,8 @@ export const LOG_ACTIONS = {
 	PL_CREATE: 'pl.create',
 	PL_UPDATE: 'pl.update',
 	PL_DELETE: 'pl.delete',
+	PL_ADMIN_ADD: 'pl.admin_add',
+	PL_ADMIN_REMOVE: 'pl.admin_remove',
 
 	// ── 收藏置顶 ──
 	FAVORITE_ADD: 'favorite.add',
@@ -204,6 +206,8 @@ export const LOG_ACTION_TO_TYPE: Record<LogActionCode, LogTypeCode> = {
 	[LOG_ACTIONS.PL_CREATE]: 'org',
 	[LOG_ACTIONS.PL_UPDATE]: 'org',
 	[LOG_ACTIONS.PL_DELETE]: 'org',
+	[LOG_ACTIONS.PL_ADMIN_ADD]: 'org',
+	[LOG_ACTIONS.PL_ADMIN_REMOVE]: 'org',
 
 	[LOG_ACTIONS.FAVORITE_ADD]: 'favorite_pin',
 	[LOG_ACTIONS.FAVORITE_REMOVE]: 'favorite_pin',

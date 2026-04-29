@@ -29,3 +29,53 @@ export function apiDeleteProductLine(id: number) {
 		method: 'DELETE',
 	})
 }
+
+// ── 产品线管理员 ──
+
+export interface PLAdminItem {
+	userId: number
+	name: string
+	email: string | null
+	avatarUrl: string | null
+	isOwner: boolean
+	createdAt: number
+}
+
+/** 产品线管理员列表 */
+export function apiGetPLAdmins(plId: number) {
+	return useAuthFetch<ApiResult<PLAdminItem[]>>(`/api/product-lines/${plId}/admins`)
+}
+
+/** 添加产品线管理员 */
+export function apiAddPLAdmin(plId: number, userId: number) {
+	return useAuthFetch<ApiResult>(`/api/product-lines/${plId}/admins`, {
+		method: 'POST',
+		body: { userId },
+	})
+}
+
+/** 移除产品线管理员 */
+export function apiRemovePLAdmin(plId: number, userId: number) {
+	return useAuthFetch<ApiResult>(`/api/product-lines/${plId}/admins/${userId}`, {
+		method: 'DELETE',
+	})
+}
+
+// ── 产品线下属组 ──
+
+export interface PLGroupItem {
+	id: number
+	name: string
+	description: string | null
+	ownerUserId: number | null
+	ownerName: string | null
+	fileCount: number
+	memberCount: number
+	childCount: number
+	updatedAt: number
+}
+
+/** 产品线下属项目组列表 */
+export function apiGetPLGroups(plId: number) {
+	return useAuthFetch<ApiResult<PLGroupItem[]>>(`/api/product-lines/${plId}/groups`)
+}
