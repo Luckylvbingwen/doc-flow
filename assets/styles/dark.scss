@@ -526,4 +526,28 @@ html.dark {
     border-color: rgba(59, 130, 246, 0.35);
     color: rgba(255, 255, 255, 0.7);
   }
+
+  /* ═══════════════════════════════════════════
+     顶栏布局 — 暗色模式
+     ═══════════════════════════════════════════ */
+  .pf-topbar {
+    background: rgba(10, 12, 18, 0.88);
+    backdrop-filter: blur(16px);
+    border-bottom-color: rgba(148, 163, 184, 0.08);
+
+    &::after {
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(59, 130, 246, 0.25) 20%,
+        rgba(59, 130, 246, 0.55) 50%,
+        rgba(59, 130, 246, 0.25) 80%,
+        transparent 100%
+      );
+    }
+  }
+
+  .pf-topbar-link.active::after {
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
+  }
 }

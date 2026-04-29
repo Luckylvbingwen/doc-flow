@@ -3,6 +3,10 @@
 // =============================================
 
 // ─── 顶栏铃铛 ─────────────────────────────────────
+.df-notification-bell-wrap {
+  display: inline-flex;
+}
+
 .df-notification-bell {
   position: relative;
   display: inline-flex;

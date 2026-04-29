@@ -1,24 +1,30 @@
 <template>
-	<el-popover
+	<el-tooltip
+:content="`通知${displayCount ? `（${displayCount} 条未读）` : ''}`" placement="bottom" :show-after="400"
+		:disabled="open">
+		<span class="df-notification-bell-wrap">
+			<el-popover
 v-model:visible="open" placement="bottom-end" :width="380" trigger="click"
-		popper-class="df-notification-popper" :show-arrow="false">
-		<template #reference>
-			<button
+				popper-class="df-notification-popper" :show-arrow="false">
+				<template #reference>
+					<button
 class="df-notification-bell" type="button"
-				:aria-label="`通知${displayCount ? `（${displayCount} 条未读）` : ''}`">
-				<el-icon :size="18">
-					<Bell />
-				</el-icon>
-				<span
+						:aria-label="`通知${displayCount ? `（${displayCount} 条未读）` : ''}`">
+						<el-icon :size="18">
+							<Bell />
+						</el-icon>
+						<span
 v-if="wsStore.badges.notifications > 0" class="df-notification-bell__dot"
-					:class="{ 'df-notification-bell__dot--wide': wsStore.badges.notifications >= 10 }">
-					{{ displayCount }}
-				</span>
-			</button>
-		</template>
+							:class="{ 'df-notification-bell__dot--wide': wsStore.badges.notifications >= 10 }">
+							{{ displayCount }}
+						</span>
+					</button>
+				</template>
 
-		<NotificationPopover v-if="open" @close="open = false" />
-	</el-popover>
+				<NotificationPopover v-if="open" @close="open = false" />
+			</el-popover>
+		</span>
+	</el-tooltip>
 </template>
 
 <script setup lang="ts">

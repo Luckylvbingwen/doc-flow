@@ -594,6 +594,196 @@ a {
   gap: 14px;
 }
 
+/* ═══════════════════════════════════════════
+   顶栏布局模式 (layoutMode: 'topnav')
+   ═══════════════════════════════════════════ */
+
+.pf-app--topnav {
+  flex-direction: column;
+}
+
+/* ---- 顶栏 ---- */
+.pf-topbar {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 20px;
+  background: linear-gradient(180deg, #0f172a 0%, #131c2e 100%);
+  border-bottom: 1px solid transparent;
+  position: relative;
+  z-index: 100;
+  flex-shrink: 0;
+
+  /* 底部发光线 — Linear 风格 */
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(59, 130, 246, 0.3) 20%,
+      rgba(59, 130, 246, 0.6) 50%,
+      rgba(59, 130, 246, 0.3) 80%,
+      transparent 100%
+    );
+  }
+}
+
+.pf-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 32px;
+  flex-shrink: 0;
+
+  .pf-brand-logo {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  }
+}
+
+.pf-topbar-title {
+  font-family: var(--df-font-heading);
+  font-size: 15px;
+  font-weight: 600;
+  color: #f1f5f9;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+/* ---- 水平导航 ---- */
+.pf-topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 100%;
+  flex: 1;
+  min-width: 0;
+}
+
+.pf-topbar-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(148, 163, 184, 0.2);
+  margin: 0 10px;
+  flex-shrink: 0;
+}
+
+.pf-topbar-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 14px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  position: relative;
+  transition: color 0.2s ease;
+  text-decoration: none;
+
+  &:hover {
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &.active {
+    color: #ffffff;
+
+    /* 底部蓝色指示线 + 发光 */
+    &::after {
+      content: '';
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: 0;
+      height: 2px;
+      background: var(--df-primary);
+      border-radius: 2px 2px 0 0;
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+    }
+  }
+}
+
+.pf-topbar-link-icon {
+  font-size: 15px;
+}
+
+/* ---- 右侧操作区 ---- */
+.pf-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+
+  .pf-dark-toggle {
+    color: #94a3b8;
+    border: none;
+    background: transparent;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  .pf-user-entry {
+    color: #c8d1dc;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  .pf-user-entry-avatar--text {
+    font-size: 12px;
+  }
+
+  /* 铃铛在深色顶栏中的适配 */
+  .df-notification-bell {
+    color: #94a3b8;
+    background: transparent;
+
+    &:hover {
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .df-notification-bell__dot {
+      box-shadow: 0 0 0 2px #0f172a;
+    }
+  }
+}
+
+/* ---- 顶栏模式下 pf-main ---- */
+.pf-app--topnav .pf-main {
+  flex: 1;
+  min-height: 0;
+  background: var(--df-bg);
+}
+
 .pf-card {
   background: var(--df-panel);
   border-radius: var(--df-radius-md);

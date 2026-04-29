@@ -3,12 +3,16 @@ import { defineStore } from 'pinia'
 const SIDEBAR_COLLAPSE_KEY = 'docflow:prototype:sidebar-collapsed'
 const DARK_MODE_KEY = 'docflow:dark-mode'
 const LOCALE_KEY = 'docflow:locale'
+const LAYOUT_MODE_KEY = 'docflow:layout-mode'
+
+export type LayoutMode = 'sidebar' | 'topnav'
 
 export const useAppStore = defineStore('app', {
 	state: () => ({
 		sidebarCollapsed: false,
 		darkMode: false,
 		locale: 'zh-CN' as 'zh-CN' | 'en-US',
+		layoutMode: 'sidebar' as LayoutMode,
 	}),
 	actions: {
 		hydrateSidebarCollapsed() {
@@ -94,6 +98,21 @@ export const useAppStore = defineStore('app', {
 			this.locale = locale
 			if (!import.meta.client) return
 			window.localStorage.setItem(LOCALE_KEY, locale)
+		},
+		hydrateLayoutMode() {
+			if (!import.meta.client) return
+			const stored = window.localStorage.getItem(LAYOUT_MODE_KEY) as LayoutMode | null
+			if (stored === 'sidebar' || stored === 'topnav') {
+				this.layoutMode = stored
+			}
+		},
+		setLayoutMode(mode: LayoutMode) {
+			this.layoutMode = mode
+			if (!import.meta.client) return
+			window.localStorage.setItem(LAYOUT_MODE_KEY, mode)
+		},
+		toggleLayoutMode() {
+			this.setLayoutMode(this.layoutMode === 'sidebar' ? 'topnav' : 'sidebar')
 		},
 	}
 })

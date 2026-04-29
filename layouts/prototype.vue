@@ -1,6 +1,7 @@
 <template>
-	<div class="pf-app">
-		<aside class="pf-sidebar" :class="{ collapsed: isSidebarCollapsed }">
+	<div class="pf-app" :class="{ 'pf-app--topnav': isTopnav }">
+		<!-- ═══════ 侧栏模式 ═══════ -->
+		<aside v-show="!isTopnav" class="pf-sidebar" :class="{ collapsed: isSidebarCollapsed }">
 			<div class="pf-brand">
 				<div class="pf-brand-logo">
 					<el-icon :size="20">
@@ -19,7 +20,6 @@ class="pf-sidebar-toggle" type="button" :aria-label="isSidebarCollapsed ? '展�
 			</div>
 
 			<el-scrollbar class="pf-nav-scrollbar">
-				<!-- menuGroups 按 can(perm) 过滤，auth 仅在客户端水合；ClientOnly 避免 SSR/客户端菜单项不一致 -->
 				<ClientOnly>
 					<nav class="pf-nav">
 						<template v-for="group in menuGroups" :key="group.title ?? 'default'">
@@ -40,6 +40,85 @@ v-for="item in group.items" :key="item.to" :content="item.label" placement="righ
 			</el-scrollbar>
 		</aside>
 
+		<!-- ═══════ 顶栏模式 — 顶部导航 ═══════ -->
+		<header v-show="isTopnav" class="pf-topbar">
+			<div class="pf-topbar-left">
+				<div class="pf-brand-logo">
+					<el-icon :size="18">
+						<Document />
+					</el-icon>
+				</div>
+				<span class="pf-topbar-title">DocFlow</span>
+			</div>
+
+			<ClientOnly>
+				<nav class="pf-topbar-nav">
+					<template v-for="(group, gi) in menuGroups" :key="group.title ?? 'default'">
+						<span v-if="gi > 0" class="pf-topbar-divider" />
+						<NuxtLink
+v-for="item in group.items" :key="item.to" class="pf-topbar-link"
+							:class="{ active: isItemActive(item) }" :to="item.to">
+							<el-icon class="pf-topbar-link-icon">
+								<component :is="item.icon" />
+							</el-icon>
+							{{ item.label }}
+						</NuxtLink>
+					</template>
+				</nav>
+			</ClientOnly>
+
+			<div class="pf-topbar-actions">
+				<el-tooltip :content="appStore.darkMode ? '切换亮色模式' : '切换暗黑模式'" placement="bottom" :show-after="400">
+					<button
+class="pf-dark-toggle" type="button" :aria-label="appStore.darkMode ? '切换亮色模式' : '切换暗黑模式'"
+						@click="appStore.toggleDarkMode($event)">
+						<el-icon :size="18">
+							<Sunny v-if="appStore.darkMode" />
+							<Moon v-else />
+						</el-icon>
+					</button>
+				</el-tooltip>
+
+				<el-tooltip v-if="isTopnav" content="切换布局" placement="bottom" :show-after="400">
+					<button class="pf-dark-toggle" type="button" aria-label="切换布局" @click="appStore.toggleLayoutMode()">
+						<el-icon :size="18">
+							<Operation />
+						</el-icon>
+					</button>
+				</el-tooltip>
+
+				<ClientOnly>
+					<NotificationBell v-if="isTopnav && authStore.isAuthenticated" />
+				</ClientOnly>
+
+				<ClientOnly>
+					<el-dropdown
+v-if="isTopnav && authStore.isAuthenticated && authStore.user" trigger="click"
+						placement="bottom-end" @command="handleUserMenuCommand">
+						<button class="pf-user-entry" type="button">
+							<img
+v-show="avatarReady" class="pf-user-entry-avatar" :src="authStore.user.avatar"
+								@load="avatarLoaded = true" @error="avatarLoadFailed = true">
+							<span v-show="!avatarReady" class="pf-user-entry-avatar pf-user-entry-avatar--text">{{ userInitial
+							}}</span>
+							<span class="pf-user-entry-name">{{ authStore.user.name }}</span>
+							<el-icon class="pf-user-entry-caret">
+								<ArrowDownBold />
+							</el-icon>
+						</button>
+						<template #dropdown>
+							<el-dropdown-menu>
+								<el-dropdown-item command="profile">个人中心</el-dropdown-item>
+								<el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+							</el-dropdown-menu>
+						</template>
+					</el-dropdown>
+
+					<NuxtLink v-else-if="isTopnav" class="pf-btn ghost" to="/login">去登录</NuxtLink>
+				</ClientOnly>
+			</div>
+		</header>
+
 		<section class="pf-main">
 			<Transition name="offline-bar">
 				<div v-if="!isOnline" class="df-offline-bar">
@@ -49,34 +128,36 @@ v-for="item in group.items" :key="item.to" :content="item.label" placement="righ
 					网络已断开，请检查网络连接
 				</div>
 			</Transition>
-			<header class="pf-header">
+			<!-- 侧栏模式保留原 header -->
+			<header v-show="!isTopnav" class="pf-header">
 				<div class="pf-header-actions">
-					<button
+					<el-tooltip :content="appStore.darkMode ? '切换亮色模式' : '切换暗黑模式'" placement="bottom" :show-after="400">
+						<button
 class="pf-dark-toggle" type="button" :aria-label="appStore.darkMode ? '切换亮色模式' : '切换暗黑模式'"
-						@click="appStore.toggleDarkMode($event)">
-						<el-icon :size="18">
-							<Sunny v-if="appStore.darkMode" />
-							<Moon v-else />
-						</el-icon>
-					</button>
+							@click="appStore.toggleDarkMode($event)">
+							<el-icon :size="18">
+								<Sunny v-if="appStore.darkMode" />
+								<Moon v-else />
+							</el-icon>
+						</button>
+					</el-tooltip>
+
+					<el-tooltip v-if="!isTopnav" content="切换布局" placement="bottom" :show-after="400">
+						<button class="pf-dark-toggle" type="button" aria-label="切换布局" @click="appStore.toggleLayoutMode()">
+							<el-icon :size="18">
+								<Operation />
+							</el-icon>
+						</button>
+					</el-tooltip>
 
 					<ClientOnly>
-						<NotificationBell v-if="authStore.isAuthenticated" />
+						<NotificationBell v-if="!isTopnav && authStore.isAuthenticated" />
 					</ClientOnly>
-
-					<!-- <button
-            class="pf-locale-toggle"
-            type="button"
-            :aria-label="currentLocale === 'zh-CN' ? 'Switch to English' : '切换为中文'"
-            @click="toggleLocale"
-          >
-            <span class="pf-locale-toggle-text">{{ currentLocale === 'zh-CN' ? 'EN' : '中' }}</span>
-          </button> -->
 
 					<ClientOnly>
 						<el-dropdown
-v-if="authStore.isAuthenticated && authStore.user" trigger="click" placement="bottom-end"
-							@command="handleUserMenuCommand">
+v-if="!isTopnav && authStore.isAuthenticated && authStore.user" trigger="click"
+							placement="bottom-end" @command="handleUserMenuCommand">
 							<button class="pf-user-entry" type="button">
 								<img
 v-show="avatarReady" class="pf-user-entry-avatar" :src="authStore.user.avatar"
@@ -96,7 +177,7 @@ v-show="avatarReady" class="pf-user-entry-avatar" :src="authStore.user.avatar"
 							</template>
 						</el-dropdown>
 
-						<NuxtLink v-else class="pf-btn ghost" to="/login">去登录</NuxtLink>
+						<NuxtLink v-else-if="!isTopnav" class="pf-btn ghost" to="/login">去登录</NuxtLink>
 					</ClientOnly>
 				</div>
 			</header>
@@ -194,6 +275,7 @@ import {
 	Folder,
 	ArrowDownBold,
 	Moon,
+	Operation,
 	Setting,
 	Sunny,
 	User,
@@ -212,6 +294,8 @@ const route = useRoute()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const { sidebarCollapsed: isSidebarCollapsed } = storeToRefs(appStore)
+
+const isTopnav = computed(() => appStore.layoutMode === 'topnav')
 
 // 固定布局页（列表型）— 由页面通过 definePageMeta({ fixedLayout: true }) 声明，不使用外层 el-scrollbar
 const isFixedLayout = computed(() => Boolean(route.meta.fixedLayout))
@@ -289,6 +373,7 @@ nuxtApp.hook('page:finish', () => {
 onMounted(() => {
 	appStore.hydrateSidebarCollapsed()
 	appStore.hydrateDarkMode()
+	appStore.hydrateLayoutMode()
 	handleResize()
 	window.addEventListener('resize', handleResize)
 })
