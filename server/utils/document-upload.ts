@@ -267,11 +267,11 @@ export async function notifyPublishToGroupMembers(params: {
  * 版本号自增：vX.Y → vX.(Y+1)
  *
  * - 解析失败时回退到 v1.0（首版兜底）
- * - 不做主版本进位（A 阶段简化）；如需要 v1.9 → v2.0 由后续 UI 手动选择
+ * - 大版本递增：v1.0 → v2.0 → v3.0（PRD 确认）
  */
 export function incrementVersion(latest: string | null | undefined): string {
 	if (!latest) return 'v1.0'
 	const m = latest.match(/^v(\d+)\.(\d+)$/)
 	if (!m) return 'v1.0'
-	return `v${m[1]}.${Number(m[2]) + 1}`
+	return `v${Number(m[1]) + 1}.0`
 }

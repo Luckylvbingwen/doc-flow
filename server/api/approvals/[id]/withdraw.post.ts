@@ -53,12 +53,24 @@ export default defineEventHandler(async (event) => {
 		return fail(event, 409, APPROVAL_NOT_WITHDRAWABLE, '当前状态不可撤回')
 	}
 
-	await prisma.doc_approval_instances.update({
-		where: { id: instanceId },
-		data: {
-			status: APPROVAL_STATUS.WITHDRAWN,
-			finished_at: new Date(),
-		},
+	const now = new Date()
+	await prisma.$transaction(async (tx) => {
+		await tx.doc_approval_instances.update({
+			where: { id: instanceId },
+			data: {
+				status: APPROVAL_STATUS.WITHDRAWN,
+				finished_at: now,
+			},
+		})
+		// PRD 确认：撤回后文档回到“草稿”状态
+		await tx.doc_documents.update({
+			where: { id: inst.document_id },
+			data: {
+				status: 1,
+				updated_by: BigInt(user.id),
+				updated_at: now,
+			},
+		})
 	})
 
 	await writeLog({

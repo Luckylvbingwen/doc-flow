@@ -147,7 +147,7 @@ const currentUserId = computed(() => authStore.user?.id ?? 0)
 
 // 「离职移交」Tab 严格按 PRD §6.5.2 「仅部门负责人可见」—— 非 dept_head 用户不展示
 const { hasRole } = useAuth()
-const canViewHandover = computed(() => hasRole('dept_head'))
+const canViewHandover = computed(() => hasRole(['dept_head', 'super_admin']))
 
 const tabCounts = reactive<Record<PersonalTab, number | undefined>>({
 	all: undefined,

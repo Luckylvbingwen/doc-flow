@@ -94,7 +94,7 @@ async function handleAddConfirm(users: SelectedUser[]) {
 	}
 
 	if (successCount > 0) {
-		msgSuccess(`已添加 ${successCount} 位管理员`)
+		msgSuccess(`已添加 ${successCount} 位产品线管理员`)
 		await loadAdmins()
 	} else {
 		msgError('添加失败，请重试')
