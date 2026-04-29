@@ -668,3 +668,62 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
   - 支持 page/pageSize 分页，按时间倒序
   - 响应：`{ list: DocHistoryItem[], total, page, pageSize }`
 - **前端** — `api/documents.ts` 新增 `apiGetDocumentHistory()`
+
+### feat: 个人中心已发布文档分享按钮
+
+- `utils/personal-matrix.ts` — ActionKind 扩展 `share`，已发布文档显示分享按钮
+- `pages/profile.vue` — 集成 ShareLinkModal，`onShare` handler 打开弹窗
+
+---
+
+## 2026-04-29
+
+### feat: 公司层管理员设置面板（#7）
+
+- **前端**
+  - 新增 `components/CompanyAdminDrawer.vue` — 公司层管理员抽屉（查看/添加/移除公司层管理员）
+  - 复用 `GET /api/admin/users?roles=company_admin,super_admin` 获取列表
+  - 复用 `PUT /api/admin/users/:id/roles` 添加/移除 `companyAdmin` 角色
+  - 复用 `MemberSelectorModal` 选择添加目标（showRoleSelector=false）
+  - 添加时保留用户已有的 `plHead` 角色状态
+  - 系统管理员(super_admin)行禁止操作（显示"系统管理员"徽章）
+  - `pages/docs/index.vue` — `onAdminSettings` 打开 CompanyAdminDrawer
+- **样式**
+  - `assets/styles/components/_modals.scss` — 新增 `.ca-*` 样式（管理员列表/头像/信息/操作按钮）
+
+### feat: 提交发布弹窗（#8）
+
+- **后端**
+  - 新增 `POST /api/documents/:id/publish` — 个人中心草稿发布到组
+    - 两种模式：`new`（首次发布：归组 + 走审批/直发布）、`update`（版本迭代：作为目标文档新版本）
+    - 鉴权：`approval:read` + 仅归属人 + 草稿/已驳回状态
+    - 调用 `executeUpload(mode='resubmit')` 走审批判定
+    - update 模式完成后软删原草稿
+  - 新增 Zod schema `documentPublishSchema`（`server/schemas/document.ts`）
+- **前端**
+  - 新增 `components/PublishModal.vue` — 发布弹窗
+    - 双模式卡片选择（全新发布 / 版本迭代）
+    - DocNavTree 选择器挑选目标组
+    - 版本迭代模式下加载目标组已发布文档列表供选择
+    - 备注输入（可选）
+  - `utils/personal-matrix.ts` — ActionKind 扩展 `publish`，草稿/已驳回 + 归属人显示
+  - `pages/profile.vue` — 集成 PublishModal，`onPublish` handler
+  - `api/documents.ts` — 新增 `apiPublishDocument()`
+
+### feat: 产品线管理完整面板 3Tab（#6）
+
+- **后端（4 个接口）**
+  - `GET /api/product-lines/:id/admins` — 管理员列表（含负责人标记 `isOwner`，不在管理员表时手动补到首位）
+  - `POST /api/product-lines/:id/admins` — 添加管理员（super_admin 或产品线负责人），幂等防重（unique key），同时授予 `pl_head` 角色
+  - `DELETE /api/product-lines/:id/admins/:userId` — 移除管理员（禁止移除负责人）
+  - `GET /api/product-lines/:id/groups` — 下属项目组列表（带文件数/成员数/子组数统计，多表 LEFT JOIN 子查询聚合）
+  - 新增错误码：`PRODUCT_LINE_ADMIN_EXISTS`
+  - 新增 log action：`PL_ADMIN_ADD` / `PL_ADMIN_REMOVE`
+- **前端**
+  - 新增 `components/ProductLineManageDrawer.vue` — 产品线管理抽屉壳（3 Tab 切换：基本信息 / 管理员 / 项目组）
+  - 新增 `components/PLInfoTab.vue` — 基本信息表单 + 危险区（删除产品线）
+  - 新增 `components/PLAdminTab.vue` — 管理员列表 + 添加/移除，复用 MemberSelectorModal
+  - 新增 `components/PLGroupListTab.vue` — 项目组列表，点击行跳转到共享文档树对应组
+  - `pages/docs/index.vue` — `onManageEntity(node)` 按节点类型打开 ProductLineManageDrawer（产品线）或提示暂不支持（部门）
+  - `api/product-lines.ts` — 新增 `PLAdminItem` / `PLGroupItem` 类型 + 6 个 API 函数
+- **规格依据**：PRD §6.9（系统管理）§357（产品线负责人由系统管理员指派）

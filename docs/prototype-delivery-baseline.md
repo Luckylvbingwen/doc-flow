@@ -70,3 +70,6 @@
 - [x] 全局表格 border + 列宽弹性分配。
 - [x] 版本回滚富确认弹窗（RollbackConfirmModal）。
 - [x] 文档操作历史抽屉（HistoryDrawer + API）。
+- [x] 公司层管理员设置面板（CompanyAdminDrawer：查看/添加/移除管理员）。
+- [x] 个人中心提交发布弹窗（PublishModal：全新发布 + 版本迭代双模式 + 组选择 + 审批路径判定）。
+- [x] 产品线管理完整面板 3Tab（ProductLineManageDrawer：基本信息 / 管理员 / 项目组 + 4 个后端 API）。

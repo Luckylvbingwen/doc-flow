@@ -1211,6 +1211,99 @@
         }
       }
     },
+    "/api/product-lines/{id}/admins": {
+      "get": {
+        "tags": ["产品线"],
+        "summary": "产品线管理员列表",
+        "description": "含负责人标记 isOwner",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["产品线"],
+        "summary": "添加产品线管理员",
+        "description": "需 super_admin 或产品线负责人",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["userId"],
+                "properties": {
+                  "userId": { "type": "integer", "description": "目标用户 ID" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "添加成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/product-lines/{id}/admins/{userId}": {
+      "delete": {
+        "tags": ["产品线"],
+        "summary": "移除产品线管理员",
+        "description": "需 super_admin 或产品线负责人，不可移除负责人",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "移除成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/product-lines/{id}/groups": {
+      "get": {
+        "tags": ["产品线"],
+        "summary": "产品线下属项目组列表",
+        "description": "返回直属组及文件数/成员数/子组数统计",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/documents": {
       "get": {
         "tags": ["文档"],
@@ -1570,6 +1663,43 @@
         "responses": {
           "200": {
             "description": "回滚成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/publish": {
+      "post": {
+        "tags": ["文档"],
+        "summary": "草稿发布到组",
+        "description": "仅归属人 + 草稿/已驳回状态。mode=new 首次发布，mode=update 版本迭代",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["mode", "targetGroupId"],
+                "properties": {
+                  "mode": { "type": "string", "enum": ["new", "update"], "description": "发布模式" },
+                  "targetGroupId": { "type": "integer", "description": "目标组 ID" },
+                  "targetDocId": { "type": "integer", "description": "版本迭代模式下目标文档 ID" },
+                  "remark": { "type": "string", "maxLength": 500 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "发布成功",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ApiResponse" }

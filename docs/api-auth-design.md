@@ -133,6 +133,16 @@
 | POST | /api/product-lines | 是 | super_admin | 创建产品线 |
 | PUT | /api/product-lines/:id | 是 | super_admin | 编辑产品线 |
 | DELETE | /api/product-lines/:id | 是 | super_admin | 删除产品线（含组时拒绝） |
+| GET | /api/product-lines/:id/admins | 是 | 登录即可 | 产品线管理员列表（含负责人） |
+| POST | /api/product-lines/:id/admins | 是 | super_admin 或产品线负责人 | 添加产品线管理员 |
+| DELETE | /api/product-lines/:id/admins/:userId | 是 | super_admin 或产品线负责人 | 移除产品线管理员（不可移除负责人） |
+| GET | /api/product-lines/:id/groups | 是 | 登录即可 | 产品线下属项目组列表（含统计） |
+
+### 文档发布 (publish)
+
+| 方法 | 路径 | 鉴权 | 权限/条件 | 说明 |
+| --- | --- | --- | --- | --- |
+| POST | /api/documents/:id/publish | 是 | 仅归属人 + 草稿/已驳回 | 个人中心草稿发布到组（new=首次发布, update=版本迭代） |
 
 ### 版本比较
 
@@ -1980,14 +1990,134 @@
 
 ---
 
+### 3.69 GET /api/product-lines/:id/admins
+
+**路径**：`GET /api/product-lines/:id/admins`
+
+**鉴权**：登录即可
+
+**用途**：产品线管理员列表（#6 产品线管理面板 — 管理员 Tab）。负责人标记 `isOwner`，不在管理员表时手动补到首位。
+
+**响应 data**（数组）：
+```json
+[
+  { "userId": 10002, "name": "文档负责人", "email": "doc@docflow.local", "avatarUrl": null, "isOwner": true, "createdAt": 1713254400000 },
+  { "userId": 10010, "name": "张晓明", "email": "zhang@docflow.local", "avatarUrl": null, "isOwner": false, "createdAt": 1714123456000 }
+]
+```
+
+**错误码**：INVALID_PARAMS, PRODUCT_LINE_NOT_FOUND
+
+---
+
+### 3.70 POST /api/product-lines/:id/admins
+
+**路径**：`POST /api/product-lines/:id/admins`
+
+**鉴权**：super_admin 或产品线负责人
+
+**用途**：添加产品线管理员。同时为该用户授予 `pl_head` 角色（保留已有的）。
+
+**Body**：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| userId | number | 是 | 目标用户 ID |
+
+**规则**：
+- 目标用户已是管理员 → 409 `PRODUCT_LINE_ADMIN_EXISTS`
+- 操作日志：`pl_admin.add`
+
+**响应**：
+```json
+{ "success": true, "code": "OK", "message": "已添加管理员", "data": { "userId": 10010 } }
+```
+
+**错误码**：INVALID_PARAMS, PRODUCT_LINE_NOT_FOUND, USER_NOT_FOUND, PERMISSION_DENIED, PRODUCT_LINE_ADMIN_EXISTS
+
+---
+
+### 3.71 DELETE /api/product-lines/:id/admins/:userId
+
+**路径**：`DELETE /api/product-lines/:id/admins/:userId`
+
+**鉴权**：super_admin 或产品线负责人
+
+**用途**：移除产品线管理员。
+
+**规则**：
+- 不能移除负责人（负责人通过编辑产品线变更）→ 403 `PERMISSION_DENIED`
+- 目标不在管理员表 → 404 `NOT_FOUND`
+- 操作日志：`pl_admin.remove`
+
+**响应**：
+```json
+{ "success": true, "code": "OK", "message": "已移除管理员", "data": null }
+```
+
+**错误码**：INVALID_PARAMS, PRODUCT_LINE_NOT_FOUND, PERMISSION_DENIED, NOT_FOUND
+
+---
+
+### 3.72 GET /api/product-lines/:id/groups
+
+**路径**：`GET /api/product-lines/:id/groups`
+
+**鉴权**：登录即可
+
+**用途**：产品线下属项目组列表（#6 产品线管理面板 — 项目组 Tab）。返回直属组（`scope_type=3 + scope_ref_id=plId + parent_id IS NULL`），附带统计。
+
+**响应 data**（数组）：
+```json
+[
+  {
+    "id": 40004, "name": "Alpha项目组", "description": "...",
+    "ownerUserId": 10002, "ownerName": "文档负责人",
+    "fileCount": 5, "memberCount": 3, "childCount": 1,
+    "updatedAt": 1714234567000
+  }
+]
+```
+
+**错误码**：INVALID_PARAMS, PRODUCT_LINE_NOT_FOUND
+
+---
+
+### 3.73 POST /api/documents/:id/publish
+
+**路径**：`POST /api/documents/:id/publish`
+
+**鉴权**：登录（`approval:read`）+ 仅文档归属人
+
+**用途**：个人中心草稿/已驳回文档发布到组（PRD §6.5.2 操作矩阵 — 提交发布）。
+
+**Body**（Zod `documentPublishSchema`）：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| mode | string | 是 | `'new'`（首次发布）或 `'update'`（版本迭代） |
+| targetGroupId | number | 是 | 目标组 ID |
+| targetDocId | number | 条件 | `mode='update'` 时必填，目标已发布文档 ID |
+| remark | string | 否 | 备注（≤500 字） |
+
+**两种模式**：
+- **new**：草稿归组 → 调 `executeUpload(mode='resubmit')` 走审批/直发布 → 返回 `path` 和 `approvalInstanceId`
+- **update**：草稿文件作为目标文档的新版本 → 版本号递增 → 走审批/直发布 → 完成后软删原草稿（status=6）
+
+**规则**：
+- 仅 `status=1`（草稿）或 `status=5`（已驳回）可发布
+- 目标组必须存在
+- update 模式下目标文档必须 `status=4`（已发布）且在目标组内
+
+**成功响应 data**：
+```json
+{ "documentId": 50027, "path": "approval", "approvalInstanceId": 62010 }
+```
+
+`path` 取值：`'direct_publish'` / `'approval'`
+
+**错误码**：INVALID_PARAMS, DOCUMENT_NOT_FOUND, DOCUMENT_STATUS_INVALID, GROUP_NOT_FOUND, PERMISSION_DENIED
+
+---
+
 ## 4. 数据与安全说明
-
-1. 登录用户来源：doc_users（status=1 且 deleted_at IS NULL）。
-2. 密码策略：用户维度 bcrypt 密码哈希（`password_hash` 字段）。
-3. Token 策略：双令牌 JWT — accessToken（15m）+ refreshToken（7d），refreshToken 存 Redis 支持吊销。
-4. logout 为无状态接口，幂等可重复调用。
-
-## 5. 后续演进建议
-
-1. 补充登录审计写入 doc_operation_logs。
-2. 统一认证失败限流策略（IP + 账号维度）。
