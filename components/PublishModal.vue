@@ -132,7 +132,7 @@ watch(selectedGroupId, async (gid) => {
 
 	docsLoading.value = true
 	try {
-		const res = await apiGetDocuments({ groupId: gid, status: 4, pageSize: 100 })
+		const res = await apiGetDocuments({ groupId: gid, status: 4, page: 1, pageSize: 100 })
 		if (res.success && res.data) {
 			publishedDocs.value = res.data.list
 		}
