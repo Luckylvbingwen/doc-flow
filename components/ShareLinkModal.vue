@@ -22,12 +22,14 @@ class="df-share-modal__perm-card" :class="{ active: selectedPermission === 4 }"
 					</div>
 				</label>
 				<label
-class="df-share-modal__perm-card" :class="{ active: selectedPermission === 2 }"
-					@click="selectedPermission = 2">
-					<input type="radio" :checked="selectedPermission === 2">
+class="df-share-modal__perm-card"
+					:class="{ active: selectedPermission === 2, disabled: props.canEdit === false }"
+					@click="props.canEdit !== false && (selectedPermission = 2)">
+					<input type="radio" :checked="selectedPermission === 2" :disabled="props.canEdit === false">
 					<div>
 						<div class="df-share-modal__perm-title">可编辑</div>
 						<div class="df-share-modal__perm-desc">对方可加入实时协同编辑</div>
+						<div v-if="props.canEdit === false" class="df-share-modal__perm-tip">您的权限不足，无法分享编辑权限</div>
 					</div>
 				</label>
 			</div>
@@ -52,6 +54,8 @@ import { apiCreateShareLink } from '~/api/share'
 const props = defineProps<{
 	documentId: number
 	fileName: string
+	/** 当前用户对该文档是否有编辑权限（无则禁用"可编辑"选项） */
+	canEdit?: boolean
 }>()
 
 const visible = defineModel<boolean>({ default: false })
@@ -149,6 +153,12 @@ function onCopy() {
 		background: var(--df-primary-soft);
 	}
 
+	&.disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
+		pointer-events: none;
+	}
+
 	input[type="radio"] {
 		accent-color: var(--df-primary);
 		margin: 0;
@@ -164,6 +174,12 @@ function onCopy() {
 .df-share-modal__perm-desc {
 	font-size: 11px;
 	color: var(--df-subtext);
+	margin-top: 2px;
+}
+
+.df-share-modal__perm-tip {
+	font-size: 11px;
+	color: var(--el-color-danger);
 	margin-top: 2px;
 }
 

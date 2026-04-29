@@ -221,27 +221,62 @@ export default defineEventHandler(async (event) => {
 		const statusNum = Number(r.status)
 		const changeType: ChangeTypeCode = Number(r.is_first_version) === 1 ? CHANGE_TYPE.NEW : CHANGE_TYPE.ITERATE
 		return {
-			id:                  Number(r.instance_id),
-			status:              statusNum,
-			documentId:          Number(r.document_id),
-			title:               r.title,
-			ext:                 r.ext ?? '',
-			versionId:           Number(r.biz_id),
-			versionNo:           r.version_no ?? '-',
+			id: Number(r.instance_id),
+			status: statusNum,
+			documentId: Number(r.document_id),
+			title: r.title,
+			ext: r.ext ?? '',
+			versionId: Number(r.biz_id),
+			versionNo: r.version_no ?? '-',
 			changeType,
-			groupId:             r.group_id != null ? Number(r.group_id) : null,
-			groupName:           r.group_name ?? '-',
-			initiatorId:         Number(r.initiator_id),
-			initiatorName:       r.initiator_name ?? '未知用户',
-			submittedAt:         new Date(r.submitted_at).getTime(),
-			handledAt:           r.handled_at ? new Date(r.handled_at).getTime() : null,
+			groupId: r.group_id != null ? Number(r.group_id) : null,
+			groupName: r.group_name ?? '-',
+			initiatorId: Number(r.initiator_id),
+			initiatorName: r.initiator_name ?? '未知用户',
+			submittedAt: new Date(r.submitted_at).getTime(),
+			handledAt: r.handled_at ? new Date(r.handled_at).getTime() : null,
 			currentApproverName: r.current_approver_name ?? null,
-			allApproverNames:    r.all_approver_names ?? '',
-			rejectReason:        r.reject_reason ?? null,
-			remindCount:         Number(r.remind_count ?? 0),
-			canWithdraw:         tab === 'submitted' && statusNum === APPROVAL_STATUS.REVIEWING,
+			allApproverNames: r.all_approver_names ?? '',
+			rejectReason: r.reject_reason ?? null,
+			remindCount: Number(r.remind_count ?? 0),
+			canWithdraw: tab === 'submitted' && statusNum === APPROVAL_STATUS.REVIEWING,
 		}
 	})
 
-	return ok({ list, total, page, pageSize })
+	// ── Tab 计数（不受当前 tab/status 筛选影响，反映各 Tab 真实总数） ──
+	const tabCountRows = await prisma.$queryRaw<Array<{ tab: string; cnt: bigint | number }>>`
+		SELECT 'pending' AS tab, COUNT(*) AS cnt
+		FROM doc_approval_instance_nodes n
+		JOIN doc_approval_instances inst ON inst.id = n.instance_id
+		JOIN doc_documents d ON d.id = inst.document_id
+		WHERE n.approver_user_id = ${userId}
+		  AND n.action_status = ${NODE_ACTION.PENDING}
+		  AND inst.status = ${APPROVAL_STATUS.REVIEWING}
+		  AND inst.current_node_order = n.node_order
+		  AND d.deleted_at IS NULL
+
+		UNION ALL
+
+		SELECT 'submitted' AS tab, COUNT(*) AS cnt
+		FROM doc_approval_instances inst
+		JOIN doc_documents d ON d.id = inst.document_id
+		WHERE inst.initiator_user_id = ${userId}
+		  AND d.deleted_at IS NULL
+
+		UNION ALL
+
+		SELECT 'handled' AS tab, COUNT(*) AS cnt
+		FROM doc_approval_instance_nodes n
+		JOIN doc_approval_instances inst ON inst.id = n.instance_id
+		JOIN doc_documents d ON d.id = inst.document_id
+		WHERE n.approver_user_id = ${userId}
+		  AND n.action_status IN (${NODE_ACTION.APPROVED}, ${NODE_ACTION.REJECTED})
+		  AND d.deleted_at IS NULL
+	`
+	const tabCounts: Record<string, number> = { pending: 0, submitted: 0, handled: 0 }
+	for (const r of tabCountRows) {
+		tabCounts[r.tab] = Number(r.cnt)
+	}
+
+	return ok({ list, total, page, pageSize, tabCounts })
 })

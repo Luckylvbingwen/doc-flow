@@ -97,12 +97,7 @@ v-for="item in outline" :key="item.id" class="fp-outline__item"
 
 <script setup lang="ts">
 import { Document, Close, ChatLineSquare, DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
-
-interface OutlineItem {
-	id: string
-	text: string
-	level: 1 | 2 | 3
-}
+import { useOutline } from '~/composables/useOutline'
 
 const props = withDefaults(defineProps<{
 	/** v-model:visible */
@@ -137,11 +132,10 @@ const visible = computed({
 
 const outlineCollapsed = ref(false)
 const annotationOpen = ref(false)
-const outline = ref<OutlineItem[]>([])
-const activeOutlineId = ref<string | null>(null)
 const scrollerRef = ref<{ wrapRef?: HTMLElement } | null>(null)
 
-let observer: IntersectionObserver | null = null
+const { outline, activeOutlineId, rebuildOutline, scrollToHeading } = useOutline(scrollerRef, '.fp-doc-preview')
+
 let onKeyDown: ((e: KeyboardEvent) => void) | null = null
 
 function close() {
@@ -158,76 +152,6 @@ const FILE_TYPE_LABEL: Record<string, string> = {
 
 const fileTypeLabel = computed(() => FILE_TYPE_LABEL[props.fileType] || props.fileType.toUpperCase())
 
-/**
- * 从已渲染 HTML 抽取 H1-H3 → outline 列表，给每个节点植入唯一 id 锚点
- * 用 nextTick 等 v-html 完成 DOM 写入再操作
- */
-async function rebuildOutline() {
-	outline.value = []
-	activeOutlineId.value = null
-
-	if (!props.visible) return
-	await nextTick()
-
-	const container = scrollerRef.value?.wrapRef as HTMLElement | undefined
-	if (!container) return
-
-	const headings = Array.from(container.querySelectorAll('.fp-doc-preview h1, .fp-doc-preview h2, .fp-doc-preview h3'))
-	const items: OutlineItem[] = []
-
-	headings.forEach((h, idx) => {
-		const el = h as HTMLElement
-		if (!el.id) el.id = `fp-h-${idx}`
-		const level = (parseInt(el.tagName.slice(1)) as 1 | 2 | 3) || 1
-		items.push({
-			id: el.id,
-			text: (el.textContent || '').trim() || `(无标题 #${idx + 1})`,
-			level,
-		})
-	})
-	outline.value = items
-	if (items.length > 0) activeOutlineId.value = items[0].id
-
-	setupObserver(headings as HTMLElement[])
-}
-
-function setupObserver(headings: HTMLElement[]) {
-	teardownObserver()
-	const container = scrollerRef.value?.wrapRef as HTMLElement | undefined
-	if (!container || headings.length === 0) return
-
-	observer = new IntersectionObserver(
-		(entries) => {
-			// 取第一个进入视口的 heading 作为 active
-			const visibleEntries = entries.filter(e => e.isIntersecting)
-			if (visibleEntries.length === 0) return
-			visibleEntries.sort(
-				(a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
-			)
-			activeOutlineId.value = (visibleEntries[0].target as HTMLElement).id
-		},
-		{
-			root: container,
-			rootMargin: '-10% 0px -70% 0px',
-			threshold: 0,
-		},
-	)
-	headings.forEach(h => observer!.observe(h))
-}
-
-function teardownObserver() {
-	observer?.disconnect()
-	observer = null
-}
-
-function scrollToHeading(id: string) {
-	const container = scrollerRef.value?.wrapRef as HTMLElement | undefined
-	const target = container?.querySelector<HTMLElement>(`#${CSS.escape(id)}`)
-	if (!target) return
-	target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-	activeOutlineId.value = id
-}
-
 /** ESC 关闭 + 锁滚动（仅客户端，SSR 阶段不跑） */
 watch(visible, (val) => {
 	if (typeof window === 'undefined') return
@@ -243,7 +167,6 @@ watch(visible, (val) => {
 		if (onKeyDown) window.removeEventListener('keydown', onKeyDown)
 		onKeyDown = null
 		document.body.style.overflow = ''
-		teardownObserver()
 	}
 })
 
@@ -255,7 +178,6 @@ watch(() => [props.html, props.fileType], () => {
 onBeforeUnmount(() => {
 	if (onKeyDown) window.removeEventListener('keydown', onKeyDown)
 	document.body.style.overflow = ''
-	teardownObserver()
 })
 </script>
 

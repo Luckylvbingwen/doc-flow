@@ -1,7 +1,16 @@
 <template>
 	<ListPageShell>
 		<template #header>
-			<PageTitle title="个人中心" subtitle="我创建的、分享给我的、个人收藏、离职交接" :refreshing="loading" @refresh="load" />
+			<PageTitle title="个人中心" subtitle="我创建的、分享给我的、个人收藏、离职交接" :refreshing="loading" @refresh="load">
+				<template #actions>
+					<el-button type="primary" size="small" @click="handleNewDoc">
+						<el-icon>
+							<Plus />
+						</el-icon>
+						新建文档
+					</el-button>
+				</template>
+			</PageTitle>
 		</template>
 
 		<template #filter>
@@ -105,7 +114,7 @@ v-if="shareTarget" v-model="shareModalVisible" :document-id="shareTarget.id"
 </template>
 
 <script setup lang="ts">
-import { Search } from '@element-plus/icons-vue'
+import { Search, Plus } from '@element-plus/icons-vue'
 import type { TableColumn } from '~/components/DataTable.vue'
 import { formatTime } from '~/utils/format'
 import { getFileTypeClass, getFileTypeLabel } from '~/utils/file-type'
@@ -137,6 +146,14 @@ const currentUserId = computed(() => authStore.user?.id ?? 0)
 const { hasRole } = useAuth()
 const canViewHandover = computed(() => hasRole('dept_head'))
 
+const tabCounts = reactive<Record<PersonalTab, number | undefined>>({
+	all: undefined,
+	mine: undefined,
+	shared: undefined,
+	favorite: undefined,
+	handover: undefined,
+})
+
 const allTabs: Array<{ value: PersonalTab; label: string }> = [
 	{ value: 'all', label: '全部' },
 	{ value: 'mine', label: '我创建的' },
@@ -144,7 +161,11 @@ const allTabs: Array<{ value: PersonalTab; label: string }> = [
 	{ value: 'favorite', label: '个人收藏' },
 	{ value: 'handover', label: '离职移交' },
 ]
-const tabs = computed(() => allTabs.filter(t => t.value !== 'handover' || canViewHandover.value))
+const tabs = computed(() =>
+	allTabs
+		.filter(t => t.value !== 'handover' || canViewHandover.value)
+		.map(t => ({ ...t, count: tabCounts[t.value] })),
+)
 
 const tab = ref<PersonalTab>('all')
 
@@ -212,7 +233,16 @@ const {
 	onFilterChange: triggerListRefetch,
 	onPageChange,
 } = useListPage<PersonalDocItem, Omit<PersonalListQuery, 'tab'> & { tab: 'all' | 'mine' | 'shared' | 'favorite' }>({
-	fetchFn: apiGetPersonalDocs,
+	fetchFn: async (params) => {
+		const res = await apiGetPersonalDocs(params)
+		if (res.success) {
+			tabCounts.all = res.data.tabCounts.all
+			tabCounts.mine = res.data.tabCounts.mine
+			tabCounts.shared = res.data.tabCounts.shared
+			tabCounts.favorite = res.data.tabCounts.favorite
+		}
+		return res
+	},
 	buildQuery: ({ page, pageSize }) => ({
 		tab: tab.value === 'handover' ? 'all' : tab.value,
 		status: statusFilterEnabled.value ? (filterStatus.value ?? undefined) : undefined,
@@ -240,6 +270,11 @@ async function refetchHandover() {
 		})
 		if (res.success) {
 			handoverGroups.value = res.data.list
+			// handover 响应也带 tabCounts
+			tabCounts.all = res.data.tabCounts.all
+			tabCounts.mine = res.data.tabCounts.mine
+			tabCounts.shared = res.data.tabCounts.shared
+			tabCounts.favorite = res.data.tabCounts.favorite
 		} else if (res.code === 'HANDOVER_NOT_DEPT_HEAD') {
 			handoverForbidden.value = true
 			handoverGroups.value = []
@@ -283,6 +318,11 @@ function onTabChange() {
 }
 
 onMounted(load)
+
+// ── 新建文档（编辑器完成前为占位） ──
+function handleNewDoc() {
+	msgWarning('在线编辑器开发中，敬请期待')
+}
 
 // ── 行操作 ──
 function getRowActions(doc: PersonalDocItem) {

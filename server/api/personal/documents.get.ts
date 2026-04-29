@@ -272,6 +272,59 @@ async function handleHandover(
 	return { list, total, page: opts.page, pageSize: opts.pageSize }
 }
 
+/** 各 Tab 不含筛选条件的真实总数（不含 handover） */
+async function queryTabCounts(userId: number) {
+	const df = Prisma.sql`d.deleted_at IS NULL AND d.deleted_at_real IS NULL`
+
+	const rows = await prisma.$queryRaw<Array<{ tab: string; cnt: bigint | number }>>`
+		SELECT 'mine' AS tab, COUNT(*) AS cnt
+		FROM doc_documents d
+		WHERE d.owner_user_id = ${userId} AND ${df}
+
+		UNION ALL
+
+		SELECT 'shared' AS tab, COUNT(*) AS cnt
+		FROM doc_document_permissions p
+		JOIN doc_documents d ON d.id = p.document_id
+		WHERE p.user_id = ${userId}
+		  AND p.deleted_at IS NULL
+		  AND d.owner_user_id <> ${userId}
+		  AND ${df}
+
+		UNION ALL
+
+		SELECT 'favorite' AS tab, COUNT(*) AS cnt
+		FROM doc_document_favorites f
+		JOIN doc_documents d ON d.id = f.document_id
+		WHERE f.user_id = ${userId} AND ${df}
+	`
+
+	const counts: Record<string, number> = { all: 0, mine: 0, shared: 0, favorite: 0 }
+	for (const r of rows) {
+		counts[r.tab] = Number(r.cnt)
+	}
+
+	// all = 三路去重后的总数
+	const allRows = await prisma.$queryRaw<Array<{ cnt: bigint | number }>>`
+		SELECT COUNT(DISTINCT sub.id) AS cnt FROM (
+			SELECT d.id FROM doc_documents d
+			WHERE d.owner_user_id = ${userId} AND ${df}
+			UNION
+			SELECT d.id FROM doc_document_permissions p
+			JOIN doc_documents d ON d.id = p.document_id
+			WHERE p.user_id = ${userId} AND p.deleted_at IS NULL
+			  AND d.owner_user_id <> ${userId} AND ${df}
+			UNION
+			SELECT d.id FROM doc_document_favorites f
+			JOIN doc_documents d ON d.id = f.document_id
+			WHERE f.user_id = ${userId} AND ${df}
+		) sub
+	`
+	counts.all = Number(allRows[0]?.cnt ?? 0)
+
+	return counts
+}
+
 export default defineEventHandler(async (event) => {
 	const user = event.context.user
 	if (!user) return fail(event, 401, AUTH_REQUIRED, '请先登录')
@@ -279,11 +332,14 @@ export default defineEventHandler(async (event) => {
 	const query = await getValidatedQuery(event, personalListQuerySchema.parse)
 	const { tab, status, keyword, page, pageSize } = query
 
+	// ── Tab 计数（不受当前 tab/筛选影响，反映各 Tab 真实总数） ──
+	const tabCounts = await queryTabCounts(user.id)
+
 	// ── handover：特殊路径 ──
 	if (tab === 'handover') {
 		const res = await handleHandover(user.id, { keyword, page, pageSize })
 		if ('__forbidden' in res) return fail(event, 403, HANDOVER_NOT_DEPT_HEAD, '仅部门负责人可查看离职交接')
-		return ok(res)
+		return ok({ ...res, tabCounts })
 	}
 
 	// ── 普通 tab ──
@@ -318,5 +374,5 @@ export default defineEventHandler(async (event) => {
 	const offset = (page - 1) * pageSize
 	const list = rows.slice(offset, offset + pageSize).map(mapRow)
 
-	return ok({ list, total, page, pageSize })
+	return ok({ list, total, page, pageSize, tabCounts })
 })

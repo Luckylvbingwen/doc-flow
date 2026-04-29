@@ -263,9 +263,6 @@ useHead({ title: '登录 - DocFlow' })
    ============================================ */
 .login-page {
 	position: relative;
-	min-height: 100vh;
-	display: flex;
-	overflow: hidden;
 	background: #f1f5f9;
 }
 
@@ -274,8 +271,6 @@ useHead({ title: '登录 - DocFlow' })
    ============================================ */
 .login-hero {
 	position: relative;
-	width: 44%;
-	min-width: 400px;
 	background: #1e293b;
 	display: flex;
 	align-items: center;
@@ -363,10 +358,6 @@ useHead({ title: '登录 - DocFlow' })
    右侧登录表单
    ============================================ */
 .login-content {
-	flex: 1;
-	display: flex;
-	align-items: center;
-	justify-content: center;
 	padding: 32px;
 }
 
@@ -532,11 +523,7 @@ useHead({ title: '登录 - DocFlow' })
 /* ============================================
    响应式
    ============================================ */
-@media (max-width: 1024px) {
-	.login-hero {
-		display: none;
-	}
-}
+
 
 @media (max-width: 900px) {
 	.login-content {

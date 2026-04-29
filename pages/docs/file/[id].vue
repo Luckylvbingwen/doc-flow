@@ -192,11 +192,37 @@ size="small" text :disabled="previewLoading || !previewHtml"
 							全屏对比
 						</el-button>
 					</div>
-					<el-scrollbar>
-						<div class="df-preview-body">
-							<DocPreview :file-type="fileType" :html="previewHtml" :loading="previewLoading" />
-						</div>
-					</el-scrollbar>
+					<div class="df-preview-with-toc">
+						<!-- TOC 目录侧栏 -->
+						<aside v-if="tocOutline.length > 0" class="df-toc-sidebar" :class="{ 'is-collapsed': tocCollapsed }">
+							<div class="df-toc-sidebar__head">
+								<span v-if="!tocCollapsed" class="df-toc-sidebar__title">目录</span>
+								<el-button
+text size="small" :title="tocCollapsed ? '展开目录' : '收起目录'"
+									@click="tocCollapsed = !tocCollapsed">
+									<el-icon :size="14">
+										<DArrowRight v-if="tocCollapsed" />
+										<DArrowLeft v-else />
+									</el-icon>
+								</el-button>
+							</div>
+							<el-scrollbar v-if="!tocCollapsed" class="df-toc-sidebar__list">
+								<a
+v-for="item in tocOutline" :key="item.id" class="df-toc-sidebar__item"
+									:class="[`is-level-${item.level}`, { 'is-active': tocActiveId === item.id }]"
+									@click="tocScrollTo(item.id)">
+									{{ item.text }}
+								</a>
+							</el-scrollbar>
+						</aside>
+						<el-scrollbar ref="previewScrollerRef">
+							<div class="df-preview-body">
+								<DocPreview
+class="df-detail-preview" :file-type="fileType" :html="previewHtml"
+									:loading="previewLoading" />
+							</div>
+						</el-scrollbar>
+					</div>
 				</template>
 
 				<!-- 页内对比模式 -->
@@ -310,7 +336,7 @@ v-if="detail?.groupId" v-model="movePickerVisible" v-model:loading="moveLoading"
 		<!-- 分享链接弹窗 -->
 		<ShareLinkModal
 v-if="detail" v-model="shareModalVisible" :document-id="documentId"
-			:file-name="`${detail.title}.${detail.ext}`" />
+			:file-name="`${detail.title}.${detail.ext}`" :can-edit="detail.canEdit" />
 
 		<!-- 版本回滚确认弹窗 -->
 		<RollbackConfirmModal
@@ -373,6 +399,8 @@ import {
 	Rank,
 	Share,
 	MoreFilled,
+	DArrowLeft,
+	DArrowRight,
 } from '@element-plus/icons-vue'
 import type { VersionInfo, CompareResult } from '~/types/version'
 import type { ApiResponse, PaginatedData } from '~/types/api'
@@ -527,6 +555,21 @@ async function fetchVersions() {
 // ── 预览 HTML（服务端渲染） ──
 const previewHtml = ref('')
 const previewLoading = ref(false)
+
+// ── TOC 目录侧栏 ──
+const previewScrollerRef = ref<{ wrapRef?: HTMLElement } | null>(null)
+const tocCollapsed = ref(false)
+const {
+	outline: tocOutline,
+	activeOutlineId: tocActiveId,
+	rebuildOutline: tocRebuild,
+	scrollToHeading: tocScrollTo,
+} = useOutline(previewScrollerRef, '.df-detail-preview')
+
+// 预览内容变化时重建目录
+watch(previewHtml, () => {
+	nextTick(tocRebuild)
+})
 async function loadPreview() {
 	if (!detail.value || !detail.value.currentVersion) {
 		previewHtml.value = ''

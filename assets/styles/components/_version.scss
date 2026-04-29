@@ -77,7 +77,7 @@
   margin-top: 4px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
-	line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -431,5 +431,83 @@
   &.cs-modify {
     background: #fef3c7;
     color: #854d0e;
+  }
+}
+
+/* ── 文件详情页常驻 TOC 侧栏 ── */
+
+.df-preview-with-toc {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.df-toc-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--df-border);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.2s ease;
+
+  &.is-collapsed {
+    width: 36px;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 8px 4px;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--df-subtext);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &__list {
+    flex: 1;
+    min-height: 0;
+  }
+
+  &__item {
+    display: block;
+    padding: 4px 12px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--df-subtext);
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+
+    &:hover {
+      color: var(--df-text);
+      background: var(--df-surface);
+    }
+
+    &.is-active {
+      color: var(--df-primary);
+      border-left-color: var(--df-primary);
+      background: var(--df-primary-soft);
+      font-weight: 500;
+    }
+
+    &.is-level-2 {
+      padding-left: 24px;
+    }
+
+    &.is-level-3 {
+      padding-left: 36px;
+    }
   }
 }

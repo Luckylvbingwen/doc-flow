@@ -2,9 +2,11 @@ import type { ApiResult, PaginatedData } from '~/types/api'
 import type { ApprovalItem, ApprovalListQuery, ApprovalFullDetailData } from '~/types/approval'
 import type { ApprovalSubmitBody, ApprovalRejectBody } from '~/server/schemas/approval-runtime'
 
-/** 审批中心列表（按 tab/status 筛选，分页） */
+export interface ApprovalTabCounts { pending: number; submitted: number; handled: number }
+
+/** 审批中心列表（按 tab/status 筛选，分页），附带各 Tab 计数 */
 export function apiGetApprovals(params: ApprovalListQuery) {
-	return useAuthFetch<ApiResult<PaginatedData<ApprovalItem>>>('/api/approvals', {
+	return useAuthFetch<ApiResult<PaginatedData<ApprovalItem> & { tabCounts: ApprovalTabCounts }>>('/api/approvals', {
 		method: 'GET',
 		query: params,
 	})

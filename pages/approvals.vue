@@ -80,11 +80,17 @@ definePageMeta({
 })
 useHead({ title: '审批中心 - DocFlow' })
 
-const tabs: Array<{ value: ApprovalTab; label: string }> = [
-	{ value: 'pending', label: '待我审批' },
-	{ value: 'submitted', label: '我发起的' },
-	{ value: 'handled', label: '我已处理' },
-]
+const tabCounts = reactive<Record<ApprovalTab, number | undefined>>({
+	pending: undefined,
+	submitted: undefined,
+	handled: undefined,
+})
+
+const tabs = computed(() => [
+	{ value: 'pending' as const, label: '待我审批', count: tabCounts.pending },
+	{ value: 'submitted' as const, label: '我发起的', count: tabCounts.submitted },
+	{ value: 'handled' as const, label: '我已处理', count: tabCounts.handled },
+])
 
 const route = useRoute()
 const tab = ref<ApprovalTab>((route.query.tab as ApprovalTab) || 'pending')
@@ -117,7 +123,15 @@ const {
 	onFilterChange,
 	onPageChange,
 } = useListPage<ApprovalItem, ApprovalListQuery>({
-	fetchFn: apiGetApprovals,
+	fetchFn: async (params) => {
+		const res = await apiGetApprovals(params)
+		if (res.success) {
+			tabCounts.pending = res.data.tabCounts.pending
+			tabCounts.submitted = res.data.tabCounts.submitted
+			tabCounts.handled = res.data.tabCounts.handled
+		}
+		return res
+	},
 	buildQuery: ({ page, pageSize }) => ({
 		tab: tab.value,
 		status: statusFilterEnabled.value ? (filterStatus.value ?? undefined) : undefined,

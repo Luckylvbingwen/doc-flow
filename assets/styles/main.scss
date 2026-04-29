@@ -111,7 +111,28 @@ a {
 .login-page {
   display: flex;
   min-height: 100vh;
+  overflow: hidden;
   background: #f1f5f9;
+}
+
+/* 登录页关键布局：必须在全局样式中定义，避免客户端导航时 scoped CSS 延迟加载导致布局闪烁 */
+.login-hero {
+  width: 44%;
+  min-width: 400px;
+  flex-shrink: 0;
+}
+
+.login-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 1024px) {
+  .login-hero {
+    display: none;
+  }
 }
 
 .pf-app {
