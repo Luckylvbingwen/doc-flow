@@ -97,6 +97,29 @@ export default defineEventHandler(async (event) => {
 		row.group_id != null ? Number(row.group_id) : null,
 	)
 
+	// 查询是否有待处理的归属人转移
+	const pendingTransferRow = await prisma.doc_ownership_transfers.findFirst({
+		where: { document_id: docId, status: 1 },
+		select: { expires_at: true },
+	})
+	const hasPendingTransfer = pendingTransferRow ? pendingTransferRow.expires_at > new Date() : false
+
+	// PRD §6.3.8 申请编辑权限：可阅读权限用户且无待处理的 type=2 申请
+	let myDocPermission: number | null = null
+	if (!isOwner) {
+		const myPerm = await prisma.doc_document_permissions.findFirst({
+			where: { document_id: docId, user_id: BigInt(user.id), deleted_at: null },
+			select: { permission: true },
+		})
+		myDocPermission = myPerm?.permission ?? null
+	}
+	const pendingEditRequest = myDocPermission === 4
+		? await prisma.doc_permission_requests.findFirst({
+			where: { document_id: docId, user_id: BigInt(user.id), type: 2, status: 1 },
+			select: { id: true },
+		})
+		: null
+
 	const detail: DocumentDetail = {
 		id: Number(row.id),
 		title: row.title,
@@ -128,6 +151,10 @@ export default defineEventHandler(async (event) => {
 		canPin,
 		canManagePermissions: canPin,  // 与 canPin 同口径（PRD §6.3.4 仅组管理员可配置）
 		canRollback: canPin && status === 4,  // 版本回滚：组管理员 + 已发布（PRD §4.3）
+		canTransfer: isOwner && status === 4 && !hasPendingTransfer,
+		hasPendingTransfer,
+		canRequestEditPermission: !isOwner && status === 4 && myDocPermission === 4 && !pendingEditRequest,
+		myDocPermission,
 	}
 
 	return ok(detail)

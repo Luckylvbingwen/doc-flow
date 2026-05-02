@@ -23,6 +23,10 @@ export interface DocumentListItem {
 	isFavorited: boolean
 	/** 该文档是否已设置文档级权限（PRD §6.3.3 行级橙锁图标 / §6.3.4 弹窗保存后） */
 	hasCustomPermissions: boolean
+	/** 是否为引用文档（PRD §6.10） */
+	isReference?: boolean
+	/** 引用记录 ID（取消引用时使用） */
+	referenceId?: number
 }
 
 /** 文件详情（GET /api/documents/:id） */
@@ -57,8 +61,18 @@ export interface DocumentDetail {
 	canUploadVersion: boolean
 	canPin: boolean
 	/** 当前用户是否可配置该文档的文档级权限（PRD §6.3.4 仅组管理员可配置） */
-	canManagePermissions: boolean	/** 当前用户是否可进行版本回滚（PRD §4.3 组管理员及上游） */
-	canRollback: boolean}
+	canManagePermissions: boolean
+	/** 当前用户是否可进行版本回滚（PRD §4.3 组管理员及上游） */
+	canRollback: boolean
+	/** 当前用户是否可发起归属人转移（仅归属人 + 已发布 + 无待处理转移，PRD §6.3.10） */
+	canTransfer?: boolean
+	/** 当前文档是否有待处理的归属人转移请求 */
+	hasPendingTransfer?: boolean
+	/** 当前用户是否可申请编辑权限（有可阅读权限 + 已发布 + 非归属人 + 无待处理申请，PRD §6.3.8） */
+	canRequestEditPermission?: boolean
+	/** 当前用户对该文档的文档级权限（2可编辑 / 3上传下载 / 4可阅读 / null无） */
+	myDocPermission?: number | null
+}
 
 /** 上传 / 更新版本 返回结构 */
 export interface UploadResult {
@@ -75,6 +89,8 @@ export interface DocumentListResponse {
 	page: number
 	pageSize: number
 	reviewingCount: number
+	/** 当前页或当前查询结果中的引用文档数量（PRD §6.10.10 翻页器可标注“含 N 条引用”） */
+	referenceCount?: number
 	/** 当前用户在此组是否有置顶权限（组管理员及上游） */
 	canPin: boolean
 	/** 当前用户在此组是否可配置文档级权限（与 canPin 同口径） */

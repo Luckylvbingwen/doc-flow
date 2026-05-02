@@ -31,6 +31,21 @@ interface Row {
 	is_favorited: number
 	has_custom_permissions: number
 }
+interface RefRow {
+	ref_id: bigint
+	id: bigint
+	title: string
+	ext: string | null
+	status: number
+	updated_at: Date
+	download_count: number
+	owner_user_id: bigint
+	owner_name: string
+	version_no: string | null
+	file_size: bigint | null
+	is_favorited: number
+	is_pinned: number
+}
 
 export default defineEventHandler(async (event) => {
 	const permErr = await requirePermission(event, 'doc:read')
@@ -105,6 +120,45 @@ export default defineEventHandler(async (event) => {
 		hasCustomPermissions: Number(r.has_custom_permissions) === 1,
 	}))
 
+	// 查引用文档（PRD §6.10.2 — 显示源文档实时数据，与普通文档一起展示）
+	const refRows = await prisma.$queryRaw<RefRow[]>`
+		SELECT
+			r.id AS ref_id,
+			d.id, d.title, d.ext, d.status, d.updated_at, d.download_count,
+			d.owner_user_id,
+			u.name AS owner_name,
+			v.version_no, v.file_size,
+			(f.id IS NOT NULL) AS is_favorited,
+			(p.id IS NOT NULL) AS is_pinned
+		FROM doc_document_references r
+		JOIN doc_documents d ON d.id = r.source_document_id AND d.deleted_at IS NULL AND d.status = 4
+		JOIN doc_users u ON u.id = d.owner_user_id
+		LEFT JOIN doc_document_versions v ON v.id = d.current_version_id
+		LEFT JOIN doc_document_favorites f ON f.document_id = d.id AND f.user_id = ${BigInt(user.id)}
+		LEFT JOIN doc_document_pins p ON p.document_id = d.id AND p.group_id = ${BigInt(groupId)}
+		WHERE r.target_group_id = ${BigInt(groupId)}
+		  ${keyword ? Prisma.sql`AND d.title LIKE ${'%' + keyword + '%'}` : Prisma.empty}
+		ORDER BY p.id IS NOT NULL DESC, d.updated_at DESC
+	`
+
+	const refList: (DocumentListItem & { isReference?: boolean; referenceId?: number })[] = refRows.map(r => ({
+		id: Number(r.id),
+		title: r.title,
+		ext: r.ext ?? '',
+		status: r.status as DocumentStatus,
+		versionNo: r.version_no,
+		fileSize: r.file_size != null ? Number(r.file_size) : null,
+		ownerId: Number(r.owner_user_id),
+		ownerName: r.owner_name,
+		updatedAt: r.updated_at.getTime(),
+		downloadCount: r.download_count,
+		isPinned: Number(r.is_pinned) === 1,
+		isFavorited: Number(r.is_favorited) === 1,
+		hasCustomPermissions: false,
+		isReference: true,
+		referenceId: Number(r.ref_id),
+	}))
+
 	// 三个组级权限标志（PRD §6.3.3 / §6.3.4 / §4.3 权限矩阵）
 	//   - canPin / canCreateSubgroup / canManagePermissions：组管理员判定（同口径）
 	//   - canUpload：组成员或上游管理员（"上传文件"全员 ✅）
@@ -114,15 +168,17 @@ export default defineEventHandler(async (event) => {
 	])
 
 	const resp: DocumentListResponse = {
-		list,
+		list: [...list, ...refList],
 		total: Number(totalBig),
 		page,
 		pageSize,
 		reviewingCount: Number(reviewingBig),
+		referenceCount: refList.length,
 		canPin: isGroupAdmin,
 		canManagePermissions: isGroupAdmin,
 		canCreateSubgroup: isGroupAdmin,
 		canUpload,
 	}
+
 	return ok(resp)
 })

@@ -52,19 +52,43 @@ v-for="item in group.items" :key="item.to" :content="item.label" placement="righ
 			</div>
 
 			<ClientOnly>
-				<nav class="pf-topbar-nav">
+				<nav v-show="!isTopbarHamburger" class="pf-topbar-nav">
 					<template v-for="(group, gi) in menuGroups" :key="group.title ?? 'default'">
 						<span v-if="gi > 0" class="pf-topbar-divider" />
-						<NuxtLink
-v-for="item in group.items" :key="item.to" class="pf-topbar-link"
-							:class="{ active: isItemActive(item) }" :to="item.to">
-							<el-icon class="pf-topbar-link-icon">
-								<component :is="item.icon" />
-							</el-icon>
-							{{ item.label }}
-						</NuxtLink>
+						<el-tooltip
+							v-for="item in group.items" :key="item.to"
+							:content="item.label" placement="bottom" :show-after="300"
+							:disabled="!isTopbarIconOnly">
+							<NuxtLink class="pf-topbar-link" :class="{ active: isItemActive(item) }" :to="item.to">
+								<el-icon class="pf-topbar-link-icon">
+									<component :is="item.icon" />
+								</el-icon>
+								<span class="pf-topbar-link-text">{{ item.label }}</span>
+							</NuxtLink>
+						</el-tooltip>
 					</template>
 				</nav>
+
+				<!-- 汉堡菜单：仅小屏 (<1024px) 显示 -->
+				<el-dropdown v-show="isTopbarHamburger" class="pf-topbar-hamburger" trigger="click" placement="bottom-start">
+					<button class="pf-dark-toggle" type="button" aria-label="导航菜单">
+						<el-icon :size="18"><Menu /></el-icon>
+					</button>
+					<template #dropdown>
+						<el-dropdown-menu>
+							<template v-for="(group, gi) in menuGroups" :key="group.title ?? 'default'">
+								<el-dropdown-item
+									v-for="(item, ii) in group.items" :key="item.to"
+									:divided="gi > 0 && ii === 0"
+									:class="{ 'pf-hamburger-item--active': isItemActive(item) }"
+									@click="navigateTo(item.to)">
+									<el-icon><component :is="item.icon" /></el-icon>
+									{{ item.label }}
+								</el-dropdown-item>
+							</template>
+						</el-dropdown-menu>
+					</template>
+				</el-dropdown>
 			</ClientOnly>
 
 			<div class="pf-topbar-actions">
@@ -274,6 +298,7 @@ import {
 	Fold,
 	Folder,
 	ArrowDownBold,
+	Menu,
 	Moon,
 	Operation,
 	Setting,
@@ -304,6 +329,9 @@ const userInitial = computed(() => {
 	const name = authStore.user?.name?.trim() || '访客'
 	return name.slice(0, 1)
 })
+
+const isTopbarIconOnly = ref(false)
+const isTopbarHamburger = ref(false)
 
 const avatarLoadFailed = ref(false)
 const avatarLoaded = ref(false)
@@ -387,7 +415,10 @@ const COLLAPSE_BREAKPOINT = 1024
 let _userManualToggle = false
 
 const handleResize = () => {
-	const narrow = window.innerWidth < COLLAPSE_BREAKPOINT
+	const w = window.innerWidth
+	const narrow = w < COLLAPSE_BREAKPOINT
+	isTopbarIconOnly.value = w >= COLLAPSE_BREAKPOINT && w < 1280
+	isTopbarHamburger.value = w < COLLAPSE_BREAKPOINT
 	if (narrow && !isSidebarCollapsed.value) {
 		appStore.setSidebarCollapsed(true)
 		_userManualToggle = false

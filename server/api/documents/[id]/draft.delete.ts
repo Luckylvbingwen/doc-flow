@@ -11,12 +11,13 @@
  * 鉴权：登录即可（本接口仅操作自己的草稿）
  */
 import { prisma } from '~/server/utils/prisma'
+import { cleanupDocumentReferences } from '~/server/utils/document-reference'
 import {
 	AUTH_REQUIRED,
 	INVALID_PARAMS,
 	DRAFT_NOT_FOUND,
 	DRAFT_NOT_OWNER,
-	DRAFT_NOT_DELETABLE,
+	DRAFT_NOT_DELETABLE, OWNERSHIP_TRANSFER_DELETE_FORBIDDEN 
 } from '~/server/constants/error-codes'
 import { writeLog } from '~/server/utils/operation-log'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
@@ -57,6 +58,14 @@ export default defineEventHandler(async (event) => {
 		return fail(event, 409, DRAFT_NOT_DELETABLE, '已在回收站，不可重复删除')
 	}
 
+	// PRD §6.3.10 第5节：待响应转移期间不允许删除文档
+	const pendingTransfer = await prisma.doc_ownership_transfers.findFirst({
+		where: { document_id: docId, status: 1 },
+	})
+	if (pendingTransfer) {
+		return fail(event, 409, OWNERSHIP_TRANSFER_DELETE_FORBIDDEN, '归属人转移请求待确认期间不允许删除')
+	}
+
 	await prisma.doc_documents.update({
 		where: { id: docId },
 		data: {
@@ -66,6 +75,9 @@ export default defineEventHandler(async (event) => {
 			updated_by: BigInt(user.id),
 		},
 	})
+
+	// PRD §6.10.6：源文档被归属人删除 → 自动失效所有引用关系 + M25 通知
+	await cleanupDocumentReferences(docId)
 
 	await writeLog({
 		actorUserId: user.id,

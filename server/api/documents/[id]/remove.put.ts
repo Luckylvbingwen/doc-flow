@@ -11,6 +11,7 @@
  */
 import { prisma } from '~/server/utils/prisma'
 import { requireMemberPermission } from '~/server/utils/group-permission'
+import { cleanupDocumentReferences } from '~/server/utils/document-reference'
 import { writeLog } from '~/server/utils/operation-log'
 import { createNotification } from '~/server/utils/notify'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
@@ -62,9 +63,9 @@ export default defineEventHandler(async (event) => {
 
 	const group = doc.doc_groups
 	const groupErr = await requireMemberPermission(event, {
-		groupId:     Number(group.id),
-		scopeType:   group.scope_type,
-		scopeRefId:  group.scope_ref_id != null ? Number(group.scope_ref_id) : null,
+		groupId: Number(group.id),
+		scopeType: group.scope_type,
+		scopeRefId: group.scope_ref_id != null ? Number(group.scope_ref_id) : null,
 		ownerUserId: Number(group.owner_user_id),
 	})
 	if (groupErr) return groupErr
@@ -101,6 +102,9 @@ export default defineEventHandler(async (event) => {
 			groupName: group.name,
 		}))
 	}
+
+	// PRD §6.10.6：源文档从组中移除 → 自动删除所有引用关系 + M25 通知目标组管理员
+	await cleanupDocumentReferences(doc.id)
 
 	return ok({ id: Number(doc.id) }, '已从组移除，文档已退回归属人个人中心')
 })

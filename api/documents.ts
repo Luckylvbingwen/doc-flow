@@ -160,3 +160,60 @@ export function apiPublishDocument(id: number, body: { mode: 'new' | 'update'; t
 		{ method: 'POST', body },
 	)
 }
+
+/** 查询当前文档待处理的归属人转移请求 */
+export function apiGetDocumentTransfer(id: number) {
+	return useAuthFetch<ApiResult<{
+		pending: boolean
+		transferId?: string
+		toUserId?: number
+		toUserName?: string
+		expiresAt?: number
+		createdAt?: number
+	}>>(`/api/documents/${id}/transfer`)
+}
+
+/** 发起归属人转移 */
+export function apiInitiateDocumentTransfer(id: number, toUserId: number) {
+	return useAuthFetch<ApiResult<{ transferId: string }>>(`/api/documents/${id}/transfer`, {
+		method: 'POST',
+		body: { toUserId },
+	})
+}
+
+/** 接收人处理归属人转移 */
+export function apiRespondDocumentTransfer(id: number, action: 'accept' | 'reject') {
+	return useAuthFetch<ApiResult<null>>(`/api/documents/${id}/transfer`, {
+		method: 'PUT',
+		body: { action },
+	})
+}
+
+/** 提交权限申请 */
+export function apiSubmitPermissionRequest(id: number, body: { type: 1 | 2; reason?: string }) {
+	return useAuthFetch<ApiResult<{ requestId: string }>>(`/api/documents/${id}/permission-requests`, {
+		method: 'POST',
+		body,
+	})
+}
+
+/** 查询待处理权限申请列表（归属人查看） */
+export function apiGetPermissionRequests(id: number) {
+	return useAuthFetch<ApiResult<Array<{
+		id: string
+		userId: number
+		userName: string
+		avatarUrl: string | null
+		type: 1 | 2
+		reason: string | null
+		createdAt: number
+	}>>>(`/api/documents/${id}/permission-requests`)
+}
+
+/** 归属人处理权限申请 */
+export function apiReviewPermissionRequest(id: number, requestId: string, action: 'approve' | 'reject') {
+	return useAuthFetch<ApiResult<null>>(`/api/documents/${id}/permission-requests/${requestId}`, {
+		method: 'PUT',
+		body: { action },
+	})
+}

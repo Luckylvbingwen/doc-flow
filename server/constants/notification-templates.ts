@@ -273,6 +273,20 @@ export const NOTIFICATION_TEMPLATES = {
 		}),
 	},
 
+	// ==================== 文档引用失效 M25 ====================
+	M25: {
+		category: 2,
+		msgCode: 'M25',
+		triggerModule: 'document-reference',
+		triggerPoint: '源文档被移除/删除，引用自动失效 — 通知目标组管理员',
+		build: (p: ToUser & { fileName: string, sourceGroupName: string, targetGroupName: string }) => ({
+			userId: p.toUserId,
+			category: 2 as const,
+			msgCode: 'M25',
+			title: `文档《${p.fileName}》已从组《${p.sourceGroupName}》移除，您的组《${p.targetGroupName}》中的引用已自动取消`,
+		}),
+	},
+
 	// ==================== 分享 M17 ====================
 	M17: {
 		category: 2,

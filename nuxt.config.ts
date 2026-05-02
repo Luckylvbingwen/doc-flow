@@ -116,6 +116,8 @@ export default defineNuxtConfig({
       '0 * * * *': ['approval:remind-timeout'],
       // 每天凌暨 3:00 自动清理回收站中超过 30 天的文件
       '0 3 * * *': ['recycle:auto-purge'],
+      // 每天凌晨 4:00 扫描过期的归属人转移请求
+      '0 4 * * *': ['ownership:expire-transfers'],
     },
     routeRules: {
       // 静态资源长缓存（Nuxt 构建产物自带 hash）

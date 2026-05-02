@@ -76,6 +76,12 @@ v-if="detail.canSubmitApproval" type="primary" size="small" :loading="submitLoad
 					</el-icon>
 					分享
 				</el-button>
+				<el-button v-if="detail.canRequestEditPermission" size="small" @click="handleRequestEditPermission">
+					<el-icon>
+						<Edit />
+					</el-icon>
+					申请编辑权限
+				</el-button>
 				<!-- 更多菜单 -->
 				<el-dropdown trigger="click" placement="bottom-end" @command="handleMoreCommand">
 					<el-button size="small" class="df-file-topbar__more">
@@ -102,6 +108,12 @@ v-if="detail.canSubmitApproval" type="primary" size="small" :loading="submitLoad
 									<Upload />
 								</el-icon>
 								上传新版本
+							</el-dropdown-item>
+							<el-dropdown-item v-if="detail.canTransfer" command="transfer">
+								<el-icon>
+									<Rank />
+								</el-icon>
+								转移归属人
 							</el-dropdown-item>
 							<el-dropdown-item command="history" divided>
 								<el-icon>
@@ -424,6 +436,8 @@ import {
 	apiUnpinDocument,
 	apiGetDocumentApprovals,
 	apiRequestCrossMove,
+	apiSubmitPermissionRequest,
+	apiInitiateDocumentTransfer,
 } from '~/api/documents'
 import { apiSubmitApproval, apiGetApproval } from '~/api/approvals'
 import { apiGetComments, apiCreateComment, apiDeleteComment } from '~/api/comments'
@@ -684,6 +698,49 @@ const fullscreenPreviewVisible = ref(false)
 
 // ── 分享 ──
 const shareModalVisible = ref(false)
+
+// ── 申请编辑权限（PRD §6.3.8） ──
+const permissionRequestPending = ref(false)
+async function handleRequestEditPermission() {
+	if (!detail.value?.canRequestEditPermission || permissionRequestPending.value) return
+	permissionRequestPending.value = true
+	try {
+		const res = await apiSubmitPermissionRequest(documentId.value, { type: 2 })
+		if (res.success) {
+			msgSuccess(res.message || `申请已发送，待${detail.value.ownerName}同意`)
+			await loadDetail()
+		} else {
+			msgError(res.message || '申请发送失败')
+		}
+	} catch {
+		msgError('申请发送失败')
+	} finally {
+		permissionRequestPending.value = false
+	}
+}
+
+// ── 转移归属人（PRD §6.3.10） ──
+async function handleTransferOwnership() {
+	if (!detail.value?.canTransfer) return
+	const { value } = await msgPrompt('请输入新归属人的用户 ID', '转移归属人', {
+		confirmText: '发送转移请求',
+		cancelText: '取消',
+		inputPattern: /^\d+$/,
+		inputErrorMessage: '请输入合法的数字 ID',
+	})
+	if (!value) return
+	try {
+		const res = await apiInitiateDocumentTransfer(documentId.value, Number(value))
+		if (res.success) {
+			msgSuccess(res.message || '已发送转移请求')
+			await loadDetail()
+		} else {
+			msgError(res.message || '发送转移请求失败')
+		}
+	} catch {
+		msgError('发送转移请求失败')
+	}
+}
 
 // ── 文档级权限弹窗（PRD §6.3.4） ──
 const permModalVisible = ref(false)
@@ -1029,6 +1086,7 @@ function handleMoreCommand(command: string) {
 		case 'permission': permModalVisible.value = true; break
 		case 'move': movePickerVisible.value = true; break
 		case 'upload': uploadVisible.value = true; break
+		case 'transfer': handleTransferOwnership(); break
 		case 'history': historyDrawerVisible.value = true; break
 		case 'remove': handleRemove(); break
 	}

@@ -1,12 +1,12 @@
 /**
  * 个人中心操作矩阵（PRD §6.5.2 操作矩阵）
  *
- * 已激活动作：查看 / 下载 / 分享 / 撤回 / 删除草稿 / 提交发布
- * 待后续模块：编辑 / 转移归属人 / 申请编辑权限
+ * 已激活动作：查看 / 下载 / 分享 / 撤回 / 删除草稿 / 提交发布 / 转移归属人 / 申请编辑权限
+ * 待后续模块：编辑
  */
 import type { PersonalDocItem, ItemSource } from '~/types/personal'
 
-export type ActionKind = 'view' | 'download' | 'share' | 'publish' | 'withdraw' | 'delete'
+export type ActionKind = 'view' | 'download' | 'share' | 'publish' | 'withdraw' | 'delete' | 'transfer' | 'requestEdit'
 
 export interface ActionSpec {
 	kind: ActionKind
@@ -61,6 +61,18 @@ export function getActions(doc: PersonalDocItem, currentUserId: number): ActionS
 	// PRD：草稿 + 我创建的
 	if (doc.status === 1 && isOwner && source === 'mine') {
 		actions.push({ kind: 'delete', label: '删除', type: 'danger', inMenu: true })
+	}
+
+	// ── 转移归属人（更多菜单）──
+	// PRD：已发布 + 我创建的 → 转移归属人
+	if (doc.status === 4 && isOwner && source === 'mine') {
+		actions.push({ kind: 'transfer', label: '转移归属人', type: 'default', inMenu: true })
+	}
+
+	// ── 申请编辑权限（主按钮）──
+	// PRD：已发布 + 分享给我的（可阅读=4） → 查看 + 申请编辑权限
+	if (doc.status === 4 && source === 'shared' && doc.permissionLevel === 4) {
+		actions.push({ kind: 'requestEdit', label: '申请编辑权限', type: 'default', inMenu: false })
 	}
 
 	return actions
