@@ -113,6 +113,11 @@ v-if="shareTarget" v-model="shareModalVisible" :document-id="shareTarget.id"
 
 		<!-- 提交发布弹窗 -->
 		<PublishModal v-model="publishModalVisible" :doc="publishTarget" @success="load" />
+
+		<!-- 转移归属人弹窗 -->
+		<OwnershipTransferModal
+v-if="transferTarget" v-model="transferModalVisible" :document-id="transferTarget.id"
+			:document-title="transferTarget.title" :exclude-user-id="currentUserId" @success="onTransferSuccess" />
 	</ListPageShell>
 </template>
 
@@ -128,7 +133,7 @@ import {
 } from '~/utils/doc-meta'
 import { getActions, type ActionKind } from '~/utils/personal-matrix'
 import { apiGetPersonalDocs, apiGetPersonalHandover, apiDeleteDraft } from '~/api/personal'
-import { apiDownloadDocumentUrl } from '~/api/documents'
+import { apiDownloadDocumentUrl, apiSubmitPermissionRequest } from '~/api/documents'
 import type {
 	PersonalDocItem,
 	HandoverGroup,
@@ -343,6 +348,8 @@ async function onActionClick(doc: PersonalDocItem, kind: ActionKind) {
 	if (kind === 'publish') return onPublish(doc)
 	if (kind === 'withdraw') return onWithdraw(doc)
 	if (kind === 'delete') return onDelete(doc)
+	if (kind === 'transfer') return onTransfer(doc)
+	if (kind === 'requestEdit') return onRequestEdit(doc)
 }
 
 function onDownload(doc: PersonalDocItem) {
@@ -356,6 +363,39 @@ const shareTarget = ref<PersonalDocItem | null>(null)
 function onShare(doc: PersonalDocItem) {
 	shareTarget.value = doc
 	shareModalVisible.value = true
+}
+
+// ── 转移归属人 ──
+const transferModalVisible = ref(false)
+const transferTarget = ref<PersonalDocItem | null>(null)
+
+function onTransfer(doc: PersonalDocItem) {
+	transferTarget.value = doc
+	transferModalVisible.value = true
+}
+
+function onTransferSuccess() {
+	load()
+}
+
+// ── 申请编辑权限 ──
+async function onRequestEdit(doc: PersonalDocItem) {
+	busyId.value = doc.id
+	busyKind.value = 'requestEdit'
+	try {
+		const res = await apiSubmitPermissionRequest(doc.id, { type: 2 })
+		if (res.success) {
+			msgSuccess(res.message || '申请已发送')
+			load()
+		} else {
+			msgError(res.message || '申请失败')
+		}
+	} catch {
+		msgError('申请失败')
+	} finally {
+		busyId.value = null
+		busyKind.value = null
+	}
 }
 
 // ── 提交发布 ──

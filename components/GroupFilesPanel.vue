@@ -73,6 +73,12 @@
 				</el-icon>
 				导入飞书
 			</el-button>
+			<el-button v-if="canCreateSubgroup" @click="referenceModalVisible = true">
+				<el-icon>
+					<Link />
+				</el-icon>
+				添加引用
+			</el-button>
 		</div>
 
 		<!-- 审批中提示条 -->
@@ -141,7 +147,8 @@ v-model="filterKeyword" placeholder="搜索文件名…" clearable size="default
 		<DataTable
 ref="tableRef" v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list"
 			:columns="columns" :total="total" :loading="loading" :page-sizes="[10, 15, 30, 50]" empty-preset="no-docs"
-			row-key="id" show-selection @page-change="onPageChange" @selection-change="onSelectionChange">
+			row-key="id" show-selection :selection-selectable="isSelectableRow" @page-change="onPageChange"
+			@selection-change="onSelectionChange">
 			<template #title="{ row }">
 				<div class="gfp-title-cell">
 					<div class="gfp-file-icon" :class="fileIconClass(row)">
@@ -149,7 +156,9 @@ ref="tableRef" v-model:page="currentPage" v-model:page-size="currentPageSize" :d
 					</div>
 					<div class="gfp-title-text">
 						<NuxtLink :to="`/docs/file/${row.id}`" class="gfp-title-link">{{ row.title }}</NuxtLink>
-						<div v-if="row.isPinned || row.isFavorited || row.hasCustomPermissions" class="gfp-title-flags">
+						<div
+v-if="row.isPinned || row.isFavorited || row.hasCustomPermissions || row.isReference"
+							class="gfp-title-flags">
 							<el-icon v-if="row.isPinned" title="已置顶" color="var(--df-primary)">
 								<Top />
 							</el-icon>
@@ -159,6 +168,11 @@ ref="tableRef" v-model:page="currentPage" v-model:page-size="currentPageSize" :d
 							<el-icon v-if="row.hasCustomPermissions" title="已设置文档级权限" color="#f97316">
 								<Lock />
 							</el-icon>
+							<el-tooltip v-if="row.isReference" :content="`引用自：${row.sourceGroupName || '其他组'}`" placement="top">
+								<el-icon color="#10b981">
+									<Link />
+								</el-icon>
+							</el-tooltip>
 						</div>
 					</div>
 				</div>
@@ -181,21 +195,28 @@ ref="tableRef" v-model:page="currentPage" v-model:page-size="currentPageSize" :d
 						<template #dropdown>
 							<el-dropdown-menu>
 								<el-dropdown-item command="download" :icon="Download">下载</el-dropdown-item>
-								<el-dropdown-item :command="row.isFavorited ? 'unfavorite' : 'favorite'" :icon="Star">
-									{{ row.isFavorited ? '取消收藏' : '收藏' }}
-								</el-dropdown-item>
-								<el-dropdown-item v-if="canPin" :command="row.isPinned ? 'unpin' : 'pin'" :icon="Top">
-									{{ row.isPinned ? '取消置顶' : '置顶' }}
-								</el-dropdown-item>
-								<el-dropdown-item v-if="canManagePermissions" command="permissions" :icon="Lock">
-									文档级权限
-								</el-dropdown-item> <el-dropdown-item v-if="canMoveDoc" command="move" :icon="Rank">
-									跨组移动
-								</el-dropdown-item> <el-dropdown-item
+								<template v-if="row.isReference">
+									<el-dropdown-item command="unreference" :icon="Delete" divided style="color: #ef4444">
+										取消引用
+									</el-dropdown-item>
+								</template>
+								<template v-else>
+									<el-dropdown-item :command="row.isFavorited ? 'unfavorite' : 'favorite'" :icon="Star">
+										{{ row.isFavorited ? '取消收藏' : '收藏' }}
+									</el-dropdown-item>
+									<el-dropdown-item v-if="canPin" :command="row.isPinned ? 'unpin' : 'pin'" :icon="Top">
+										{{ row.isPinned ? '取消置顶' : '置顶' }}
+									</el-dropdown-item>
+									<el-dropdown-item v-if="canManagePermissions" command="permissions" :icon="Lock">
+										文档级权限
+									</el-dropdown-item> <el-dropdown-item v-if="canMoveDoc" command="move" :icon="Rank">
+										跨组移动
+									</el-dropdown-item> <el-dropdown-item
 v-if="canRemoveDoc" command="remove" :icon="Delete" divided
-									style="color: #ef4444">
-									从组移除
-								</el-dropdown-item>
+										style="color: #ef4444">
+										从组移除
+									</el-dropdown-item>
+								</template>
 							</el-dropdown-menu>
 						</template>
 					</el-dropdown>
@@ -225,6 +246,11 @@ v-if="canRemoveDoc" size="small" type="danger" plain :loading="batchRemoveLoadin
 		<UploadFileModal
 v-if="data?.id" v-model="uploadVisible" :group-id="Number(data.id)" mode="first"
 			@success="onUploadSuccess" />
+
+		<!-- 添加引用弹窗 -->
+		<AddReferenceModal
+v-if="groupId" v-model="referenceModalVisible" :group-id="groupId"
+			@success="onReferenceSuccess" />
 
 		<!-- 文档级权限弹窗 -->
 		<DocPermissionModal
@@ -257,6 +283,7 @@ import {
 	apiBatchRemoveDocuments,
 	apiRequestCrossMove,
 } from '~/api/documents'
+import { apiDeleteReference } from '~/api/document-references'
 import type { DocumentListItem } from '~/types/document'
 import type { DocumentListQuery } from '~/server/schemas/document'
 import type { ApiResult, PaginatedData } from '~/types/api'
@@ -382,6 +409,8 @@ function fileIconClass(row: DocumentListItem): string {
 async function onRowCommand(cmd: string | number | object, row: DocumentListItem) {
 	if (cmd === 'download') {
 		window.location.href = apiDownloadDocumentUrl(row.id)
+	} else if (cmd === 'unreference') {
+		await onUnreference(row)
 	} else if (cmd === 'remove') {
 		await onRemove(row)
 	} else if (cmd === 'favorite' || cmd === 'unfavorite') {
@@ -397,6 +426,18 @@ async function onRowCommand(cmd: string | number | object, row: DocumentListItem
 
 const favPendingIds = new Set<number>()
 const pinPendingIds = new Set<number>()
+const unreferencePendingIds = new Set<number>()
+
+const referenceModalVisible = ref(false)
+
+function isSelectableRow(row: DocumentListItem): boolean {
+	return !row.isReference
+}
+
+function onReferenceSuccess() {
+	refresh()
+	emit('documents-changed')
+}
 
 async function onToggleFavorite(row: DocumentListItem) {
 	if (favPendingIds.has(row.id)) return
@@ -461,6 +502,32 @@ async function onRemove(row: DocumentListItem) {
 		}
 	} catch {
 		msgError('移除失败')
+	}
+}
+
+async function onUnreference(row: DocumentListItem) {
+	if (!row.referenceId || unreferencePendingIds.has(row.id)) return
+	const ok = await msgConfirm(
+		`确定取消引用「${row.title}」吗？取消后该组将不再展示此文档。`,
+		'取消引用',
+		{ type: 'warning', confirmText: '确认取消', danger: true },
+	)
+	if (!ok) return
+	unreferencePendingIds.add(row.id)
+	try {
+		const res = await apiDeleteReference(groupId.value!, row.referenceId)
+		if (res.success) {
+			msgSuccess(res.message || '已取消引用')
+			clearSelection()
+			refresh()
+			emit('documents-changed')
+		} else {
+			msgError(res.message || '取消引用失败')
+		}
+	} catch {
+		msgError('取消引用失败')
+	} finally {
+		unreferencePendingIds.delete(row.id)
 	}
 }
 

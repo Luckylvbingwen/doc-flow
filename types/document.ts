@@ -27,6 +27,8 @@ export interface DocumentListItem {
 	isReference?: boolean
 	/** 引用记录 ID（取消引用时使用） */
 	referenceId?: number
+	/** 引用来源组名（PRD §6.10.2 悬停提示“引用自”） */
+	sourceGroupName?: string
 }
 
 /** 文件详情（GET /api/documents/:id） */
@@ -72,6 +74,17 @@ export interface DocumentDetail {
 	canRequestEditPermission?: boolean
 	/** 当前用户对该文档的文档级权限（2可编辑 / 3上传下载 / 4可阅读 / null无） */
 	myDocPermission?: number | null
+}
+
+/** 文档权限申请项（归属人审批弹窗） */
+export interface DocumentPermissionRequestItem {
+	id: string
+	userId: number
+	userName: string
+	avatarUrl: string | null
+	type: 1 | 2
+	reason: string | null
+	createdAt: number
 }
 
 /** 上传 / 更新版本 返回结构 */

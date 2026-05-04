@@ -29,7 +29,7 @@ ref="tableRef" v-loading="loading" :data="data" :stripe="stripe" :border="border
 				<!-- 多选列 -->
 				<el-table-column
 v-if="showSelection" type="selection" width="48" align="center"
-					:reserve-selection="reserveSelection" />
+					:reserve-selection="reserveSelection" :selectable="selectionSelectable" />
 
 				<!-- 序号列 -->
 				<el-table-column v-if="showIndex" type="index" label="#" width="56" align="center" :index="indexMethod" />
@@ -128,6 +128,7 @@ interface DataTableProps {
 	showSelection?: boolean
 	showIndex?: boolean
 	reserveSelection?: boolean
+	selectionSelectable?: (row: Record<string, any>, index: number) => boolean
 	showSearch?: boolean
 	searchPlaceholder?: string
 	defaultSort?: { prop: string; order: 'ascending' | 'descending' }
@@ -156,6 +157,7 @@ const props = withDefaults(defineProps<DataTableProps>(), {
 	showSelection: false,
 	showIndex: false,
 	reserveSelection: false,
+	selectionSelectable: undefined,
 	showSearch: false,
 	searchPlaceholder: '搜索关键词…',
 	defaultSort: undefined,

@@ -82,6 +82,12 @@ v-if="detail.canSubmitApproval" type="primary" size="small" :loading="submitLoad
 					</el-icon>
 					申请编辑权限
 				</el-button>
+				<el-button v-if="canReviewPermissionRequests" size="small" @click="permissionReviewVisible = true">
+					<el-icon>
+						<Lock />
+					</el-icon>
+					审批权限申请{{ pendingPermissionRequestCount > 0 ? `（${pendingPermissionRequestCount}）` : '' }}
+				</el-button>
 				<!-- 更多菜单 -->
 				<el-dropdown trigger="click" placement="bottom-end" @command="handleMoreCommand">
 					<el-button size="small" class="df-file-topbar__more">
@@ -350,6 +356,16 @@ v-if="detail?.groupId" v-model="movePickerVisible" v-model:loading="moveLoading"
 v-if="detail" v-model="shareModalVisible" :document-id="documentId"
 			:file-name="`${detail.title}.${detail.ext}`" :can-edit="detail.canEdit" />
 
+		<!-- 转移归属人弹窗 -->
+		<OwnershipTransferModal
+v-if="detail" v-model="transferModalVisible" :document-id="documentId"
+			:document-title="detail.title" :exclude-user-id="detail.ownerId" @success="loadDetail" />
+
+		<!-- 权限申请审批弹窗 -->
+		<PermissionRequestReviewModal
+v-if="detail" v-model="permissionReviewVisible" :document-id="documentId"
+			@reviewed="loadDetail" />
+
 		<!-- 版本回滚确认弹窗 -->
 		<RollbackConfirmModal
 v-model="rollbackVisible" :file-name="fileName" :current-version="currentVersionNo"
@@ -437,7 +453,7 @@ import {
 	apiGetDocumentApprovals,
 	apiRequestCrossMove,
 	apiSubmitPermissionRequest,
-	apiInitiateDocumentTransfer,
+	apiGetPermissionRequests,
 } from '~/api/documents'
 import { apiSubmitApproval, apiGetApproval } from '~/api/approvals'
 import { apiGetComments, apiCreateComment, apiDeleteComment } from '~/api/comments'
@@ -450,13 +466,22 @@ definePageMeta({
 })
 useHead({ title: '文件详情 - DocFlow' })
 
+const { msgSuccess, msgError, msgWarning, msgConfirm } = useNotify()
+
 const route = useRoute()
 const documentId = computed(() => Number(route.params.id))
+const authStore = useAuthStore()
 
 // ── 文件详情 ──
 const detail = ref<DocumentDetail | null>(null)
 const fileName = computed(() => detail.value?.title ?? '')
 const fileType = computed(() => (detail.value?.ext ?? 'md').toLowerCase())
+const permissionReviewVisible = ref(false)
+const pendingPermissionRequestCount = ref(0)
+const canReviewPermissionRequests = computed(() => {
+	if (!detail.value) return false
+	return detail.value.ownerId === authStore.user?.id && detail.value.status === 4
+})
 
 const FILE_TYPE_LABELS: Record<string, string> = {
 	md: 'Markdown', pdf: 'PDF', docx: 'Word', xlsx: 'Excel', txt: '纯文本',
@@ -480,8 +505,22 @@ async function loadDetail() {
 	const res = await apiGetDocument(documentId.value)
 	if (res.success) {
 		detail.value = res.data
+		await loadPendingPermissionRequestCount()
 	} else {
 		msgError(res.message || '加载文档失败')
+	}
+}
+
+async function loadPendingPermissionRequestCount() {
+	if (!detail.value || detail.value.ownerId !== authStore.user?.id || detail.value.status !== 4) {
+		pendingPermissionRequestCount.value = 0
+		return
+	}
+	try {
+		const res = await apiGetPermissionRequests(documentId.value)
+		pendingPermissionRequestCount.value = res.success ? res.data.length : 0
+	} catch {
+		pendingPermissionRequestCount.value = 0
 	}
 }
 
@@ -720,26 +759,11 @@ async function handleRequestEditPermission() {
 }
 
 // ── 转移归属人（PRD §6.3.10） ──
+const transferModalVisible = ref(false)
+
 async function handleTransferOwnership() {
 	if (!detail.value?.canTransfer) return
-	const { value } = await msgPrompt('请输入新归属人的用户 ID', '转移归属人', {
-		confirmText: '发送转移请求',
-		cancelText: '取消',
-		inputPattern: /^\d+$/,
-		inputErrorMessage: '请输入合法的数字 ID',
-	})
-	if (!value) return
-	try {
-		const res = await apiInitiateDocumentTransfer(documentId.value, Number(value))
-		if (res.success) {
-			msgSuccess(res.message || '已发送转移请求')
-			await loadDetail()
-		} else {
-			msgError(res.message || '发送转移请求失败')
-		}
-	} catch {
-		msgError('发送转移请求失败')
-	}
+	transferModalVisible.value = true
 }
 
 // ── 文档级权限弹窗（PRD §6.3.4） ──

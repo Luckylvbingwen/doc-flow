@@ -36,6 +36,7 @@ interface RefRow {
 	id: bigint
 	title: string
 	ext: string | null
+	source_group_name: string
 	status: number
 	updated_at: Date
 	download_count: number
@@ -125,6 +126,7 @@ export default defineEventHandler(async (event) => {
 		SELECT
 			r.id AS ref_id,
 			d.id, d.title, d.ext, d.status, d.updated_at, d.download_count,
+			sg.name AS source_group_name,
 			d.owner_user_id,
 			u.name AS owner_name,
 			v.version_no, v.file_size,
@@ -132,6 +134,7 @@ export default defineEventHandler(async (event) => {
 			(p.id IS NOT NULL) AS is_pinned
 		FROM doc_document_references r
 		JOIN doc_documents d ON d.id = r.source_document_id AND d.deleted_at IS NULL AND d.status = 4
+		JOIN doc_groups sg ON sg.id = r.source_group_id
 		JOIN doc_users u ON u.id = d.owner_user_id
 		LEFT JOIN doc_document_versions v ON v.id = d.current_version_id
 		LEFT JOIN doc_document_favorites f ON f.document_id = d.id AND f.user_id = ${BigInt(user.id)}
@@ -157,6 +160,7 @@ export default defineEventHandler(async (event) => {
 		hasCustomPermissions: false,
 		isReference: true,
 		referenceId: Number(r.ref_id),
+		sourceGroupName: r.source_group_name,
 	}))
 
 	// 三个组级权限标志（PRD §6.3.3 / §6.3.4 / §4.3 权限矩阵）

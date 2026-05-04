@@ -2,6 +2,7 @@ import type { ApiResult } from '~/types/api'
 import type {
 	DocumentDetail,
 	DocumentListResponse,
+	DocumentPermissionRequestItem,
 	PreviewResponse,
 	UploadResult,
 } from '~/types/document'
@@ -199,15 +200,7 @@ export function apiSubmitPermissionRequest(id: number, body: { type: 1 | 2; reas
 
 /** 查询待处理权限申请列表（归属人查看） */
 export function apiGetPermissionRequests(id: number) {
-	return useAuthFetch<ApiResult<Array<{
-		id: string
-		userId: number
-		userName: string
-		avatarUrl: string | null
-		type: 1 | 2
-		reason: string | null
-		createdAt: number
-	}>>>(`/api/documents/${id}/permission-requests`)
+	return useAuthFetch<ApiResult<DocumentPermissionRequestItem[]>>(`/api/documents/${id}/permission-requests`)
 }
 
 /** 归属人处理权限申请 */
