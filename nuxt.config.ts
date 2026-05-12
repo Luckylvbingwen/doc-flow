@@ -68,6 +68,7 @@ export default defineNuxtConfig({
       appEnv: process.env.APP_ENV || 'local',
       feishuAppId: process.env.FEISHU_APP_ID || '',
       feishuSiteUrl: process.env.FEISHU_SITE_URL || '',
+      hocuspocusUrl: process.env.NUXT_PUBLIC_HOCUSPOCUS_URL ?? 'ws://localhost:1234',
     }
   },
   security: {

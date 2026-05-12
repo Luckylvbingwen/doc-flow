@@ -187,6 +187,8 @@ CREATE TABLE doc_documents (
   owner_user_id      BIGINT UNSIGNED NOT NULL COMMENT '归属人（可转移，§6.3.10）',
   title              VARCHAR(255)    NOT NULL COMMENT '文档名（逻辑名）',
   ext                VARCHAR(20)     DEFAULT NULL COMMENT '文件扩展名',
+  doc_type           TINYINT UNSIGNED NOT NULL DEFAULT '1' COMMENT '文档类型: 1=文件上传 2=在线Markdown',
+  draft_content      MEDIUMTEXT      COMMENT '在线编辑草稿内容，发布时写入MinIO生成版本',
   status             TINYINT         NOT NULL COMMENT '1草稿 2编辑中 3审批中 4已发布 5已驳回 6已删除',
   source_doc_id      BIGINT UNSIGNED DEFAULT NULL COMMENT '编辑副本的源文档ID（§6.3.5，NULL=非副本）',
   current_version_id BIGINT UNSIGNED DEFAULT NULL COMMENT '当前发布版本ID',

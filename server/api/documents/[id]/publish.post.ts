@@ -20,6 +20,7 @@ import { executeUpload, incrementVersion } from '~/server/utils/document-upload'
 import { generateId } from '~/server/utils/snowflake'
 import { writeLog } from '~/server/utils/operation-log'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
+import { storage } from '~/server/utils/storage'
 import {
 	AUTH_REQUIRED,
 	DOCUMENT_NOT_FOUND,
@@ -55,6 +56,8 @@ export default defineEventHandler(async (event) => {
 			owner_user_id: true,
 			current_version_id: true,
 			deleted_at: true,
+			doc_type: true,
+			draft_content: true,
 		},
 	})
 	if (!doc || doc.deleted_at) {
@@ -84,6 +87,38 @@ export default defineEventHandler(async (event) => {
 			select: { id: true, version_no: true, storage_key: true, storage_bucket: true, file_size: true, mime_type: true, checksum: true },
 		})
 		: null
+
+	// ── 在线文档发布：将 draft_content 材料化为 MinIO 版本 ──
+	if (doc.doc_type === 2 && !currentVersion) {
+		if (!doc.draft_content) {
+			return fail(event, 409, DOCUMENT_STATUS_INVALID, '草稿内容为空，无法发布')
+		}
+		const versionId = generateId()
+		const storageKey = `documents/${doc.id}/v1.0/${versionId}.md`
+		const contentBuffer = Buffer.from(doc.draft_content, 'utf-8')
+		await storage.putObject(storageKey, contentBuffer, { mimeType: 'text/markdown; charset=utf-8' })
+
+		const newVersion = await prisma.doc_document_versions.create({
+			data: {
+				id: BigInt(versionId),
+				document_id: doc.id,
+				version_no: 'v1.0',
+				storage_key: storageKey,
+				storage_bucket: storage.bucket,
+				file_size: BigInt(contentBuffer.length),
+				mime_type: 'text/markdown',
+				uploaded_by: BigInt(user.id),
+			},
+		})
+
+		await prisma.doc_documents.update({
+			where: { id: doc.id },
+			data: { current_version_id: BigInt(versionId) },
+		})
+
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		;(currentVersion as any) = newVersion
+	}
 
 	if (!currentVersion) {
 		return fail(event, 409, DOCUMENT_STATUS_INVALID, '草稿没有可发布的版本')

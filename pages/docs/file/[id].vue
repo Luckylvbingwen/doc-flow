@@ -50,7 +50,7 @@ circle size="small" :type="detail.isPinned ? 'primary' : 'default'" :loading="pi
 				<!-- 协作者头像叠层 -->
 				<AvatarStack :users="collaborators" :max="3" />
 				<!-- 核心按钮：编辑/下载/分享 -->
-				<el-button v-if="detail.canEdit" size="small" @click="handleEdit">
+				<el-button v-if="detail.canEdit" size="small" :loading="creatingCopy" @click="handleEdit">
 					<el-icon>
 						<Edit />
 					</el-icon>
@@ -455,6 +455,7 @@ import {
 	apiSubmitPermissionRequest,
 	apiGetPermissionRequests,
 } from '~/api/documents'
+import { apiCreateEditCopy } from '~/api/document-editor'
 import { apiSubmitApproval, apiGetApproval } from '~/api/approvals'
 import { apiGetComments, apiCreateComment, apiDeleteComment } from '~/api/comments'
 import type { CommentVO } from '~/api/comments'
@@ -505,6 +506,11 @@ async function loadDetail() {
 	const res = await apiGetDocument(documentId.value)
 	if (res.success) {
 		detail.value = res.data
+		// 在线草稿 → 自动跳转编辑器
+		if (detail.value.docType === 2 && (detail.value.status === 1 || detail.value.status === 2)) {
+			await navigateTo(`/docs/editor/${detail.value.id}`, { replace: true })
+			return
+		}
 		await loadPendingPermissionRequestCount()
 	} else {
 		msgError(res.message || '加载文档失败')
@@ -809,6 +815,7 @@ async function onUploadSuccess() {
 
 // ── 提交审批 ──
 const submitLoading = ref(false)
+const creatingCopy = ref(false)
 async function handleSubmitApproval() {
 	if (!detail.value?.currentVersion) {
 		msgWarning('文档尚无可提交的版本')
@@ -1097,9 +1104,23 @@ function backToGroup() {
 	}
 }
 
-// ── 编辑（TODO: 对接在线编辑器） ──
-function handleEdit() {
-	msgSuccess('编辑功能开发中，敬请期待')
+// ── 编辑副本 ──
+async function handleEdit() {
+	try {
+		await msgConfirm(
+			'将为此文档创建一份编辑副本，原已发布版本不受影响。一份文档同时只有一份活跃副本。',
+			'确认编辑'
+		)
+	} catch { return }
+	creatingCopy.value = true
+	try {
+		const res = await apiCreateEditCopy(documentId.value)
+		if (res.success) {
+			await navigateTo(`/docs/editor/${res.data.id}`)
+		}
+	} finally {
+		creatingCopy.value = false
+	}
 }
 
 // ── 更多菜单 ──

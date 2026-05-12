@@ -2,7 +2,7 @@
 
 > 基于 `prototype-v21.0.html` 原型与 `企业文档管理系统-产品需求说明文档.md` 综合分析，记录当前待补充的功能项。  
 > 已完成的功能会从对应分类中移除。  
-> 最后更新：2026-04-29
+> 最后更新：2026-05-11
 
 ---
 
@@ -138,12 +138,12 @@
 - [x] ~~来源徽章（mine/shared/favorite）+ 权限级别徽章（可编辑/可阅读）~~ ✅ 2026-04-18
 - [x] ~~操作矩阵 A 阶段：查看 / 下载 / 撤回 / 删除草稿~~ ✅ 2026-04-28（下载按钮激活，已发布文档可直接下载）
 - [x] ~~离职交接手风琴视图 + 仅部门负责人可见~~ ✅ 2026-04-18
-- [ ] 编辑（要文件编辑器）— 延迟
+- [x] ~~编辑（要文件编辑器）~~ ✅ 2026-05-11
 - [x] ~~分享（要 share-links 模块）~~ ✅ 2026-04-29（个人中心已发布文档增加"分享"按钮，复用 ShareLinkModal）
 - [x] ~~下载（要文件存储）~~ ✅ 2026-04-28（个人中心已发布文档可直接下载）
 - [x] ~~提交发布（要审批发起）~~ ✅ 2026-04-29（PublishModal + POST /api/documents/:id/publish，双模式：全新发布/版本迭代）
-- [ ] 转移归属人（要 ownership-transfer 模块）— 延迟
-- [ ] 申请编辑权限（要 permission-requests 模块）— 延迟
+- [x] ~~转移归属人~~ ✅ 2026-05-04（OwnershipTransferModal 集成 profile.vue；transfer.post/put.ts 含 M10/M11 通知 2026-05-02）
+- [x] ~~申请编辑权限~~ ✅ 2026-05-04（requestEdit action 接入 profile.vue + file/[id].vue PermissionRequestReviewModal；permission-requests.post.ts 含 M14/M15/M16 通知 2026-05-02）
 
 ## 三、Composable / 工具函数
 
@@ -206,13 +206,13 @@
 | M7 | approval-runtime | 提交人撤回 — 通知已参与审批人 | ✅ 2026-04-24（`approvals/[id]/withdraw.post.ts`） |
 | M8 | document-lifecycle | 新版本发布 — 通知归属人+编辑成员+管理员 | ✅ 2026-04-24（`document-upload.ts` notifyPublishToGroupMembers） |
 | M9 | document-lifecycle | 管理员从组移除文件 — 通知归属人 | ✅ 2026-04-24（`documents/[id]/remove.put.ts`） |
-| M10 | ownership-transfer | 发起归属人转移 — 通知新归属人 | ⏳ 待接入 |
-| M11 | ownership-transfer | 转移同意/拒绝/过期 — 通知发起人 | ⏳ 待接入 |
+| M10 | ownership-transfer | 发起归属人转移 — 通知新归属人 | ✅ 2026-05-02（`documents/[id]/transfer.post.ts`） |
+| M11 | ownership-transfer | 转移同意/拒绝/过期 — 通知发起人 | ✅ 2026-05-02（`documents/[id]/transfer.put.ts`） |
 | M12 | cross-move | 发起跨组移动 — 通知目标组负责人 | ✅ 2026-04-28（`documents/[id]/move.post.ts`） |
 | M13 | cross-move | 移动同意/拒绝/过期 — 通知发起人 | ✅ 2026-04-28（`documents/cross-move/[id]/review.put.ts`） |
-| M14 | permission-request | 阅读权限申请 — 通知归属人 | ⏳ 待接入 |
-| M15 | permission-request | 编辑权限申请 — 通知归属人 | ⏳ 待接入 |
-| M16 | permission-request | 权限审批结果 — 通知申请人 | ⏳ 待接入 |
+| M14 | permission-request | 阅读权限申请 — 通知归属人 | ✅ 2026-05-02（`documents/[id]/permission-requests.post.ts` type=1） |
+| M15 | permission-request | 编辑权限申请 — 通知归属人 | ✅ 2026-05-02（`documents/[id]/permission-requests.post.ts` type=2） |
+| M16 | permission-request | 权限审批结果 — 通知申请人 | ✅ 2026-05-02（`documents/[id]/permission-requests/[requestId].put.ts`） |
 | M17 | share | 分享文档 — 通知被分享人 | ✅ 2026-04-28（`share/[token].get.ts` 打开链接时通知创建者） |
 | M18 | group-member | 被加入组 — 通知被添加成员 | ✅ 2026-04-28（`groups/:id/members POST` handler） |
 | M19 | group-member | 成员权限变更 — 通知被变更成员 | ✅ 2026-04-28（`groups/:id/members/:memberId PUT` handler） |
@@ -226,6 +226,20 @@
 
 **延迟项**：
 - `/docs/repo/[id].vue` 页的 `?openSettings=approval` query 自动打开组设置审批配置 Tab，因 repo 页当前未集成 GroupSettingsModal，推迟到 repo 页整合时一并实现。通知中心 M24 卡片点击会跳到 `/docs/repo/:id?openSettings=approval`，目前只跳转不自动开弹窗。
+
+---
+
+## 八、在线编辑器
+
+| 功能 | 完成日期 |
+|------|----------|
+| 在线 Markdown 编辑器（Milkdown Crepe） | ✅ 2026-05-11 |
+| 新建草稿 / 编辑草稿 / 编辑副本三种模式 | ✅ 2026-05-11 |
+| 2秒防抖自动保存（draft_content 字段） | ✅ 2026-05-11 |
+| 发布时材料化 draft_content → MinIO | ✅ 2026-05-11 |
+| Hocuspocus 协同服务（Docker） | ✅ 2026-05-11 |
+| 批注 CRUD（GET/POST/PUT/DELETE） | ✅ 2026-05-11 |
+| AnnotationPanel 批注面板组件 | ✅ 2026-05-11 |
 
 ---
 

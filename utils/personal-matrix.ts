@@ -6,7 +6,7 @@
  */
 import type { PersonalDocItem, ItemSource } from '~/types/personal'
 
-export type ActionKind = 'view' | 'download' | 'share' | 'publish' | 'withdraw' | 'delete' | 'transfer' | 'requestEdit'
+export type ActionKind = 'view' | 'download' | 'share' | 'publish' | 'withdraw' | 'delete' | 'transfer' | 'requestEdit' | 'edit'
 
 export interface ActionSpec {
 	kind: ActionKind
@@ -27,6 +27,11 @@ export function getActions(doc: PersonalDocItem, currentUserId: number): ActionS
 	const actions: ActionSpec[] = []
 	const isOwner = doc.ownerUserId === currentUserId
 	const source: ItemSource = doc.source
+
+	// ── 编辑按钮（在线文档草稿） ──
+	if ((doc.status === 1 || doc.status === 2) && doc.docType === 2 && isOwner) {
+		actions.push({ kind: 'edit', label: '编辑', type: 'primary', inMenu: false })
+	}
 
 	// ── 查看按钮 ──
 	// PRD：审批中 + 我创建的 → 查看；已发布 + 分享可阅读 → 查看

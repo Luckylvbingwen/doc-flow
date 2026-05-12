@@ -90,7 +90,14 @@
       "Bash(\"D:/phpstudy_pro/Extensions/MySQL8.0.12/bin/mysql.exe\" -u root -proot -h 127.0.0.1 -P 3306 docflow)",
       "Bash(D:/phpstudy_pro/Extensions/MySQL8.0.12/bin/mysql.exe -u root -proot -h 127.0.0.1 -P 3306 docflow -N -B -e ' *)",
       "Read(//c/temp/**)",
-      "Bash(mkdir -p /c/temp)"
+      "Bash(mkdir -p /c/temp)",
+      "mcp__plugin_claude-mem_mcp-search__search",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "mcp__plugin_claude-mem_mcp-search__smart_outline",
+      "mcp__plugin_claude-mem_mcp-search__get_observations",
+      "Bash(Get-ChildItem *)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

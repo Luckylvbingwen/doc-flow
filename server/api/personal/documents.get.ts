@@ -39,6 +39,7 @@ interface BaseRow {
 	version_no: string | null
 	file_size: bigint | null
 	updated_at: Date
+	doc_type: number
 	source: string
 	permission_level: number | null
 }
@@ -55,6 +56,7 @@ interface PersonalDocItemDto {
 	versionNo: string
 	fileSize: number
 	updatedAt: number
+	docType: number
 	source: string
 	permissionLevel: number | null
 }
@@ -72,7 +74,8 @@ const SELECT_COLS = Prisma.sql`
 	d.current_version_id,
 	v.version_no        AS version_no,
 	v.file_size         AS file_size,
-	d.updated_at
+	d.updated_at,
+	d.doc_type
 `
 
 function mapRow(r: BaseRow): PersonalDocItemDto {
@@ -88,6 +91,7 @@ function mapRow(r: BaseRow): PersonalDocItemDto {
 		versionNo: r.version_no ?? '-',
 		fileSize: r.file_size != null ? Number(r.file_size) : 0,
 		updatedAt: new Date(r.updated_at).getTime(),
+		docType: Number(r.doc_type),
 		source: r.source,
 		permissionLevel: r.permission_level != null ? Number(r.permission_level) : null,
 	}

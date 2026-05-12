@@ -30,6 +30,7 @@ export interface PersonalDocItem {
 	source: ItemSource
 	/** shared 来源时为 2(可编辑)/3(上传下载)/4(可阅读)，根据来源（文档级权限自定义 vs 分享）取值；否则 null */
 	permissionLevel: import('~/utils/permission-meta').PermissionLevel | null
+	docType: number
 }
 
 /** 离职移交分组（handover tab 返回） */

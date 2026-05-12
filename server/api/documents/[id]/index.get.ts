@@ -20,6 +20,7 @@ interface Row {
 	group_id: bigint | null
 	group_name: string | null
 	source_doc_id: bigint | null
+	doc_type: number
 	owner_user_id: bigint
 	owner_name: string
 	created_at: Date
@@ -50,7 +51,7 @@ export default defineEventHandler(async (event) => {
 
 	const rows = await prisma.$queryRaw<Row[]>`
 		SELECT
-			d.id, d.title, d.ext, d.status, d.group_id, d.source_doc_id,
+			d.id, d.title, d.ext, d.status, d.group_id, d.source_doc_id, d.doc_type,
 			d.owner_user_id, d.download_count, d.created_at, d.updated_at,
 			g.name AS group_name,
 			u.name AS owner_name,
@@ -144,7 +145,8 @@ export default defineEventHandler(async (event) => {
 		isFavorited: Number(row.is_favorited) === 1,
 		hasCustomPermissions: Number(row.has_custom_permissions) === 1,
 		sourceDocId: row.source_doc_id != null ? Number(row.source_doc_id) : null,
-		canEdit: false,  // 编辑器 A 阶段不做
+		docType: Number(row.doc_type),
+		canEdit: isOwner && Number(row.doc_type) === 2 && status === 4,
 		canRemove: isGroupAdmin && status === 4,
 		canSubmitApproval: isOwner && (status === 1 || status === 5),
 		canUploadVersion: canEditInGroup && (status === 4 || status === 5),

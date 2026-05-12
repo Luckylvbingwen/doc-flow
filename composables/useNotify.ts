@@ -132,3 +132,7 @@ export const msgAlert = (
 		modalClass: 'df-msgbox-on-top',
 		customClass: 'df-msgbox-on-top',
 	})
+
+export function useNotify() {
+	return { msgSuccess, msgError, msgWarning, msgInfo, msgNotify, msgErrorDetail, msgConfirm, msgAlert }
+}

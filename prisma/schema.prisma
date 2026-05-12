@@ -339,6 +339,8 @@ model doc_documents {
   owner_user_id                                                                 BigInt                     @db.UnsignedBigInt
   title                                                                         String                     @db.VarChar(255)
   ext                                                                           String?                    @db.VarChar(20)
+  doc_type                                                                      Int                        @default(1) @db.UnsignedTinyInt
+  draft_content                                                                 String?                    @db.MediumText
   status                                                                        Int                        @db.TinyInt
   source_doc_id                                                                 BigInt?                    @db.UnsignedBigInt
   current_version_id                                                            BigInt?                    @db.UnsignedBigInt

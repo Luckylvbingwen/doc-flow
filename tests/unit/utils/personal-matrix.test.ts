@@ -17,6 +17,7 @@ function makeDoc(overrides: Partial<PersonalDocItem>): PersonalDocItem {
 		updatedAt: Date.now(),
 		source: 'mine',
 		permissionLevel: null,
+		docType: 1,
 		...overrides,
 	}
 }

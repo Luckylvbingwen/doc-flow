@@ -134,6 +134,7 @@ import {
 import { getActions, type ActionKind } from '~/utils/personal-matrix'
 import { apiGetPersonalDocs, apiGetPersonalHandover, apiDeleteDraft } from '~/api/personal'
 import { apiDownloadDocumentUrl, apiSubmitPermissionRequest } from '~/api/documents'
+import { apiCreateDraft } from '~/api/document-editor'
 import type {
 	PersonalDocItem,
 	HandoverGroup,
@@ -327,9 +328,12 @@ function onTabChange() {
 
 onMounted(load)
 
-// ── 新建文档（编辑器完成前为占位） ──
-function handleNewDoc() {
-	msgWarning('在线编辑器开发中，敬请期待')
+// ── 新建文档 ──
+async function handleNewDoc() {
+	const res = await apiCreateDraft({ title: '未命名文档' })
+	if (res.success) {
+		await navigateTo(`/docs/editor/${res.data.id}`)
+	}
 }
 
 // ── 行操作 ──
@@ -350,6 +354,11 @@ async function onActionClick(doc: PersonalDocItem, kind: ActionKind) {
 	if (kind === 'delete') return onDelete(doc)
 	if (kind === 'transfer') return onTransfer(doc)
 	if (kind === 'requestEdit') return onRequestEdit(doc)
+	if (kind === 'edit') return onEdit(doc)
+}
+
+function onEdit(doc: PersonalDocItem) {
+	navigateTo(`/docs/editor/${doc.id}`)
 }
 
 function onDownload(doc: PersonalDocItem) {

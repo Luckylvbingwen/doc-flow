@@ -36,6 +36,7 @@ export interface DocumentDetail {
 	id: number
 	title: string
 	ext: string
+	docType: number
 	status: DocumentStatus
 	groupId: number | null
 	groupName: string | null
