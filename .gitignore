@@ -28,3 +28,6 @@ Thumbs.db
 
 # Bundle analyzer
 stats.html
+
+# Claude Code
+.claude/worktrees/
