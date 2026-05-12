@@ -31,15 +31,20 @@ export default defineEventHandler(async (event) => {
   }
   const groupId = BigInt(idStr)
 
-  // 组管理员权限校验
-  const adminErr = await requireMemberPermission(event, Number(groupId), 1)
-  if (adminErr) return adminErr
-
   const group = await prisma.doc_groups.findFirst({
     where: { id: groupId },
-    select: { id: true },
+    select: { id: true, scope_type: true, scope_ref_id: true, owner_user_id: true },
   })
   if (!group) return fail(event, 404, GROUP_NOT_FOUND, '组不存在')
+
+  // 组管理员权限校验
+  const adminErr = await requireMemberPermission(event, {
+    groupId: Number(groupId),
+    scopeType: group.scope_type,
+    scopeRefId: group.scope_ref_id != null ? Number(group.scope_ref_id) : null,
+    ownerUserId: Number(group.owner_user_id),
+  })
+  if (adminErr) return adminErr
 
   const body = await readValidatedBody(event, addReferencesSchema.parse)
 

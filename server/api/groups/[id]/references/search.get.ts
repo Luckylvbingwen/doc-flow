@@ -6,6 +6,7 @@
  * 每个文档附带 isReferenced 标记（已被本组引用则不可再选）
  */
 import { prisma } from '~/server/utils/prisma'
+import { Prisma } from '@prisma/client'
 import { requireMemberPermission } from '~/server/utils/group-permission'
 import { searchReferencesQuerySchema } from '~/server/schemas/document-reference'
 import { INVALID_PARAMS, GROUP_NOT_FOUND } from '~/server/constants/error-codes'
@@ -21,15 +22,20 @@ export default defineEventHandler(async (event) => {
   }
   const groupId = BigInt(idStr)
 
-  // 组管理员才能添加引用
-  const adminErr = await requireMemberPermission(event, Number(groupId), 1)
-  if (adminErr) return adminErr
-
   const group = await prisma.doc_groups.findFirst({
     where: { id: groupId },
-    select: { id: true },
+    select: { id: true, scope_type: true, scope_ref_id: true, owner_user_id: true },
   })
   if (!group) return fail(event, 404, GROUP_NOT_FOUND, '组不存在')
+
+  // 组管理员才能添加引用
+  const adminErr = await requireMemberPermission(event, {
+    groupId: Number(groupId),
+    scopeType: group.scope_type,
+    scopeRefId: group.scope_ref_id != null ? Number(group.scope_ref_id) : null,
+    ownerUserId: Number(group.owner_user_id),
+  })
+  if (adminErr) return adminErr
 
   const query = await getValidatedQuery(event, searchReferencesQuerySchema.parse)
 
@@ -66,8 +72,8 @@ export default defineEventHandler(async (event) => {
 			  AND d.deleted_at IS NULL
 			  AND d.group_id IS NOT NULL
 			  AND d.group_id != ${groupId}
-			  ${query.sourceGroupId ? prisma.sql`AND d.group_id = ${BigInt(query.sourceGroupId)}` : prisma.sql``}
-			  ${query.keyword ? prisma.sql`AND d.title LIKE ${`%${query.keyword}%`}` : prisma.sql``}
+			  ${query.sourceGroupId ? Prisma.sql`AND d.group_id = ${BigInt(query.sourceGroupId)}` : Prisma.empty}
+			  ${query.keyword ? Prisma.sql`AND d.title LIKE ${`%${query.keyword}%`}` : Prisma.empty}
 			ORDER BY d.updated_at DESC
 			LIMIT ${query.pageSize} OFFSET ${(query.page - 1) * query.pageSize}
 		`,
@@ -78,8 +84,8 @@ export default defineEventHandler(async (event) => {
 			  AND d.deleted_at IS NULL
 			  AND d.group_id IS NOT NULL
 			  AND d.group_id != ${groupId}
-			  ${query.sourceGroupId ? prisma.sql`AND d.group_id = ${BigInt(query.sourceGroupId)}` : prisma.sql``}
-			  ${query.keyword ? prisma.sql`AND d.title LIKE ${`%${query.keyword}%`}` : prisma.sql``}
+			  ${query.sourceGroupId ? Prisma.sql`AND d.group_id = ${BigInt(query.sourceGroupId)}` : Prisma.empty}
+			  ${query.keyword ? Prisma.sql`AND d.title LIKE ${`%${query.keyword}%`}` : Prisma.empty}
 		`,
   ])
 
