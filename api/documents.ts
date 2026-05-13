@@ -210,3 +210,46 @@ export function apiReviewPermissionRequest(id: number, requestId: string, action
 		body: { action },
 	})
 }
+
+// ── 快照 ──
+
+export interface SnapshotTimelineItem {
+	id: number
+	kind: 'snapshot' | 'version'
+	label: string
+	authorName: string
+	createdAt: number
+}
+
+/** 获取文档快照 + 版本时间线 */
+export function apiGetDocSnapshots(docId: number) {
+	return useAuthFetch<ApiResult<{ list: SnapshotTimelineItem[] }>>(`/api/documents/${docId}/snapshots`)
+}
+
+/** 创建命名快照 */
+export function apiCreateSnapshot(docId: number, name: string) {
+	return useAuthFetch<ApiResult<{ id: number }>>(`/api/documents/${docId}/snapshots`, {
+		method: 'POST',
+		body: { name },
+	})
+}
+
+/** 获取快照原始内容 */
+export function apiGetSnapshotContent(docId: number, snapId: number) {
+	return useAuthFetch<ApiResult<{ content: string; name: string | null }>>(`/api/documents/${docId}/snapshots/${snapId}/content`)
+}
+
+/** 获取快照预览 HTML */
+export function apiGetSnapshotPreview(docId: number, snapId: number) {
+	return useAuthFetch<ApiResult<{ html: string; name: string | null }>>(`/api/documents/${docId}/snapshots/${snapId}/preview`)
+}
+
+/** 还原快照到草稿 */
+export function apiRestoreSnapshot(docId: number, snapId: number) {
+	return useAuthFetch<ApiResult<null>>(`/api/documents/${docId}/snapshots/${snapId}/restore`, { method: 'POST' })
+}
+
+/** 还原已发布版本到草稿 */
+export function apiRestoreVersionToDraft(docId: number, versionId: number) {
+	return useAuthFetch<ApiResult<null>>(`/api/documents/${docId}/versions/${versionId}/restore-to-draft`, { method: 'POST' })
+}

@@ -28,7 +28,8 @@
 					</el-button>
 					<template #dropdown>
 						<el-dropdown-menu>
-							<el-dropdown-item @click="handleTransfer">转移归属人</el-dropdown-item>
+							<el-dropdown-item @click="snapshotDrawerVisible = true">历史记录</el-dropdown-item>
+							<el-dropdown-item divided @click="handleTransfer">转移归属人</el-dropdown-item>
 							<el-dropdown-item @click="handleShare">分享</el-dropdown-item>
 						</el-dropdown-menu>
 					</template>
@@ -36,11 +37,19 @@
 			</div>
 		</header>
 
+		<!-- 快照预览横幅 -->
+		<div v-if="previewMode" class="editor-preview-banner">
+			正在预览快照：{{ previewName }}
+			<el-button size="small" link @click="exitPreview">退出预览</el-button>
+		</div>
+
 		<!-- ─── 主体 ─── -->
 		<div class="editor-body">
 			<!-- 编辑区 -->
 			<main class="editor-main">
-				<ClientOnly>
+				<!-- 快照预览内容（只读覆盖） -->
+				<div v-if="previewMode" class="editor-preview-content markdown-body" v-html="sanitize(previewHtml)" />
+				<ClientOnly v-else>
 					<MilkdownEditor
 v-if="!loading && content !== null" ref="milkdownRef" :initial-content="content"
 						:doc-id="docId" :enable-collab="enableCollab" @update="onEditorUpdate"
@@ -52,7 +61,7 @@ v-if="!loading && content !== null" ref="milkdownRef" :initial-content="content"
 			</main>
 
 			<!-- 批注面板 -->
-			<aside v-if="annotationOpen" class="editor-annotation-aside">
+			<aside v-if="annotationOpen && !previewMode" class="editor-annotation-aside">
 				<AnnotationPanel :doc-id="docId" />
 			</aside>
 		</div>
@@ -67,11 +76,17 @@ v-if="docId" v-model="transferModalVisible" :document-id="docId" :document-title
 
 		<!-- 分享弹窗复用 -->
 		<ShareLinkModal v-if="docId" v-model="shareModalVisible" :document-id="docId" :file-name="`${title}.md`" />
+
+		<!-- 历史记录 / 快照抽屉 -->
+		<SnapshotDrawer
+v-if="docId" v-model="snapshotDrawerVisible" :doc-id="docId" @preview="onSnapshotPreview"
+			@restored="onSnapshotRestored" />
 	</div>
 </template>
 
 <script setup lang="ts">
 import { ArrowLeft, MoreFilled } from '@element-plus/icons-vue'
+import { sanitize } from '~/composables/useSanitize'
 import { apiGetDocContent } from '~/api/document-editor'
 import { useDocEditor } from '~/composables/useDocEditor'
 import type { PersonalDocItem } from '~/types/personal'
@@ -155,6 +170,28 @@ const shareModalVisible = ref(false)
 
 function handleTransfer() { transferModalVisible.value = true }
 function handleShare() { shareModalVisible.value = true }
+
+// ── 历史快照 ──
+const snapshotDrawerVisible = ref(false)
+const previewMode = ref(false)
+const previewHtml = ref('')
+const previewName = ref('')
+
+function onSnapshotPreview(html: string, name: string) {
+	previewHtml.value = html
+	previewName.value = name
+	previewMode.value = true
+}
+
+function exitPreview() {
+	previewMode.value = false
+	previewHtml.value = ''
+}
+
+function onSnapshotRestored() {
+	snapshotDrawerVisible.value = false
+	setTimeout(() => window.location.reload(), 800)
+}
 </script>
 
 <style>
@@ -242,5 +279,27 @@ function handleShare() { shareModalVisible.value = true }
 
 .editor-loading {
 	padding: 48px 48px;
+}
+
+.editor-preview-banner {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 6px 24px;
+	background: var(--el-color-warning-light-9);
+	border-bottom: 1px solid var(--el-color-warning-light-5);
+	font-size: 13px;
+	color: var(--el-color-warning-dark-2);
+	flex-shrink: 0;
+}
+
+.editor-preview-content {
+	flex: 1;
+	overflow-y: auto;
+	padding: 48px;
+	max-width: 900px;
+	margin: 0 auto;
+	font-size: 15px;
+	line-height: 1.75;
 }
 </style>

@@ -2121,4 +2121,17 @@
 
 ---
 
+### 快照接口（编辑器专用）
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | /api/documents/:id/snapshots | 是（归属人或编辑权限） | 快照 + 已发布版本合并时间线 |
+| POST | /api/documents/:id/snapshots | 是（归属人或编辑权限） | 创建命名快照（读 draft_content → 写 MinIO） |
+| GET | /api/documents/:id/snapshots/:sid/content | 是（归属人或编辑权限） | 获取快照原始 Markdown |
+| GET | /api/documents/:id/snapshots/:sid/preview | 是（归属人或编辑权限） | 快照 Markdown 渲染为 HTML |
+| POST | /api/documents/:id/snapshots/:sid/restore | 是（归属人或编辑权限） | 快照还原到 draft_content |
+| POST | /api/documents/:id/versions/:vid/restore-to-draft | 是（归属人或编辑权限） | 已发布版本内容还原到 draft_content |
+
+---
+
 ## 4. 数据与安全说明
