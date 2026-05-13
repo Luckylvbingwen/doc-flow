@@ -5,6 +5,8 @@
 import { prisma } from '~/server/utils/prisma'
 import { userRoleAssignSchema } from '~/server/schemas/rbac'
 import { USER_NOT_FOUND, ROLE_NOT_FOUND, ALREADY_ASSIGNED } from '~/server/constants/error-codes'
+import { createNotification } from '~/server/utils/notify'
+import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'role:assign')
@@ -48,6 +50,18 @@ export default defineEventHandler(async (event) => {
 		INSERT INTO sys_user_roles (user_id, role_id, created_by)
 		VALUES (${userId}, ${roleId}, ${createdBy})
 	`
+
+	// M21 通知：通知被分配角色的用户
+	const roleRow = await prisma.$queryRaw<Array<{ name: string }>>`
+		SELECT name FROM sys_roles WHERE id = ${roleId} LIMIT 1
+	`
+	const roleName = roleRow[0]?.name ?? '未知角色'
+	await createNotification(NOTIFICATION_TEMPLATES.M21.build({
+		toUserId: userId,
+		action: 'assign',
+		roleName,
+		scope: '全局',
+	}))
 
 	return ok(null, '角色分配成功')
 })

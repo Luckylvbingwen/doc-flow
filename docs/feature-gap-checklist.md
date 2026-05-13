@@ -16,12 +16,12 @@
 | ApprovalDrawer | ~~审批详情抽屉（文件卡+审批链+意见区+操作按钮）~~ ✅ 已完成 | ~~approvals、file/[id]~~ |
 | ApprovalChain | ~~审批流程节点可视化（发起→审批人→…→完成）~~ ✅ 已完成 | ~~approvals、file/[id]~~ |
 | CommentThread | ~~评论线程（头像+内容+时间+回复）~~ ✅ 已完成 | ~~file/[id]~~ |
-| ActivityFilterBar | 日志筛选条（搜索+时间范围+操作类型 chips） | logs |
+| ~~ActivityFilterBar~~ | ~~日志筛选条（搜索+时间范围+操作类型 chips）~~ ✅ 2026-05-13 | ~~logs~~ |
 | RemoteSelect | ~~远程搜索 + 滚动分页下拉~~ ✅ 2026-04-18 | 回收站原仓库筛选、未来成员选择 |
 | MemberPicker | ~~成员选择器（飞书风格 / 部门钻入 / 已选面板）~~ ✅ 已完成 `MemberSelectorModal` | ~~组设置、admin~~ |
 | PermissionEditor | 权限编辑弹窗（继承/自定义+角色矩阵） | repo 设置、file/[id] |
 | MoveTargetPicker | 跨组移动目标选择器（复用 DocNavTree） | file/[id]、docs |
-| StatsCard | 统计数字卡片（数字+标签+趋势图标） | admin、docs 首页 |
+| ~~StatsCard~~ | ~~统计数字卡片（数字+标签+趋势图标）~~ ✅ 2026-05-13 | ~~admin、docs 首页~~ |
 
 ## 二、页面交互补全
 
@@ -149,31 +149,31 @@
 
 | 名称 | 用途 |
 |------|------|
-| useConfirmAction | 统一的「确认→执行→反馈」封装（删除/恢复/回滚等危险操作） |
-| useBatchSelect | 表格批量选中状态管理（全选/反选/已选计数） |
-| useNotificationBadge | 通知未读数管理（WebSocket 推送+本地缓存） |
-| formatActivity | 日志描述格式化工具函数 |
+| ~~useConfirmAction~~ | ~~统一的「确认→执行→反馈」封装（删除/恢复/回滚等危险操作）~~ ✅ 2026-05-13 |
+| ~~useBatchSelect~~ | ~~表格批量选中状态管理（全选/反选/已选计数）~~ ✅ 2026-05-13 |
+| ~~useNotificationBadge~~ | ~~通知未读数管理（WebSocket 推送+本地缓存）~~ ✅ 2026-05-13 |
+| ~~formatActivity~~ | ~~日志描述格式化工具函数~~ ✅ 2026-05-13 |
 
 ## 四、第三方库
 
 | 库 | 用途 | 优先级 |
 |----|------|--------|
-| sortablejs / @types/sortablejs | 审批链节点拖拽排序、成员排序 | 高 |
-| pdfjs-dist | PDF 全屏预览（页级导航） | 中 |
-| @tiptap/vue-3 系列 **或** @milkdown/kit (Crepe) | 在线富文本编辑（需求确认后再装） | 低 |
-| yjs + @hocuspocus/provider | CRDT 多人协同（与编辑器配套） | 低 |
+| ~~sortablejs / @types/sortablejs~~ | ~~审批链节点拖拽排序~~ ✅ 2026-05-13（GroupApprovalPanel 已集成） | ~~高~~ |
+| ~~pdfjs-dist~~ | ~~PDF 全屏预览（页级导航）~~ ✅ 2026-05-13（DocPreview url prop 驱动 canvas 渲染） | ~~中~~ |
+| ~~@tiptap/vue-3 系列 **或** @milkdown/kit (Crepe)~~ | ~~在线富文本编辑~~ ✅ 2026-05-11（Milkdown Crepe 已使用） | ~~低~~ |
+| yjs + @hocuspocus/provider | CRDT 多人协同（hocuspocus npm 包尚未安装，Docker 服务已容器化） | 低 |
 
 > **编辑器技术选型参考**：[markdowm-sample](https://github.com/empty-byte/markdowm-sample) 仓库已验证 **Milkdown (Crepe) + Yjs + Hocuspocus** 方案，覆盖 WYSIWYG 编辑、Slash 菜单、选区评论锚点、历史快照还原、多人协同。启动编辑器开发时可直接参考或复用，也可与 tiptap + Yjs 做横向 POC 对比。
 
 ## 五、样式层
 
-- [ ] 审批链节点样式
-- [ ] 状态徽标统一样式体系
-- [ ] 操作类型 chips 样式
-- [ ] 仓库卡片样式
-- [ ] 文件头信息区样式
-- [ ] 评论线程样式
-- [ ] 全屏查看器工具栏样式
+- [x] ~~审批链节点样式~~ ✅ 2026-05-13（已确认在 `_doc-preview.scss` 内 `.df-approval-chain` 完整实现）
+- [x] ~~状态徽标统一样式体系~~ ✅ 2026-05-13（`.df-badge` 系列 + 暗色覆写已追加至 `_doc-preview.scss` / `dark.scss`）
+- [x] ~~操作类型 chips 样式~~ ✅ 2026-05-13（`.action-chip` 系列已追加至 `_data-table.scss` / `dark.scss`）
+- [x] ~~仓库卡片样式~~ ✅ 2026-05-13（`.group-card` / `.repo-card` 已追加至 `_list-shell.scss` / `dark.scss`）
+- [x] ~~文件头信息区样式~~ ✅ 2026-05-13（已确认在 `_doc-preview.scss` `.file-meta-header` 完整实现）
+- [x] ~~评论线程样式~~ ✅ 2026-05-13（已确认在 `_comments.scss` 完整实现）
+- [x] ~~全屏查看器工具栏样式~~ ✅ 2026-05-13（已确认在 `FullscreenPreviewer.vue` scoped style 完整实现）
 
 ## 六、数据层
 
@@ -217,10 +217,10 @@
 | M18 | group-member | 被加入组 — 通知被添加成员 | ✅ 2026-04-28（`groups/:id/members POST` handler） |
 | M19 | group-member | 成员权限变更 — 通知被变更成员 | ✅ 2026-04-28（`groups/:id/members/:memberId PUT` handler） |
 | M20 | group-member | 被移出组 — 通知被移出成员 | ✅ 2026-04-28（`groups/:id/members/:memberId DELETE` handler） |
-| M21 | role-assign | 管理员角色指派/撤销 | ⏳ 待接入 |
-| M22 | group-owner | 组负责人变更 | ⏳ 待接入 |
-| M23 | hr-handover | 员工离职交接 | ⏳ 待接入 |
-| M24 | approval-chain-change | 审批链成员因离职/调岗移除 | ⏳ 待接入 |
+| M21 | role-assign | 管理员角色指派/撤销 | ✅ 2026-05-13（`assign.post.ts`、`revoke.post.ts`、`admin/users/[id]/roles.put.ts`） |
+| M22 | group-owner | 组负责人变更 | ✅ 2026-05-13（`groups/[id].put.ts` ownerId 字段 + M22 通知全组成员） |
+| M23 | hr-handover | 员工离职交接 | ⏳ 待接入（依赖 B 阶段停用用户流程） |
+| M24 | approval-chain-change | 审批链成员因离职/调岗移除 | ⏳ 待接入（依赖 B 阶段停用用户流程） |
 
 **开发流程：** 做某业务模块前 → `grep "triggerModule: 'xxx'" server/constants/notification-templates.ts` 反查 M 码 → 依模板接入 → 本表打 ✅ + 日期。
 

@@ -24,3 +24,89 @@
     min-height: 0;
   }
 }
+
+/* ── 文档组 / 仓库卡片 ── */
+.group-card,
+.repo-card {
+  background: var(--df-panel);
+  border: 1px solid var(--df-border);
+  border-radius: var(--df-radius-md, 8px);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--df-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.07), 0 4px 12px rgba(15, 23, 42, 0.06);
+  }
+}
+
+.group-card__header,
+.repo-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.group-card__icon,
+.repo-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--df-primary-soft);
+  color: var(--df-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.group-card__title,
+.repo-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--df-text);
+  margin: 0 0 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-card__desc,
+.repo-card__desc {
+  font-size: 12px;
+  color: var(--df-subtext);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-card__footer,
+.repo-card__footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 8px;
+  border-top: 1px solid var(--df-border);
+}
+
+.group-card__stat,
+.repo-card__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--df-subtext);
+}
+
+.group-grid,
+.repo-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}

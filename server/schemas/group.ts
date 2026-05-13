@@ -14,5 +14,6 @@ export type GroupCreateBody = z.infer<typeof groupCreateSchema>
 export const groupUpdateSchema = z.object({
 	name: z.string().min(1, '组名称不能为空').max(150, '组名称最多 150 字').optional(),
 	description: z.string().max(500, '描述最多 500 字').optional(),
+	ownerId: z.number().int().positive().optional(),
 })
 export type GroupUpdateBody = z.infer<typeof groupUpdateSchema>

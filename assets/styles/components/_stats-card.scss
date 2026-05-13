@@ -1,0 +1,70 @@
+/* ── 统计卡片 StatsCard ── */
+.stats-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 24px;
+  background: var(--df-panel);
+  border: 1px solid var(--df-border);
+  border-radius: var(--df-radius-md, 8px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+
+  &__skeleton {
+    width: 100%;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__icon {
+    font-size: 16px;
+    color: var(--df-primary);
+  }
+
+  &__label {
+    font-size: 13px;
+    color: var(--df-subtext);
+    user-select: none;
+  }
+
+  &__value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--df-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    font-weight: 500;
+
+    &.is-up   { color: #16a34a; }
+    &.is-down { color: #dc2626; }
+    &.is-flat { color: var(--df-subtext); }
+  }
+
+  &__trend-text {
+    line-height: 1;
+  }
+}
+
+/* ── 审批人拖拽排序句柄 ── */
+.ap-approver-row__drag-handle {
+  cursor: grab;
+  color: var(--df-subtext);
+  font-size: 14px;
+  padding: 0 4px;
+  user-select: none;
+  flex-shrink: 0;
+
+  &:active {
+    cursor: grabbing;
+  }
+}

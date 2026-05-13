@@ -97,7 +97,11 @@
       "mcp__plugin_claude-mem_mcp-search__smart_outline",
       "mcp__plugin_claude-mem_mcp-search__get_observations",
       "Bash(Get-ChildItem *)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(Get-Content \"D:\\\\workspace\\\\project\\\\docflow\\\\assets\\\\styles\\\\components\\\\_doc-preview.scss\" -Tail 5)",
+      "Bash(Get-Content \"D:\\\\workspace\\\\project\\\\docflow\\\\assets\\\\styles\\\\components\\\\_data-table.scss\" -Tail 5)",
+      "Bash(Get-Content \"D:\\\\workspace\\\\project\\\\docflow\\\\assets\\\\styles\\\\components\\\\_list-shell.scss\" -Tail 5)",
+      "Bash(Get-Content \"D:\\\\workspace\\\\project\\\\docflow\\\\assets\\\\styles\\\\dark.scss\" -Tail 8)"
     ]
   }
 }

@@ -2,7 +2,7 @@
  * 未读数对账（WS 断开重连时 + 登录完成时各拉一次）
  * 正常会话无定时轮询，仅靠 WS 推送更新 wsStore.badges.notifications
  */
-import { fetchUnreadCount } from '~/api/notifications'
+import { fetchUnreadCount, markAllRead as apiMarkAllRead } from '~/api/notifications'
 
 let reconciling = false
 
@@ -20,4 +20,37 @@ export async function reconcileNotificationBadge() {
 	} finally {
 		reconciling = false
 	}
+}
+
+/**
+ * 通知未读数 composable
+ *
+ * 用法：
+ *   const { unreadCount, refresh, markAllRead } = useNotificationBadge()
+ */
+export function useNotificationBadge() {
+	const wsStore = useWsStore()
+
+	const unreadCount = computed(() => wsStore.badges.notifications)
+
+	async function refresh() {
+		await reconcileNotificationBadge()
+	}
+
+	async function markAllRead() {
+		try {
+			const res = await apiMarkAllRead()
+			if (res.success) {
+				wsStore.badges.notifications = 0
+			} else {
+				msgError(res.message || '操作失败')
+			}
+		} catch {
+			msgError('操作失败')
+		}
+	}
+
+	onMounted(refresh)
+
+	return { unreadCount, refresh, markAllRead }
 }

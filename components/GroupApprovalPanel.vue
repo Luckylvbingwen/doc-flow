@@ -58,8 +58,9 @@
 				</el-button>
 			</div>
 
-			<div class="ap-approver-list">
+			<div ref="approverListRef" class="ap-approver-list">
 				<div v-for="(ap, idx) in form.approvers" :key="ap.userId" class="ap-approver-row">
+					<span class="ap-approver-row__drag-handle" title="拖拽排序">⠿</span>
 					<span class="ap-approver-row__order">{{ idx + 1 }}</span>
 					<span class="ap-approver-row__avatar">{{ ap.name?.slice(0, 1) }}</span>
 					<span class="ap-approver-row__name">{{ ap.name }}</span>
@@ -149,6 +150,7 @@ v-model:visible="selectorVisible" :exclude-user-ids="excludeUserIdsForSelector"
 
 <script setup lang="ts">
 import { Plus, ArrowUp, ArrowDown, Close, Right, Sort } from '@element-plus/icons-vue'
+import Sortable from 'sortablejs'
 import type { ApprovalTemplate } from '~/types/approval-template'
 import { APPROVAL_MODE_MAP } from '~/types/approval-template'
 import { apiGetApprovalTemplate, apiSaveApprovalTemplate } from '~/api/approval-template'
@@ -165,6 +167,8 @@ const emit = defineEmits<{
 const loading = ref(false)
 const saving = ref(false)
 const selectorVisible = ref(false)
+const approverListRef = ref<HTMLElement | null>(null)
+let sortableInstance: Sortable | null = null
 
 const form = ref<ApprovalTemplate>({
 	approvalEnabled: 1,
@@ -277,6 +281,27 @@ async function handleSave() {
 		saving.value = false
 	}
 }
+
+onMounted(() => {
+	if (approverListRef.value) {
+		sortableInstance = new Sortable(approverListRef.value, {
+			animation: 150,
+			handle: '.ap-approver-row__drag-handle',
+			onEnd(evt) {
+				const { oldIndex, newIndex } = evt
+				if (oldIndex == null || newIndex == null || oldIndex === newIndex) return
+				const arr = form.value.approvers
+				const moved = arr.splice(oldIndex, 1)[0]
+				arr.splice(newIndex, 0, moved)
+			},
+		})
+	}
+})
+
+onUnmounted(() => {
+	sortableInstance?.destroy()
+	sortableInstance = null
+})
 
 defineExpose({
 	isDirty,

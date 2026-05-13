@@ -152,3 +152,34 @@
     border-radius: 12px;
   }
 }
+
+/* ── 通用操作类型 chip ── */
+.action-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.6;
+  border: 1px solid var(--df-border);
+  white-space: nowrap;
+  user-select: none;
+  background: var(--df-surface);
+  color: var(--df-subtext);
+  transition: background 0.15s, border-color 0.15s;
+
+  &--upload              { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+  &--download,
+  &--approve             { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+  &--reject,
+  &--delete              { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+  &--edit                { background: #fefce8; color: #a16207; border-color: #fde68a; }
+
+  &.is-active {
+    background: var(--df-primary-soft);
+    color: var(--df-primary);
+    border-color: var(--df-primary);
+  }
+}

@@ -24,6 +24,8 @@ import {
 	ADMIN_SUPER_ADMIN_PROTECTED,
 	ADMIN_PL_HEAD_HAS_OWNERSHIP,
 } from '~/server/constants/error-codes'
+import { createNotifications } from '~/server/utils/notify'
+import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 
 export default defineEventHandler(async (event) => {
 	const denied = await requirePermission(event, 'admin:role_assign')
@@ -114,6 +116,42 @@ export default defineEventHandler(async (event) => {
 				plHead: body.plHead,
 			},
 		})
+	}
+
+	// M21 通知：角色变更 → 通知被操作的用户
+	if (changes.length > 0) {
+		const notifyList = []
+		if (changes.includes('授予公司层管理员')) {
+			notifyList.push(NOTIFICATION_TEMPLATES.M21.build({
+				toUserId: BigInt(userId),
+				action: 'assign',
+				roleName: '公司层管理员',
+				scope: '全公司',
+			}))
+		}
+		if (changes.includes('撤销公司层管理员')) {
+			notifyList.push(NOTIFICATION_TEMPLATES.M21.build({
+				toUserId: BigInt(userId),
+				action: 'revoke',
+				roleName: '公司层管理员',
+			}))
+		}
+		if (changes.includes('授予产品线负责人')) {
+			notifyList.push(NOTIFICATION_TEMPLATES.M21.build({
+				toUserId: BigInt(userId),
+				action: 'assign',
+				roleName: '产品线负责人',
+				scope: '产品线',
+			}))
+		}
+		if (changes.includes('撤销产品线负责人')) {
+			notifyList.push(NOTIFICATION_TEMPLATES.M21.build({
+				toUserId: BigInt(userId),
+				action: 'revoke',
+				roleName: '产品线负责人',
+			}))
+		}
+		if (notifyList.length > 0) await createNotifications(notifyList)
 	}
 
 	return ok({ changed: changes.length > 0, changes }, changes.length > 0 ? '角色已更新' : '无变更')
