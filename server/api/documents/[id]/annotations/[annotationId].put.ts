@@ -4,7 +4,7 @@
  */
 import { prisma } from '~/server/utils/prisma'
 import { updateAnnotationSchema } from '~/server/schemas/annotation'
-import { DOCUMENT_NOT_FOUND, INVALID_PARAMS, PERMISSION_DENIED } from '~/server/constants/error-codes'
+import { DOCUMENT_NOT_FOUND, INVALID_PARAMS, PERMISSION_DENIED, ANNOTATION_FROZEN } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
 	const permErr = await requirePermission(event, 'doc:read')
@@ -21,15 +21,20 @@ export default defineEventHandler(async (event) => {
 
 	const doc = await prisma.doc_documents.findFirst({
 		where: { id: docId, deleted_at: null },
-		select: { id: true },
+		select: { id: true, current_version_id: true },
 	})
 	if (!doc) return fail(event, 404, DOCUMENT_NOT_FOUND, '文档不存在')
 
 	const ann = await prisma.doc_document_annotations.findFirst({
 		where: { id: annId, document_id: docId, deleted_at: null },
-		select: { id: true, created_by: true },
+		select: { id: true, created_by: true, version_id: true },
 	})
 	if (!ann) return fail(event, 404, INVALID_PARAMS, '批注不存在')
+
+	const isFrozen = ann.version_id !== null && doc.current_version_id !== null
+		&& ann.version_id !== doc.current_version_id
+	if (isFrozen) return fail(event, 409, ANNOTATION_FROZEN, '该批注已冻结，旧版本批注不可编辑')
+
 	if (Number(ann.created_by) !== user.id) return fail(event, 403, PERMISSION_DENIED, '仅批注作者可修改')
 
 	const body = await readValidatedBody(event, updateAnnotationSchema.parse)

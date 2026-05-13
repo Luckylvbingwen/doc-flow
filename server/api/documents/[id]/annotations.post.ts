@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
 
 	const doc = await prisma.doc_documents.findFirst({
 		where: { id: docId, deleted_at: null },
-		select: { id: true },
+		select: { id: true, current_version_id: true },
 	})
 	if (!doc) return fail(event, 404, DOCUMENT_NOT_FOUND, '文档不存在')
 
@@ -29,6 +29,7 @@ export default defineEventHandler(async (event) => {
 		data: {
 			id,
 			document_id: docId,
+			version_id: doc.current_version_id ?? undefined,
 			created_by: BigInt(user.id),
 			content: body.content,
 			quote_text: body.quoteText,

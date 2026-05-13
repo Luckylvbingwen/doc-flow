@@ -19,6 +19,7 @@ export interface AnnotationItem {
 	createdAt: number
 	status: number  // 1=打开 2=已解决
 	resolvedAt: number | null
+	frozen: boolean  // 旧版本批注已冻结，不可编辑
 }
 
 export type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error'

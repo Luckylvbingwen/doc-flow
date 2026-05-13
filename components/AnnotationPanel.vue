@@ -5,6 +5,11 @@
 			<el-button size="small" type="primary" link @click="showAddForm = true">+ 新增</el-button>
 		</div>
 
+		<!-- 冻结提示 -->
+		<div v-if="hasFrozen" class="annotation-panel__frozen-banner">
+			⚠ 部分批注属于旧版本，已冻结，不可编辑或删除
+		</div>
+
 		<!-- 新增输入区 -->
 		<div v-if="showAddForm" class="annotation-panel__add">
 			<el-input v-model="newContent" type="textarea" :rows="3" placeholder="输入批注内容..." />
@@ -17,14 +22,17 @@
 		<!-- 批注列表 -->
 		<el-scrollbar>
 			<div v-if="!loading && annotations.length === 0" class="annotation-panel__empty">暂无批注</div>
-			<div v-for="item in annotations" :key="item.id" class="annotation-item">
+			<div
+v-for="item in annotations" :key="item.id" class="annotation-item"
+				:class="{ 'annotation-item--frozen': item.frozen }">
+				<div v-if="item.frozen" class="annotation-item__frozen-tag">已冻结</div>
 				<div v-if="item.quoteText" class="annotation-item__quote">{{ item.quoteText }}</div>
 				<div class="annotation-item__content">{{ item.content }}</div>
 				<div class="annotation-item__meta">
 					<span>{{ item.authorName }}</span>
 					<span>{{ formatTime(item.createdAt) }}</span>
 				</div>
-				<div class="annotation-item__actions">
+				<div v-if="!item.frozen" class="annotation-item__actions">
 					<el-button size="small" link @click="handleResolve(item.id)">标记解决</el-button>
 					<el-button size="small" link type="danger" @click="handleDelete(item.id)">删除</el-button>
 				</div>
@@ -46,6 +54,7 @@ const showAddForm = ref(false)
 const newContent = ref('')
 const submitting = ref(false)
 const openCount = computed(() => annotations.value.filter(a => a.status === 1).length)
+const hasFrozen = computed(() => annotations.value.some(a => a.frozen))
 
 onMounted(load)
 

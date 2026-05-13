@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
 	const doc = await prisma.doc_documents.findFirst({
 		where: { id: docId, deleted_at: null },
-		select: { id: true },
+		select: { id: true, current_version_id: true },
 	})
 	if (!doc) return fail(event, 404, DOCUMENT_NOT_FOUND, '文档不存在')
 
@@ -24,6 +24,8 @@ export default defineEventHandler(async (event) => {
 		include: { doc_users: { select: { name: true } } },
 		orderBy: { created_at: 'asc' },
 	})
+
+	const currentVersionId = doc.current_version_id
 
 	return ok(rows.map(r => ({
 		id: r.id.toString(),
@@ -34,5 +36,6 @@ export default defineEventHandler(async (event) => {
 		createdAt: r.created_at.getTime(),
 		status: r.status,
 		resolvedAt: r.resolved_at ? r.resolved_at.getTime() : null,
+		frozen: r.version_id !== null && currentVersionId !== null && r.version_id !== currentVersionId,
 	})))
 })
