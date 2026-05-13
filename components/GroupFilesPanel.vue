@@ -434,7 +434,7 @@ const unreferencePendingIds = new Set<number>()
 
 const referenceModalVisible = ref(false)
 
-function isSelectableRow(row: DocumentListItem): boolean {
+function isSelectableRow(row: Record<string, any>): boolean {
 	return !row.isReference
 }
 
