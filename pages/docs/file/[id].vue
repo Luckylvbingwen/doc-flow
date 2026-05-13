@@ -381,6 +381,10 @@ v-model="rollbackVisible" :file-name="fileName" :current-version="currentVersion
 					:loading="commentsLoading" @submit="onCommentSubmit" @reply="onCommentReply" @delete="onCommentDelete" />
 			</div>
 
+			<div v-if="bottomTab === 'annotations'" class="df-file-tabs__panel">
+				<AnnotationPanel :doc-id="documentId" />
+			</div>
+
 			<div v-if="bottomTab === 'approvals'" class="df-file-tabs__panel">
 				<div v-if="approvalsLoading" class="df-file-tabs__loading">
 					<el-icon class="is-loading">
@@ -877,10 +881,11 @@ function handleViewFile() {
 }
 
 // ── 底部 TAB（PRD §6.3.4） ──
-type BottomTab = 'comments' | 'approvals'
+type BottomTab = 'comments' | 'annotations' | 'approvals'
 const bottomTab = ref<BottomTab>('comments')
 const bottomTabs: Array<{ value: BottomTab; label: string }> = [
 	{ value: 'comments', label: '评论' },
+	{ value: 'annotations', label: '批注' },
 	{ value: 'approvals', label: '审批记录' },
 ]
 
