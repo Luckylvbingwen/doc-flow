@@ -17,3 +17,9 @@ export const groupUpdateSchema = z.object({
 	ownerId: z.number().int().positive().optional(),
 })
 export type GroupUpdateBody = z.infer<typeof groupUpdateSchema>
+
+/** 飞书文档导入 */
+export const feishuImportSchema = z.object({
+	feishuUrl: z.string().url('请输入有效的飞书文档链接').max(500),
+	changeNote: z.string().max(500).optional(),
+})

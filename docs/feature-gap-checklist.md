@@ -19,8 +19,8 @@
 | ~~ActivityFilterBar~~ | ~~日志筛选条（搜索+时间范围+操作类型 chips）~~ ✅ 2026-05-13 | ~~logs~~ |
 | RemoteSelect | ~~远程搜索 + 滚动分页下拉~~ ✅ 2026-04-18 | 回收站原仓库筛选、未来成员选择 |
 | MemberPicker | ~~成员选择器（飞书风格 / 部门钻入 / 已选面板）~~ ✅ 已完成 `MemberSelectorModal` | ~~组设置、admin~~ |
-| PermissionEditor | 权限编辑弹窗（继承/自定义+角色矩阵） | repo 设置、file/[id] |
-| MoveTargetPicker | 跨组移动目标选择器（复用 DocNavTree） | file/[id]、docs |
+| ~~PermissionEditor~~ | ~~权限编辑弹窗（继承/自定义+角色矩阵）~~ ✅ 2026-04-27（`DocPermissionModal` 实现） | ~~file/[id]~~ |
+| ~~MoveTargetPicker~~ | ~~跨组移动目标选择器（复用 DocNavTree）~~ ✅ 2026-04-28（`MoveTargetPicker` 实现） | ~~file/[id]、docs~~ |
 | ~~StatsCard~~ | ~~统计数字卡片（数字+标签+趋势图标）~~ ✅ 2026-05-13 | ~~admin、docs 首页~~ |
 
 ## 二、页面交互补全
@@ -100,7 +100,7 @@
 - [x] ~~组设置 — 成员管理 tab~~ ✅ 2026-04-17（`GroupSettingsModal` 成员管理 Tab）
 - [x] ~~组设置 — 审批流配置 tab~~ ✅ 2026-04-17（`GroupApprovalPanel`，整包 PUT + 组创建时初始化默认模板）
 - [x] ~~文件列表批量操作（勾选 + 批量删除/移动/下载）~~ ✅ 2026-04-28（DataTable showSelection + BulkActionBar + batch-remove API + 批量下载）
-- [ ] 飞书导入入口接通后端
+- [x] ~~飞书导入入口接通后端~~ ✅ 2026-05-13（POST /api/groups/:id/feishu-import，调飞书 raw_content API 转 MD，走 executeUpload 审批路由；FeishuImportModal 弹窗）
 
 ### 2.7 文件详情 (`pages/docs/file/[id].vue`)
 
@@ -125,9 +125,9 @@
 - [x] ~~角色管理弹窗（公司层管理员 / 产品线负责人 双卡片 + 产品线只读 tag）~~ ✅ 2026-04-20
 - [x] ~~飞书全员预落地到 doc_users + 部门主管自动 dept_head（§327）~~ ✅ 2026-04-20
 - [x] ~~产品线 POST/PUT 事务自动授予 owner 的 pl_head 角色（数据一致性）~~ ✅ 2026-04-20
-- [ ] 停用用户流程（B 阶段，依赖离职交接运行时）
-- [ ] 负责人交接流程（B 阶段）
-- [ ] 重新启用已停用用户（B 阶段）
+- [x] ~~停用用户流程~~ ✅ 2026-05-13（PUT /api/admin/users/:id/deactivate，清理组成员、交接负责组、移除审批链，触发 M22/M23/M24）
+- [x] ~~负责人交接流程~~ ✅ 2026-05-13（停用时自动交接，可通过 successorId 指定接任者）
+- [x] ~~重新启用已停用用户~~ ✅ 2026-05-13（PUT /api/admin/users/:id/activate）
 
 > 框架层通用 RBAC 页面 `pages/system/roles.vue` + `pages/system/user-roles.vue` 已拆出，DocFlow 业务侧栏不展示（注释保留），抽离 starter 模板时启用。
 
@@ -161,7 +161,7 @@
 | ~~sortablejs / @types/sortablejs~~ | ~~审批链节点拖拽排序~~ ✅ 2026-05-13（GroupApprovalPanel 已集成） | ~~高~~ |
 | ~~pdfjs-dist~~ | ~~PDF 全屏预览（页级导航）~~ ✅ 2026-05-13（DocPreview url prop 驱动 canvas 渲染） | ~~中~~ |
 | ~~@tiptap/vue-3 系列 **或** @milkdown/kit (Crepe)~~ | ~~在线富文本编辑~~ ✅ 2026-05-11（Milkdown Crepe 已使用） | ~~低~~ |
-| yjs + @hocuspocus/provider | CRDT 多人协同（hocuspocus npm 包尚未安装，Docker 服务已容器化） | 低 |
+| ~~yjs + y-websocket + @milkdown/plugin-collab~~ | ~~CRDT 多人协同~~ ✅ 2026-05-13（`yjs@^13.6.30` + `y-websocket@^3.0.0` + `@milkdown/plugin-collab@^7.20.0` 均已安装，MilkdownEditor.vue 已接入 Hocuspocus Docker 服务） | ~~低~~ |
 
 > **编辑器技术选型参考**：[markdowm-sample](https://github.com/empty-byte/markdowm-sample) 仓库已验证 **Milkdown (Crepe) + Yjs + Hocuspocus** 方案，覆盖 WYSIWYG 编辑、Slash 菜单、选区评论锚点、历史快照还原、多人协同。启动编辑器开发时可直接参考或复用，也可与 tiptap + Yjs 做横向 POC 对比。
 
@@ -219,8 +219,8 @@
 | M20 | group-member | 被移出组 — 通知被移出成员 | ✅ 2026-04-28（`groups/:id/members/:memberId DELETE` handler） |
 | M21 | role-assign | 管理员角色指派/撤销 | ✅ 2026-05-13（`assign.post.ts`、`revoke.post.ts`、`admin/users/[id]/roles.put.ts`） |
 | M22 | group-owner | 组负责人变更 | ✅ 2026-05-13（`groups/[id].put.ts` ownerId 字段 + M22 通知全组成员） |
-| M23 | hr-handover | 员工离职交接 | ⏳ 待接入（依赖 B 阶段停用用户流程） |
-| M24 | approval-chain-change | 审批链成员因离职/调岗移除 | ⏳ 待接入（依赖 B 阶段停用用户流程） |
+| M23 | hr-handover | 员工离职交接 | ✅ 2026-05-13（`admin/users/[id]/deactivate.put.ts` — 部门范围组交接时通知部门负责人） |
+| M24 | approval-chain-change | 审批链成员因离职/调岗移除 | ✅ 2026-05-13（`admin/users/[id]/deactivate.put.ts` — 移除审批链节点时通知组负责人） |
 
 **开发流程：** 做某业务模块前 → `grep "triggerModule: 'xxx'" server/constants/notification-templates.ts` 反查 M 码 → 依模板接入 → 本表打 ✅ + 日期。
 

@@ -67,7 +67,7 @@
 				</el-icon>
 				上传文件
 			</el-button>
-			<el-button v-if="canUpload" disabled title="飞书导入功能规划中">
+			<el-button v-if="canUpload" @click="feishuImportVisible = true">
 				<el-icon>
 					<Link />
 				</el-icon>
@@ -262,6 +262,9 @@ v-if="permModalRow && data?.id" v-model:visible="permModalVisible"
 		<MoveTargetPicker
 v-if="moveRow && groupId" v-model="movePickerVisible" v-model:loading="moveLoading"
 			:document-id="moveRow.id" :exclude-group-id="groupId" @confirm="onMoveConfirm" />
+
+		<!-- 飞书文档导入弹窗 -->
+		<FeishuImportModal v-if="groupId" v-model:visible="feishuImportVisible" :group-id="groupId" @success="refresh" />
 	</div>
 </template>
 
@@ -391,6 +394,7 @@ watch(groupId, (val) => {
 
 // ── 上传 ──
 const uploadVisible = ref(false)
+const feishuImportVisible = ref(false)
 function onUploadSuccess() {
 	refresh()
 	emit('documents-changed')

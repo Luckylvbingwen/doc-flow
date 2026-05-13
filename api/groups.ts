@@ -35,3 +35,11 @@ export function apiDeleteGroup(id: number) {
 		method: 'DELETE',
 	})
 }
+
+/** 从飞书文档链接导入为 Markdown */
+export function apiFeishuImport(groupId: number, body: { feishuUrl: string; changeNote?: string }) {
+	return useAuthFetch<ApiResult>(`/api/groups/${groupId}/feishu-import`, {
+		method: 'POST',
+		body,
+	})
+}
