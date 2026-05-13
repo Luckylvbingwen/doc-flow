@@ -40,6 +40,22 @@ export interface FeishuSyncStats {
 	deptHeadAssigned: number
 }
 
+/** 停用用户（清理组成员、交接负责组、移除审批链） */
+export function apiDeactivateUser(userId: number, successorId?: number) {
+	return useAuthFetch<ApiResult<null>>(
+		`/api/admin/users/${userId}/deactivate`,
+		{ method: 'PUT', body: successorId ? { successorId } : {} },
+	)
+}
+
+/** 重新启用已停用用户 */
+export function apiActivateUser(userId: number) {
+	return useAuthFetch<ApiResult<null>>(
+		`/api/admin/users/${userId}/activate`,
+		{ method: 'PUT' },
+	)
+}
+
 /** 手动触发飞书通讯录同步（admin 页面使用） */
 export function apiSyncFeishuContacts() {
 	return useAuthFetch<ApiResult<FeishuSyncStats>>(

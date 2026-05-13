@@ -139,6 +139,12 @@ export const ADMIN_SUPER_ADMIN_PROTECTED = 'ADMIN_SUPER_ADMIN_PROTECTED'
 export const ADMIN_PL_HEAD_HAS_OWNERSHIP = 'ADMIN_PL_HEAD_HAS_OWNERSHIP'
 /** 部门负责人由飞书同步，不可在此指派 (400) */
 export const ADMIN_DEPT_HEAD_SYNC_ONLY = 'ADMIN_DEPT_HEAD_SYNC_ONLY'
+/** 用户已处于停用状态 (409) */
+export const ADMIN_USER_ALREADY_DEACTIVATED = 'ADMIN_USER_ALREADY_DEACTIVATED'
+/** 用户已处于启用状态 (409) */
+export const ADMIN_USER_ALREADY_ACTIVE = 'ADMIN_USER_ALREADY_ACTIVE'
+/** 不能停用自己的账号 (400) */
+export const ADMIN_SELF_DEACTIVATE = 'ADMIN_SELF_DEACTIVATE'
 
 // ─── 文档（document-core A 阶段） ───
 /** 文档不存在 (404) */

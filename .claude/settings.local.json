@@ -101,7 +101,8 @@
       "Bash(Get-Content \"D:\\\\workspace\\\\project\\\\docflow\\\\assets\\\\styles\\\\components\\\\_doc-preview.scss\" -Tail 5)",
       "Bash(Get-Content \"D:\\\\workspace\\\\project\\\\docflow\\\\assets\\\\styles\\\\components\\\\_data-table.scss\" -Tail 5)",
       "Bash(Get-Content \"D:\\\\workspace\\\\project\\\\docflow\\\\assets\\\\styles\\\\components\\\\_list-shell.scss\" -Tail 5)",
-      "Bash(Get-Content \"D:\\\\workspace\\\\project\\\\docflow\\\\assets\\\\styles\\\\dark.scss\" -Tail 8)"
+      "Bash(Get-Content \"D:\\\\workspace\\\\project\\\\docflow\\\\assets\\\\styles\\\\dark.scss\" -Tail 8)",
+      "PowerShell(cd \"D:\\\\workspace\\\\project\\\\docflow\"; \\(Get-Content \"docs/企业文档管理系统-产品需求说明文档.md\" | Measure-Object -Line\\).Lines)"
     ]
   }
 }

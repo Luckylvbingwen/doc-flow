@@ -106,15 +106,22 @@ v-for="r in row.roles" :key="r.code" class="admin-role-badge" :class="{ 'is-feis
 				<!-- 系统管理员行 -->
 				<span v-if="isSuperAdmin(row)" class="admin-system-preset">系统预设</span>
 				<!-- 已停用行 -->
-				<span v-else-if="row.status === 0" class="admin-deactivated-time">
-					停用时间：{{ row.deactivatedAt ? formatTime(row.deactivatedAt, 'YYYY-MM-DD') : '—' }}
-				</span>
+				<template v-else-if="row.status === 0">
+					<span class="admin-deactivated-time">
+						停用时间：{{ row.deactivatedAt ? formatTime(row.deactivatedAt, 'YYYY-MM-DD') : '—' }}
+					</span>
+					<el-button
+v-auth="'admin:role_assign'" link type="primary" size="small" :loading="activatingId === row.id"
+						@click="onActivate(row)">
+						启用
+					</el-button>
+				</template>
 				<!-- 活跃行 -->
 				<template v-else>
 					<el-button v-auth="'admin:role_assign'" link type="primary" size="small" @click="onOpenAssign(row)">
 						角色管理
 					</el-button>
-					<el-button link type="danger" size="small" @click="onDeactivateStub(row)">
+					<el-button link type="danger" size="small" :loading="deactivatingId === row.id" @click="onDeactivate(row)">
 						停用
 					</el-button>
 				</template>
@@ -138,7 +145,7 @@ v-for="r in row.roles" :key="r.code" class="admin-role-badge" :class="{ 'is-feis
 import { Search, Refresh } from '@element-plus/icons-vue'
 import type { TableColumn } from '~/components/DataTable.vue'
 import AdminRoleAssignModal from '~/components/admin/AdminRoleAssignModal.vue'
-import { apiGetAdminUsers, apiSyncFeishuContacts } from '~/api/admin'
+import { apiGetAdminUsers, apiSyncFeishuContacts, apiDeactivateUser, apiActivateUser } from '~/api/admin'
 import { formatTime } from '~/utils/format'
 import {
 	getRoleMeta, ROLE_FILTER_OPTIONS, STATUS_FILTER_OPTIONS,
@@ -252,9 +259,56 @@ function onAssignSuccess() {
 	refresh()
 }
 
-// ── 停用（B 阶段做，目前 stub） ──
-function onDeactivateStub(row: AdminUserItem) {
-	msgWarning(`「${row.name}」停用 / 离职交接功能开发中`)
+// ── 停用 / 启用 ──
+const deactivatingId = ref<number | null>(null)
+const activatingId = ref<number | null>(null)
+
+async function onDeactivate(row: AdminUserItem) {
+	const confirmed = await msgConfirm(
+		`停用后，「${row.name}」将无法登录，其负责的文档组将自动交接给系统管理员，审批链中的该成员也将被移除。确认停用？`,
+		`停用用户「${row.name}」`,
+		{ confirmText: '确认停用', danger: true },
+	)
+	if (!confirmed) return
+
+	deactivatingId.value = row.id
+	try {
+		const res = await apiDeactivateUser(row.id)
+		if (res.success) {
+			msgSuccess(res.message || '停用成功')
+			refresh()
+		}
+		else {
+			msgError(res.message || '停用失败')
+		}
+	}
+	finally {
+		deactivatingId.value = null
+	}
+}
+
+async function onActivate(row: AdminUserItem) {
+	const confirmed = await msgConfirm(
+		`将重新启用「${row.name}」的账号，使其可以正常登录系统。确认启用？`,
+		`启用用户「${row.name}」`,
+		{ confirmText: '确认启用' },
+	)
+	if (!confirmed) return
+
+	activatingId.value = row.id
+	try {
+		const res = await apiActivateUser(row.id)
+		if (res.success) {
+			msgSuccess(res.message || '启用成功')
+			refresh()
+		}
+		else {
+			msgError(res.message || '启用失败')
+		}
+	}
+	finally {
+		activatingId.value = null
+	}
 }
 
 // ── 手动触发飞书同步 ──

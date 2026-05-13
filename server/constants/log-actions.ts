@@ -110,6 +110,8 @@ export const LOG_ACTIONS = {
 
 	// ── 系统管理（§6.9） ──
 	ADMIN_ROLE_ASSIGN: 'admin.role_assign',
+	ADMIN_USER_DEACTIVATE: 'admin.user_deactivate',
+	ADMIN_USER_ACTIVATE: 'admin.user_activate',
 } as const
 
 /** 具体 action 字符串的联合类型 */
@@ -216,6 +218,8 @@ export const LOG_ACTION_TO_TYPE: Record<LogActionCode, LogTypeCode> = {
 
 	// 系统管理：指派公司层管理员 / 产品线负责人 — 归入"权限变更"类别
 	[LOG_ACTIONS.ADMIN_ROLE_ASSIGN]: 'permission',
+	[LOG_ACTIONS.ADMIN_USER_DEACTIVATE]: 'org',
+	[LOG_ACTIONS.ADMIN_USER_ACTIVATE]: 'org',
 }
 
 /** 14 类 → 该类包含的所有 action 码（反向索引，用于 WHERE IN 展开） */

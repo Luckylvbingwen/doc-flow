@@ -37,5 +37,10 @@ export const adminRoleAssignBodySchema = z.object({
 
 export type AdminRoleAssignBody = z.infer<typeof adminRoleAssignBodySchema>
 
+/** 停用用户请求体（successorId 可选，不传则自动交接给 super_admin） */
+export const deactivateUserBodySchema = z.object({
+	successorId: z.number().int().positive().optional(),
+})
+
 /** 重导出角色 code 便于 handler 引用 */
 export { SYSTEM_ROLE_CODES }
