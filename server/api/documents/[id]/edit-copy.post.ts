@@ -35,13 +35,37 @@ export default defineEventHandler(async (event) => {
 		if (!perm || perm.permission > 2) return fail(event, 403, PERMISSION_DENIED, '无编辑权限')
 	}
 
+	// 统计当前版本未解决批注数
+	const unresolvedAnnotationCount = await prisma.doc_document_annotations.count({
+		where: {
+			document_id: docId,
+			status: 1, // open
+			deleted_at: null,
+		},
+	})
+
 	// 检查是否已有活跃副本
 	const existing = await prisma.doc_documents.findFirst({
 		where: { source_doc_id: docId, status: { in: [1, 2] }, deleted_at: null },
-		select: { id: true },
+		select: { id: true, owner_user_id: true },
 	})
 	if (existing) {
-		return ok({ id: existing.id.toString(), isNew: false }, '已有活跃编辑副本')
+		const isOwnCopy = Number(existing.owner_user_id) === user.id
+		let ownerName = ''
+		if (!isOwnCopy) {
+			const ownerUser = await prisma.doc_users.findFirst({
+				where: { id: existing.owner_user_id },
+				select: { name: true },
+			})
+			ownerName = ownerUser?.name ?? '未知用户'
+		}
+		return ok({
+			id: existing.id.toString(),
+			isNew: false,
+			ownerUserId: Number(existing.owner_user_id),
+			ownerName,
+			unresolvedAnnotationCount,
+		}, '已有活跃编辑副本')
 	}
 
 	// 加载原文档当前版本内容（MinIO）
@@ -77,5 +101,5 @@ export default defineEventHandler(async (event) => {
 		},
 	})
 
-	return ok({ id: copyId.toString(), isNew: true }, '编辑副本已创建')
+	return ok({ id: copyId.toString(), isNew: true, unresolvedAnnotationCount }, '编辑副本已创建')
 })

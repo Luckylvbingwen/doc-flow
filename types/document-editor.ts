@@ -8,6 +8,10 @@ export interface DraftContent {
 export interface EditCopyResult {
 	id: string
 	isNew: boolean
+	ownerUserId?: number
+	ownerName?: string
+	/** 当前版本未解决批注数 */
+	unresolvedAnnotationCount?: number
 }
 
 export interface AnnotationItem {

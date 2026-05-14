@@ -89,6 +89,9 @@ export const LOG_ACTIONS = {
 	ANNOTATION_REPLY: 'annotation.reply',
 	ANNOTATION_RESOLVE: 'annotation.resolve',
 
+	// ── 组负责人交接 ──
+	GROUP_LEADER_TRANSFER: 'group.leader_transfer',
+
 	// ── 组织管理 ──
 	GROUP_CREATE: 'group.create',
 	GROUP_UPDATE: 'group.update',
@@ -96,6 +99,8 @@ export const LOG_ACTIONS = {
 	DEPT_CREATE: 'dept.create',
 	DEPT_UPDATE: 'dept.update',
 	DEPT_DELETE: 'dept.delete',
+	DEPT_ADMIN_ADD: 'dept.admin_add',
+	DEPT_ADMIN_REMOVE: 'dept.admin_remove',
 	PL_CREATE: 'pl.create',
 	PL_UPDATE: 'pl.update',
 	PL_DELETE: 'pl.delete',
@@ -199,12 +204,15 @@ export const LOG_ACTION_TO_TYPE: Record<LogActionCode, LogTypeCode> = {
 	[LOG_ACTIONS.ANNOTATION_REPLY]: 'comment',
 	[LOG_ACTIONS.ANNOTATION_RESOLVE]: 'comment',
 
+	[LOG_ACTIONS.GROUP_LEADER_TRANSFER]: 'org',
 	[LOG_ACTIONS.GROUP_CREATE]: 'org',
 	[LOG_ACTIONS.GROUP_UPDATE]: 'org',
 	[LOG_ACTIONS.GROUP_DELETE]: 'org',
 	[LOG_ACTIONS.DEPT_CREATE]: 'org',
 	[LOG_ACTIONS.DEPT_UPDATE]: 'org',
 	[LOG_ACTIONS.DEPT_DELETE]: 'org',
+	[LOG_ACTIONS.DEPT_ADMIN_ADD]: 'org',
+	[LOG_ACTIONS.DEPT_ADMIN_REMOVE]: 'org',
 	[LOG_ACTIONS.PL_CREATE]: 'org',
 	[LOG_ACTIONS.PL_UPDATE]: 'org',
 	[LOG_ACTIONS.PL_DELETE]: 'org',

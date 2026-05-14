@@ -52,12 +52,21 @@ v-model:visible="settingsModalVisible" :group-id="settingsModalGroupId"
 v-model:visible="plManageDrawerVisible" :pl-id="plManageId" :pl-name="plManageName"
 			@success="refreshTree" @navigate-group="onPLNavigateGroup" />
 
+		<DeptManageDrawer
+v-model:visible="deptManageDrawerVisible" :dept-id="deptManageId" :dept-name="deptManageName"
+			@navigate-group="onPLNavigateGroup" />
+
 		<!-- Context menu -->
 		<TreeActionMenu
 ref="actionMenuRef" @edit-group="onEditGroup" @create-child="onCreateChild"
 			@delete-group="onDeleteGroup" @create-group="onCreateGroupFromMenu" @edit-product-line="onEditProductLine"
 			@delete-product-line="onDeleteProductLine" @create-product-line="onCreateProductLine"
-			@admin-settings="onAdminSettings" />
+			@admin-settings="onAdminSettings" @transfer-leader="onTransferLeader" @manage-department="onManageDepartment" />
+
+		<!-- 交接负责人选人弹窗 -->
+		<MemberSelectorModal
+v-model:visible="transferLeaderVisible" :multiple="false" :show-role-selector="false"
+			:exclude-user-ids="transferExcludeIds" @confirm="onTransferLeaderConfirm" />
 	</section>
 </template>
 
@@ -65,7 +74,7 @@ ref="actionMenuRef" @edit-group="onEditGroup" @create-child="onCreateChild"
 import { Collection } from '@element-plus/icons-vue'
 import type { NavTreeCategory, NavTreeGroup, NavTreeFile, NavTreeOrgUnit } from '~/types/doc-nav-tree'
 import type { GroupDetail } from '~/types/group'
-import { apiGetGroupTree, apiGetGroup, apiDeleteGroup } from '~/api/groups'
+import { apiGetGroupTree, apiGetGroup, apiDeleteGroup, apiTransferGroupLeader } from '~/api/groups'
 import { apiDeleteProductLine } from '~/api/product-lines'
 
 definePageMeta({ layout: 'prototype' })
@@ -450,6 +459,53 @@ function onCreateProductLine() {
 	plModalVisible.value = true
 }
 
+// ── 交接负责人 ──
+const transferLeaderVisible = ref(false)
+const transferTargetGroup = ref<NavTreeGroup | null>(null)
+const transferExcludeIds = computed(() => {
+	if (!transferTargetGroup.value) return []
+	// 后端根据 owner_user_id 判断，这里需要获取组详情中的负责人 ID
+	// 暂时从 selectedData 获取
+	const groupDetail = selectedData.value as GroupDetail | null
+	if (groupDetail && Number(groupDetail.id) === transferTargetGroup.value.id) {
+		return [groupDetail.ownerUserId]
+	}
+	return []
+})
+
+function onTransferLeader(group: NavTreeGroup) {
+	transferTargetGroup.value = group
+	transferLeaderVisible.value = true
+}
+
+async function onTransferLeaderConfirm(users: Array<{ id: number; name: string }>) {
+	const target = transferTargetGroup.value
+	if (!target || users.length === 0) return
+	const newLeader = users[0]
+
+	const confirmed = await msgConfirm(
+		`确定将组「${target.name}」的负责人交接给「${newLeader.name}」？\n原负责人将降为普通成员。`,
+		'交接负责人',
+	)
+	if (!confirmed) return
+
+	try {
+		const res = await apiTransferGroupLeader(target.id, newLeader.id)
+		if (res.success) {
+			msgSuccess(res.message || '交接成功')
+			await refreshTree()
+			// 如果当前选中的是被交接的组，刷新右侧面板
+			if (selectedGroupId.value === target.id) {
+				await onGroupSelect(target)
+			}
+		} else {
+			msgError(res.message || '交接失败')
+		}
+	} catch {
+		msgError('交接失败')
+	}
+}
+
 // ── Company admin drawer ──
 const companyAdminDrawerVisible = ref(false)
 
@@ -462,17 +518,29 @@ const plManageDrawerVisible = ref(false)
 const plManageId = ref(0)
 const plManageName = ref('')
 
+// ── Department manage drawer ──
+const deptManageDrawerVisible = ref(false)
+const deptManageId = ref(0)
+const deptManageName = ref('')
+
 function onManageEntity() {
 	const data = selectedData.value
 	if (!data) return
-	// 仅产品线类型支持管理面板，部门暂不支持
 	if (selectedType.value === 'productline') {
 		plManageId.value = typeof data.id === 'number' ? data.id : Number(data.id)
 		plManageName.value = data.label || data.name || ''
 		plManageDrawerVisible.value = true
-	} else {
-		msgWarning('部门管理功能即将上线')
+	} else if (selectedType.value === 'department') {
+		deptManageId.value = typeof data.id === 'number' ? data.id : Number(data.id)
+		deptManageName.value = data.label || data.name || ''
+		deptManageDrawerVisible.value = true
 	}
+}
+
+function onManageDepartment(dept: NavTreeOrgUnit) {
+	deptManageId.value = typeof dept.id === 'string' ? parseInt(dept.id.replace(/\D/g, '')) : Number(dept.id)
+	deptManageName.value = dept.label
+	deptManageDrawerVisible.value = true
 }
 
 function onPLNavigateGroup(groupId: number) {

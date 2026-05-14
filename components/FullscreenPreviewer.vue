@@ -18,15 +18,53 @@
 							</span>
 						</div>
 						<div class="fp-header__right">
-							<el-tooltip content="批注（即将上线）" placement="bottom">
+							<!-- 版本侧栏切换 -->
+							<el-tooltip v-if="versions.length > 0" content="版本记录" placement="bottom">
+								<el-button text :class="{ 'is-active': versionOpen }" @click="versionOpen = !versionOpen">
+									<el-icon :size="16">
+										<Clock />
+									</el-icon>
+									<span class="fp-annot-label">版本</span>
+								</el-button>
+							</el-tooltip>
+							<!-- 批注切换 -->
+							<el-tooltip v-if="docId" content="批注" placement="bottom">
 								<el-button text :class="{ 'is-active': annotationOpen }" @click="annotationOpen = !annotationOpen">
 									<el-icon :size="16">
 										<ChatLineSquare />
 									</el-icon>
 									<span class="fp-annot-label">批注</span>
-									<span v-if="annotationCount > 0" class="fp-annot-badge">{{ annotationCount }}</span>
 								</el-button>
 							</el-tooltip>
+							<el-divider direction="vertical" />
+							<!-- 普通模式按钮 -->
+							<template v-if="mode === 'normal'">
+								<el-tooltip content="下载" placement="bottom">
+									<el-button text @click="emit('download')">
+										<el-icon :size="16">
+											<Download />
+										</el-icon>
+									</el-button>
+								</el-tooltip>
+								<el-tooltip content="打印" placement="bottom">
+									<el-button text @click="handlePrint">
+										<el-icon :size="16">
+											<Printer />
+										</el-icon>
+									</el-button>
+								</el-tooltip>
+							</template>
+							<!-- 审批模式按钮 -->
+							<template v-if="mode === 'approval'">
+								<el-tooltip content="全屏对比" placement="bottom">
+									<el-button text @click="emit('compare')">
+										<el-icon :size="16">
+											<Switch />
+										</el-icon>
+										<span class="fp-annot-label">全屏对比</span>
+									</el-button>
+								</el-tooltip>
+							</template>
 							<el-tooltip content="关闭（ESC）" placement="bottom">
 								<el-button text @click="close">
 									<el-icon :size="18">
@@ -67,26 +105,36 @@ v-for="item in outline" :key="item.id" class="fp-outline__item"
 							<DocPreview class="fp-doc-preview" :file-type="fileType" :html="html" :loading="loading" />
 						</el-scrollbar>
 
-						<!-- 批注面板（占位） -->
-						<aside v-if="annotationOpen" class="fp-annot-panel">
-							<header class="fp-annot-panel__head">
+						<!-- 版本侧栏 -->
+						<aside v-if="versionOpen && versions.length > 0" class="fp-version-panel">
+							<header class="fp-side-panel__head">
 								<el-icon :size="14">
-									<ChatLineSquare />
+									<Clock />
 								</el-icon>
-								<span>批注</span>
-								<el-button text size="small" style="margin-left: auto" @click="annotationOpen = false">
+								<span>版本记录 ({{ versions.length }})</span>
+								<el-button text size="small" style="margin-left: auto" @click="versionOpen = false">
 									<el-icon :size="14">
 										<Close />
 									</el-icon>
 								</el-button>
 							</header>
-							<div class="fp-annot-panel__body">
-								<el-icon :size="36" color="var(--df-subtext)" style="opacity: 0.3">
-									<ChatLineSquare />
-								</el-icon>
-								<p class="fp-annot-panel__hint">批注功能即将上线</p>
-								<p class="fp-annot-panel__sub">将随评论 / 标注模块一并接入</p>
-							</div>
+							<el-scrollbar class="fp-version-panel__list">
+								<div
+v-for="v in versions" :key="v.id" class="fp-ver-item"
+									:class="{ 'is-active': activeVersionId === v.id }" @click="onVersionClick(v)">
+									<div class="fp-ver-item__no">
+										{{ v.versionNo }}
+										<span v-if="v.isCurrent" class="fp-ver-item__badge">当前</span>
+									</div>
+									<div class="fp-ver-item__meta">{{ v.uploaderName }} · {{ formatTime(v.createdAt) }}</div>
+									<div v-if="v.changeNote" class="fp-ver-item__note">{{ v.changeNote }}</div>
+								</div>
+							</el-scrollbar>
+						</aside>
+
+						<!-- 批注面板 -->
+						<aside v-if="annotationOpen && docId" class="fp-annot-panel">
+							<AnnotationPanel :doc-id="docId" />
 						</aside>
 					</div>
 				</div>
@@ -96,33 +144,39 @@ v-for="item in outline" :key="item.id" class="fp-outline__item"
 </template>
 
 <script setup lang="ts">
-import { Document, Close, ChatLineSquare, DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
+import { Document, Close, ChatLineSquare, Clock, DArrowLeft, DArrowRight, Download, Printer, Switch } from '@element-plus/icons-vue'
 import { useOutline } from '~/composables/useOutline'
+import type { VersionInfo } from '~/types/version'
+import { formatTime } from '~/utils/format'
 
 const props = withDefaults(defineProps<{
-	/** v-model:visible */
 	visible: boolean
-	/** 文档名（顶栏标题） */
 	title?: string
-	/** 当前版本号（顶栏徽章） */
 	versionNo?: string
-	/** 文件类型（DocPreview 透传） */
 	fileType: string
-	/** 服务端预渲染 HTML（DocPreview 透传） */
 	html?: string
 	loading?: boolean
-	/** 批注数量（顶栏角标占位，本期恒 0） */
-	annotationCount?: number
+	/** 模式：normal=普通预览, approval=审批预览 */
+	mode?: 'normal' | 'approval'
+	/** 文档 ID（批注面板需要） */
+	docId?: number
+	/** 版本列表 */
+	versions?: VersionInfo[]
 }>(), {
 	title: '',
 	versionNo: '',
 	html: '',
 	loading: false,
-	annotationCount: 0,
+	mode: 'normal',
+	docId: 0,
+	versions: () => [],
 })
 
 const emit = defineEmits<{
 	'update:visible': [val: boolean]
+	'download': []
+	'compare': []
+	'version-change': [version: VersionInfo]
 }>()
 
 const visible = computed({
@@ -132,6 +186,8 @@ const visible = computed({
 
 const outlineCollapsed = ref(false)
 const annotationOpen = ref(false)
+const versionOpen = ref(false)
+const activeVersionId = ref<number | null>(null)
 const scrollerRef = ref<{ wrapRef?: HTMLElement } | null>(null)
 
 const { outline, activeOutlineId, rebuildOutline, scrollToHeading } = useOutline(scrollerRef, '.fp-doc-preview')
@@ -140,6 +196,21 @@ let onKeyDown: ((e: KeyboardEvent) => void) | null = null
 
 function close() {
 	visible.value = false
+}
+
+function onVersionClick(v: VersionInfo) {
+	activeVersionId.value = v.id
+	emit('version-change', v)
+}
+
+function handlePrint() {
+	const content = scrollerRef.value?.wrapRef
+	if (!content) return
+	const printWindow = window.open('', '_blank')
+	if (!printWindow) return
+	printWindow.document.write(`<html><head><title>${props.title}</title></head><body>${content.innerHTML}</body></html>`)
+	printWindow.document.close()
+	printWindow.print()
 }
 
 const FILE_TYPE_LABEL: Record<string, string> = {
@@ -162,6 +233,7 @@ watch(visible, (val) => {
 		window.addEventListener('keydown', onKeyDown)
 		document.body.style.overflow = 'hidden'
 		annotationOpen.value = false
+		versionOpen.value = false
 		nextTick(rebuildOutline)
 	} else {
 		if (onKeyDown) window.removeEventListener('keydown', onKeyDown)
@@ -410,7 +482,20 @@ onBeforeUnmount(() => {
 	}
 }
 
-// ── 批注面板占位 ──
+// ── 侧面板通用 ──
+.fp-side-panel__head {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 12px 14px;
+	border-bottom: 1px solid var(--df-border);
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--df-text);
+	flex-shrink: 0;
+}
+
+// ── 批注面板 ──
 .fp-annot-panel {
 	flex-shrink: 0;
 	width: 320px;
@@ -420,37 +505,65 @@ onBeforeUnmount(() => {
 	flex-direction: column;
 }
 
-.fp-annot-panel__head {
+// ── 版本面板 ──
+.fp-version-panel {
+	flex-shrink: 0;
+	width: 280px;
+	background: var(--df-surface);
+	border-left: 1px solid var(--df-border);
 	display: flex;
-	align-items: center;
-	gap: 6px;
-	padding: 12px 14px;
+	flex-direction: column;
+}
+
+.fp-version-panel__list {
+	flex: 1;
+	min-height: 0;
+}
+
+.fp-ver-item {
+	padding: 10px 14px;
+	cursor: pointer;
 	border-bottom: 1px solid var(--df-border);
+	transition: background 0.15s;
+
+	&:hover {
+		background: color-mix(in srgb, var(--df-primary) 5%, transparent);
+	}
+
+	&.is-active {
+		background: var(--df-primary-soft);
+		border-left: 3px solid var(--df-primary);
+	}
+}
+
+.fp-ver-item__no {
 	font-size: 13px;
 	font-weight: 600;
 	color: var(--df-text);
 }
 
-.fp-annot-panel__body {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
+.fp-ver-item__badge {
+	display: inline-flex;
 	align-items: center;
-	justify-content: center;
-	gap: 8px;
-	padding: 24px;
-	text-align: center;
+	padding: 1px 6px;
+	border-radius: 8px;
+	font-size: 10px;
+	font-weight: 500;
+	background: var(--df-primary-soft);
+	color: var(--df-primary);
+	margin-left: 6px;
 }
 
-.fp-annot-panel__hint {
-	font-size: 13px;
-	color: var(--df-text);
-	margin: 0;
-}
-
-.fp-annot-panel__sub {
+.fp-ver-item__meta {
 	font-size: 12px;
 	color: var(--df-subtext);
-	margin: 0;
+	margin-top: 2px;
+}
+
+.fp-ver-item__note {
+	font-size: 12px;
+	color: var(--df-subtext);
+	margin-top: 4px;
+	font-style: italic;
 }
 </style>

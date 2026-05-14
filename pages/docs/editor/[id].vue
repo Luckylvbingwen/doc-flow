@@ -43,6 +43,11 @@
 			<el-button size="small" link @click="exitPreview">退出预览</el-button>
 		</div>
 
+		<!-- 自动保存快照失败警示 -->
+		<div v-if="autoSnapshotFailed" class="editor-preview-banner" style="background: #fef3c7; color: #92400e">
+			⚠ 自动保存快照失败，请检查网络连接
+		</div>
+
 		<!-- ─── 主体 ─── -->
 		<div class="editor-body">
 			<!-- 编辑区 -->
@@ -121,7 +126,7 @@ onMounted(async () => {
 })
 
 // ── 自动保存 ──
-const { saveStatus, saveStatusLabel, onContentChange, flushSave } = useDocEditor(docId)
+const { saveStatus, saveStatusLabel, autoSnapshotFailed, onContentChange, flushSave } = useDocEditor(docId)
 
 const milkdownRef = ref<{ getMarkdown: () => string } | null>(null)
 

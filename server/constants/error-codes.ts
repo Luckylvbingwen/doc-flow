@@ -146,6 +146,12 @@ export const ADMIN_USER_ALREADY_ACTIVE = 'ADMIN_USER_ALREADY_ACTIVE'
 /** 不能停用自己的账号 (400) */
 export const ADMIN_SELF_DEACTIVATE = 'ADMIN_SELF_DEACTIVATE'
 
+// ─── 部门管理 ───
+/** 部门不存在 (404) */
+export const DEPARTMENT_NOT_FOUND = 'DEPARTMENT_NOT_FOUND'
+/** 部门管理员已存在 (409) */
+export const DEPARTMENT_ADMIN_EXISTS = 'DEPARTMENT_ADMIN_EXISTS'
+
 // ─── 文档（document-core A 阶段） ───
 /** 文档不存在 (404) */
 export const DOCUMENT_NOT_FOUND = 'DOCUMENT_NOT_FOUND'

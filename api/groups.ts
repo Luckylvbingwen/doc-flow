@@ -43,3 +43,11 @@ export function apiFeishuImport(groupId: number, body: { feishuUrl: string; chan
 		body,
 	})
 }
+
+/** 组负责人交接 */
+export function apiTransferGroupLeader(groupId: number, newLeaderUserId: number) {
+	return useAuthFetch<ApiResult>(`/api/groups/${groupId}/transfer-leader`, {
+		method: 'POST',
+		body: { newLeaderUserId },
+	})
+}

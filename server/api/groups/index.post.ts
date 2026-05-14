@@ -14,6 +14,8 @@ import {
 import { writeLog } from '~/server/utils/operation-log'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 
+import { injectInheritedMembers } from '~/server/utils/permission-inheritance'
+
 export default defineEventHandler(async (event) => {
 	const body = await readValidatedBody(event, groupCreateSchema.parse)
 	const userId = event.context.user!.id
@@ -118,6 +120,14 @@ export default defineEventHandler(async (event) => {
 		}
 		throw error
 	}
+
+	// 注入上级负责人为继承成员
+	await injectInheritedMembers(
+		groupId,
+		effectiveScopeType,
+		effectiveScopeRefId ? BigInt(effectiveScopeRefId) : null,
+		BigInt(userId),
+	)
 
 	await writeLog({
 		actorUserId: userId,

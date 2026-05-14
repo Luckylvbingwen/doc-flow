@@ -25,6 +25,8 @@ import {
 	Plus,
 	Delete,
 	FolderAdd,
+	Setting,
+	Switch,
 } from '@element-plus/icons-vue'
 import type { NavTreeCategory, NavTreeOrgUnit, NavTreeGroup } from '~/types/doc-nav-tree'
 
@@ -41,9 +43,11 @@ const emit = defineEmits<{
 	'edit-group': [group: NavTreeGroup]
 	'create-child': [parentGroup: NavTreeGroup]
 	'delete-group': [group: NavTreeGroup]
+	'transfer-leader': [group: NavTreeGroup]
 	'create-group': [scopeInfo: { scopeType: number; scopeRefId?: number | null; parentId?: number | null }]
 	'edit-product-line': [productLine: NavTreeOrgUnit]
 	'delete-product-line': [productLine: NavTreeOrgUnit]
+	'manage-department': [department: NavTreeOrgUnit]
 	'create-product-line': []
 	'admin-settings': []
 }>()
@@ -63,6 +67,7 @@ const menuItems = computed<MenuItem[]>(() => {
 		return [
 			{ key: 'edit-group', label: '编辑组', icon: Edit },
 			{ key: 'create-child', label: '创建子组', icon: FolderAdd },
+			{ key: 'transfer-leader', label: '交接负责人', icon: Switch },
 			{ key: 'delete-group', label: '删除组', icon: Delete, danger: true },
 		]
 	}
@@ -70,8 +75,8 @@ const menuItems = computed<MenuItem[]>(() => {
 	if (currentNodeType.value === 'org') {
 		const scope = currentCategory.value?.scope
 		if (scope === 'department') {
-			// 部门只能创建组，不能编辑/删除
 			return [
+				{ key: 'manage-department', label: '管理部门', icon: Setting },
 				{ key: 'create-group-under-org', label: '创建组', icon: Plus },
 			]
 		}
@@ -139,6 +144,9 @@ function handleAction(key: string) {
 		case 'delete-group':
 			emit('delete-group', currentNodeData.value as NavTreeGroup)
 			break
+		case 'transfer-leader':
+			emit('transfer-leader', currentNodeData.value as NavTreeGroup)
+			break
 		case 'create-group-under-org': {
 			const org = currentNodeData.value as NavTreeOrgUnit
 			const scope = currentCategory.value?.scope
@@ -156,6 +164,9 @@ function handleAction(key: string) {
 			break
 		case 'delete-product-line':
 			emit('delete-product-line', currentNodeData.value as NavTreeOrgUnit)
+			break
+		case 'manage-department':
+			emit('manage-department', currentNodeData.value as NavTreeOrgUnit)
 			break
 		case 'create-product-line':
 			emit('create-product-line')

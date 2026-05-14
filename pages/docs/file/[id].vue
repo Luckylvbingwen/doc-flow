@@ -344,7 +344,8 @@ v-if="detail?.groupId && detail?.canManagePermissions" v-model:visible="permModa
 		<!-- 全屏预览（PRD §6.3.4 line 507 「全屏按钮」） -->
 		<FullscreenPreviewer
 v-model:visible="fullscreenPreviewVisible" :title="detail?.title"
-			:version-no="currentVersion?.versionNo" :file-type="fileType" :html="previewHtml" :loading="previewLoading" />
+			:version-no="currentVersion?.versionNo" :file-type="fileType" :html="previewHtml" :loading="previewLoading"
+			:doc-id="documentId" :versions="versions" @download="onDownload" @version-change="onFullscreenVersionChange" />
 
 		<!-- 跨组移动弹窗 -->
 		<MoveTargetPicker
@@ -817,6 +818,20 @@ async function onUploadSuccess() {
 	await loadPreview()
 }
 
+function onDownload() {
+	handleDownloadCurrent()
+}
+
+async function onFullscreenVersionChange(version: VersionInfo) {
+	previewLoading.value = true
+	try {
+		const res = await apiPreviewDocument(documentId.value, version.id)
+		if (res.success) previewHtml.value = res.data.html
+	} finally {
+		previewLoading.value = false
+	}
+}
+
 // ── 提交审批 ──
 const submitLoading = ref(false)
 const creatingCopy = ref(false)
@@ -1120,7 +1135,38 @@ async function handleEdit() {
 	creatingCopy.value = true
 	try {
 		const res = await apiCreateEditCopy(documentId.value)
-		if (res.success) {
+		if (!res.success) return
+
+		if (res.data.isNew) {
+			// 提示未解决批注数
+			const ac = res.data.unresolvedAnnotationCount ?? 0
+			if (ac > 0) {
+				const proceed = await msgConfirm(
+					`当前版本有 ${ac} 条未解决批注，是否继续编辑？`,
+					'未解决批注提醒',
+					{ type: 'warning' },
+				)
+				if (!proceed) return
+			}
+			await navigateTo(`/docs/editor/${res.data.id}`)
+			return
+		}
+
+		// 已有活跃副本
+		const isSelf = res.data.ownerUserId === authStore.user?.id
+		if (isSelf) {
+			// 自己的副本，直接打开
+			await navigateTo(`/docs/editor/${res.data.id}`)
+			return
+		}
+
+		// 他人的副本，询问是否加入协同编辑
+		const confirmed = await msgConfirm(
+			`${res.data.ownerName} 正在编辑该文档，是否加入协同编辑？`,
+			'加入协同编辑',
+			{ confirmText: '加入协同', type: 'info' }
+		)
+		if (confirmed) {
 			await navigateTo(`/docs/editor/${res.data.id}`)
 		}
 	} finally {

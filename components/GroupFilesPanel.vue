@@ -195,6 +195,9 @@ v-if="row.isPinned || row.isFavorited || row.hasCustomPermissions || row.isRefer
 						<template #dropdown>
 							<el-dropdown-menu>
 								<el-dropdown-item command="download" :icon="Download">下载</el-dropdown-item>
+								<el-dropdown-item
+v-if="canEdit && row.fileType === 'md'" command="edit"
+									:icon="Edit">编辑</el-dropdown-item>
 								<template v-if="row.isReference">
 									<el-dropdown-item command="unreference" :icon="Delete" divided style="color: #ef4444">
 										取消引用
@@ -272,7 +275,7 @@ v-if="moveRow && groupId" v-model="movePickerVisible" v-model:loading="moveLoadi
 import {
 	FolderOpened, Folder, Setting, Plus, Upload, Link, WarningFilled,
 	Search, Document, User, Clock, Top, Star, Lock, MoreFilled,
-	Download, Delete, Rank,
+	Download, Delete, Rank, Edit,
 } from '@element-plus/icons-vue'
 import type { TableColumn } from '~/components/DataTable.vue'
 import {
@@ -287,6 +290,7 @@ import {
 	apiRequestCrossMove,
 } from '~/api/documents'
 import { apiDeleteReference } from '~/api/document-references'
+import { apiCreateEditCopy } from '~/api/document-editor'
 import type { DocumentListItem } from '~/types/document'
 import type { DocumentListQuery } from '~/server/schemas/document'
 import type { ApiResult, PaginatedData } from '~/types/api'
@@ -319,6 +323,7 @@ const emit = defineEmits<{
 const { can } = useAuth()
 const canRemoveDoc = computed(() => can('doc:remove'))
 const canMoveDoc = computed(() => can('doc:move'))
+const canEdit = computed(() => can('doc:edit'))
 
 // ── 列表 + 组级权限标志 ──
 const reviewingCount = ref(0)
@@ -425,12 +430,47 @@ async function onRowCommand(cmd: string | number | object, row: DocumentListItem
 		openPermissionModal(row)
 	} else if (cmd === 'move') {
 		openMovePicker(row)
+	} else if (cmd === 'edit') {
+		await onEditDoc(row)
 	}
 }
 
 const favPendingIds = new Set<number>()
 const pinPendingIds = new Set<number>()
 const unreferencePendingIds = new Set<number>()
+
+const editingDocId = ref<number | null>(null)
+
+async function onEditDoc(row: DocumentListItem) {
+	editingDocId.value = row.id
+	try {
+		const res = await apiCreateEditCopy(row.id)
+		if (!res.success) return
+
+		if (res.data.isNew) {
+			await navigateTo(`/docs/editor/${res.data.id}`)
+			return
+		}
+
+		const authStore = useAuthStore()
+		const isSelf = res.data.ownerUserId === authStore.user?.id
+		if (isSelf) {
+			await navigateTo(`/docs/editor/${res.data.id}`)
+			return
+		}
+
+		const confirmed = await msgConfirm(
+			`${res.data.ownerName} 正在编辑该文档，是否加入协同编辑？`,
+			'加入协同编辑',
+			{ confirmText: '加入协同', type: 'info' },
+		)
+		if (confirmed) {
+			await navigateTo(`/docs/editor/${res.data.id}`)
+		}
+	} finally {
+		editingDocId.value = null
+	}
+}
 
 const referenceModalVisible = ref(false)
 

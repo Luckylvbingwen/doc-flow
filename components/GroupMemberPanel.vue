@@ -39,7 +39,10 @@ v-if="row.avatar" class="gm-panel__avatar" :src="row.avatar"
 
 			<el-table-column label="来源" width="140">
 				<template #default="{ row }">
-					<el-tag v-if="row.immutableFlag === 1" type="danger" size="small" effect="plain" round>
+					<el-tag v-if="row.sourceType === 3" type="danger" size="small" effect="plain" round>
+						继承（不可移除）
+					</el-tag>
+					<el-tag v-else-if="row.immutableFlag === 1" type="danger" size="small" effect="plain" round>
 						组负责人
 					</el-tag>
 					<el-tag v-else-if="row.sourceType === 2" size="small" effect="plain" round>
