@@ -83,6 +83,8 @@ export default defineEventHandler(async (event) => {
 
 	if (tab === 'pending') {
 		// 待我审批：node 为主
+		// 依次模式(mode=1): inst.current_node_order = n.node_order
+		// 会签模式(mode=2): 所有 pending 节点都算"当前"
 		fromSql = Prisma.sql`
 			FROM doc_approval_instance_nodes n
 			JOIN doc_approval_instances  inst ON inst.id = n.instance_id
@@ -95,7 +97,7 @@ export default defineEventHandler(async (event) => {
 			n.approver_user_id = ${userId}
 			AND n.action_status = ${NODE_ACTION.PENDING}
 			AND inst.status = ${APPROVAL_STATUS.REVIEWING}
-			AND inst.current_node_order = n.node_order
+			AND (inst.mode = 2 OR inst.current_node_order = n.node_order)
 			AND d.deleted_at IS NULL
 		`
 		handledAtSql = Prisma.sql`NULL`

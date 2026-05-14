@@ -57,6 +57,7 @@ export default defineEventHandler(async (event) => {
 		select: {
 			id: true,
 			status: true,
+			mode: true,
 			initiator_user_id: true,
 			document_id: true,
 			current_node_order: true,
@@ -68,14 +69,29 @@ export default defineEventHandler(async (event) => {
 	if (inst.status !== APPROVAL_STATUS.REVIEWING) {
 		return fail(event, 409, DOCUMENT_STATUS_INVALID, '审批已结束，不可处理')
 	}
-	if (inst.current_node_order == null) {
-		return fail(event, 409, DOCUMENT_STATUS_INVALID, '审批节点状态异常')
+
+	const isCountersign = (inst.mode ?? 1) === 2
+
+	// ── 查找当前用户的待处理节点 ──
+	let currentNode: { id: bigint; approver_user_id: bigint; action_status: number } | null
+
+	if (isCountersign) {
+		// 会签模式：查用户自己的 pending 节点（无需 current_node_order 约束）
+		currentNode = await prisma.doc_approval_instance_nodes.findFirst({
+			where: { instance_id: instanceId, approver_user_id: BigInt(user.id), action_status: NODE_ACTION.PENDING },
+			select: { id: true, approver_user_id: true, action_status: true },
+		})
+	} else {
+		// 依次模式：按 current_node_order 查
+		if (inst.current_node_order == null) {
+			return fail(event, 409, DOCUMENT_STATUS_INVALID, '审批节点状态异常')
+		}
+		currentNode = await prisma.doc_approval_instance_nodes.findFirst({
+			where: { instance_id: instanceId, node_order: inst.current_node_order },
+			select: { id: true, approver_user_id: true, action_status: true },
+		})
 	}
 
-	const currentNode = await prisma.doc_approval_instance_nodes.findFirst({
-		where: { instance_id: instanceId, node_order: inst.current_node_order },
-		select: { id: true, approver_user_id: true, action_status: true },
-	})
 	if (!currentNode) {
 		return fail(event, 404, APPROVAL_NOT_FOUND, '当前节点不存在')
 	}
@@ -92,84 +108,136 @@ export default defineEventHandler(async (event) => {
 	const documentId = inst.document_id
 	const versionId = inst.biz_id
 
-	// 扫描"下一级非提交人"节点，决定流转结果
-	const remainingNodes = await prisma.doc_approval_instance_nodes.findMany({
-		where: {
-			instance_id: instanceId,
-			node_order: { gt: inst.current_node_order },
-		},
-		orderBy: { node_order: 'asc' },
-		select: { id: true, node_order: true, approver_user_id: true },
-	})
-
-	const autoPassedNodes: Array<{ id: bigint, order: number }> = []
-	let nextNode: { id: bigint, order: number, approverId: bigint } | null = null
-	for (const n of remainingNodes) {
-		if (n.approver_user_id === initiatorId) {
-			autoPassedNodes.push({ id: n.id, order: n.node_order })
-			continue
-		}
-		nextNode = { id: n.id, order: n.node_order, approverId: n.approver_user_id }
-		break
-	}
-	const isFinal = nextNode === null
-
-	const totalLevel = inst.current_node_order + remainingNodes.length
-
 	const now = new Date()
 
-	await prisma.$transaction(async (tx) => {
-		// a) 本人节点通过
-		await tx.doc_approval_instance_nodes.update({
-			where: { id: currentNode.id },
-			data: {
-				action_status: NODE_ACTION.APPROVED,
-				action_comment: comment,
-				action_at: now,
-			},
-		})
+	let isFinal = false
+	let nextNode: { id: bigint, order: number, approverId: bigint } | null = null
+	const autoPassedNodes: Array<{ id: bigint, order: number }> = []
+	let totalLevel = 0
 
-		// b) 途经的"提交人自审"节点批量自动通过
-		if (autoPassedNodes.length > 0) {
-			await tx.doc_approval_instance_nodes.updateMany({
-				where: { id: { in: autoPassedNodes.map(n => n.id) } },
+	if (isCountersign) {
+		// ── 会签模式：当前人通过，检查是否全部通过 ──
+		await prisma.$transaction(async (tx) => {
+			await tx.doc_approval_instance_nodes.update({
+				where: { id: currentNode!.id },
 				data: {
 					action_status: NODE_ACTION.APPROVED,
-					action_comment: SELF_SUBMITTER_AUTO_COMMENT,
+					action_comment: comment,
 					action_at: now,
 				},
 			})
-		}
 
-		// c) 最终完成 or 推进到下一级
-		if (isFinal) {
-			await tx.doc_approval_instances.update({
-				where: { id: instanceId },
-				data: {
-					status: APPROVAL_STATUS.APPROVED,
-					finished_at: now,
+			// 查还有没有未处理的节点
+			const pendingCount = await tx.doc_approval_instance_nodes.count({
+				where: {
+					instance_id: instanceId,
+					action_status: NODE_ACTION.PENDING,
+					id: { not: currentNode!.id },
 				},
 			})
-			await tx.doc_documents.update({
-				where: { id: documentId },
-				data: {
-					status: 4,
-					current_version_id: versionId,
-					updated_by: BigInt(user.id),
-					updated_at: now,
-				},
-			})
-			await tx.doc_document_versions.update({
-				where: { id: versionId },
-				data: { published_at: now },
-			})
-		} else {
-			await tx.doc_approval_instances.update({
-				where: { id: instanceId },
-				data: { current_node_order: nextNode!.order },
-			})
+
+			isFinal = pendingCount === 0
+
+			if (isFinal) {
+				await tx.doc_approval_instances.update({
+					where: { id: instanceId },
+					data: {
+						status: APPROVAL_STATUS.APPROVED,
+						finished_at: now,
+					},
+				})
+				await tx.doc_documents.update({
+					where: { id: documentId },
+					data: {
+						status: 4,
+						current_version_id: versionId,
+						updated_by: BigInt(user.id),
+						updated_at: now,
+					},
+				})
+				await tx.doc_document_versions.update({
+					where: { id: versionId },
+					data: { published_at: now },
+				})
+			}
+		})
+	} else {
+		// ── 依次模式（原逻辑） ──
+		// 扫描"下一级非提交人"节点，决定流转结果
+		const remainingNodes = await prisma.doc_approval_instance_nodes.findMany({
+			where: {
+				instance_id: instanceId,
+				node_order: { gt: inst.current_node_order! },
+			},
+			orderBy: { node_order: 'asc' },
+			select: { id: true, node_order: true, approver_user_id: true },
+		})
+
+		for (const n of remainingNodes) {
+			if (n.approver_user_id === initiatorId) {
+				autoPassedNodes.push({ id: n.id, order: n.node_order })
+				continue
+			}
+			nextNode = { id: n.id, order: n.node_order, approverId: n.approver_user_id }
+			break
 		}
-	})
+		isFinal = nextNode === null
+
+		totalLevel = inst.current_node_order! + remainingNodes.length
+
+		await prisma.$transaction(async (tx) => {
+			// a) 本人节点通过
+			await tx.doc_approval_instance_nodes.update({
+				where: { id: currentNode!.id },
+				data: {
+					action_status: NODE_ACTION.APPROVED,
+					action_comment: comment,
+					action_at: now,
+				},
+			})
+
+			// b) 途经的"提交人自审"节点批量自动通过
+			if (autoPassedNodes.length > 0) {
+				await tx.doc_approval_instance_nodes.updateMany({
+					where: { id: { in: autoPassedNodes.map(n => n.id) } },
+					data: {
+						action_status: NODE_ACTION.APPROVED,
+						action_comment: SELF_SUBMITTER_AUTO_COMMENT,
+						action_at: now,
+					},
+				})
+			}
+
+			// c) 最终完成 or 推进到下一级
+			if (isFinal) {
+				await tx.doc_approval_instances.update({
+					where: { id: instanceId },
+					data: {
+						status: APPROVAL_STATUS.APPROVED,
+						finished_at: now,
+					},
+				})
+				await tx.doc_documents.update({
+					where: { id: documentId },
+					data: {
+						status: 4,
+						current_version_id: versionId,
+						updated_by: BigInt(user.id),
+						updated_at: now,
+					},
+				})
+				await tx.doc_document_versions.update({
+					where: { id: versionId },
+					data: { published_at: now },
+				})
+			} else {
+				await tx.doc_approval_instances.update({
+					where: { id: instanceId },
+					data: { current_node_order: nextNode!.order },
+				})
+			}
+		})
+	}
 
 	// ─── 事务外：日志 ───
 	await writeLog({
@@ -180,7 +248,9 @@ export default defineEventHandler(async (event) => {
 		groupId,
 		documentId: Number(documentId),
 		detail: {
-			desc: `通过审批「${title}」第 ${inst.current_node_order} 级`,
+			desc: isCountersign
+				? `通过审批「${title}」（会签）`
+				: `通过审批「${title}」第 ${inst.current_node_order} 级`,
 			level: inst.current_node_order,
 			comment: comment ?? undefined,
 		},

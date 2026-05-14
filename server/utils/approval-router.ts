@@ -11,6 +11,8 @@ export type ApprovalPath =
 	| {
 		path: 'approval'
 		templateId: bigint
+		/** 1=依次审批 2=会签审批 */
+		mode: 1 | 2
 		nodes: Array<{ order: number, approverId: bigint }>
 	}
 
@@ -36,7 +38,7 @@ export async function resolveApprovalPath(params: {
 			enabled:    1,
 			deleted_at: null,
 		},
-		select: { id: true },
+		select: { id: true, mode: true },
 	})
 	if (!tpl) return { path: 'direct_publish' }
 
@@ -54,6 +56,7 @@ export async function resolveApprovalPath(params: {
 	return {
 		path:       'approval',
 		templateId: tpl.id,
+		mode:       (tpl.mode === 2 ? 2 : 1) as 1 | 2,
 		nodes:      nodes.map(n => ({
 			order:      n.order_no,
 			approverId: n.approver_user_id,

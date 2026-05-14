@@ -114,6 +114,8 @@ export interface ApprovalDetail {
 	chain: ChainNode[]
 	/** 审批状态 */
 	status: 'pending' | 'approved' | 'rejected' | 'withdrawn'
+	/** 审批模式 1=依次 2=会签 */
+	mode?: 1 | 2
 	/** 额外：文档 id（审批完成后用于跳转文件详情页） */
 	documentId?: number
 }
@@ -125,6 +127,8 @@ export interface ApprovalDetail {
 export interface ApprovalFullDetailData {
 	id: number
 	status: ApprovalStatus
+	/** 审批模式 1=依次 2=会签 */
+	mode?: 1 | 2
 	documentId: number
 	title: string
 	ext: string

@@ -20,37 +20,79 @@ class="df-approval-chain" :class="{
 			</el-icon>
 		</span>
 
-		<!-- 审批人节点 -->
-		<template v-for="(node, index) in nodes" :key="index">
-			<div
+		<!-- 依次审批模式（串行箭头） -->
+		<template v-if="mode !== 2">
+			<template v-for="(node, index) in nodes" :key="index">
+				<div
 class="df-chain-node" :class="nodeClass(node)" role="listitem"
-				:aria-current="node.status === 'current' ? 'step' : undefined">
-				<div class="df-chain-node__avatar" :style="avatarStyle(node)">
-					<template v-if="node.status === 'approved'">
-						<el-icon>
-							<Check />
-						</el-icon>
-					</template>
-					<template v-else-if="node.status === 'rejected'">
-						<el-icon>
-							<Close />
-						</el-icon>
-					</template>
-					<template v-else>
-						{{ node.avatar || (node.name ? node.name[0] : '') }}
-					</template>
+					:aria-current="node.status === 'current' ? 'step' : undefined">
+					<div class="df-chain-node__avatar" :style="avatarStyle(node)">
+						<template v-if="node.status === 'approved'">
+							<el-icon>
+								<Check />
+							</el-icon>
+						</template>
+						<template v-else-if="node.status === 'rejected'">
+							<el-icon>
+								<Close />
+							</el-icon>
+						</template>
+						<template v-else>
+							{{ node.avatar || (node.name ? node.name[0] : '') }}
+						</template>
+					</div>
+					<div class="df-chain-node__info">
+						<span class="df-chain-node__name">{{ node.name }}</span>
+						<span v-if="node.statusText" class="df-chain-node__status">
+							{{ node.statusText }}
+						</span>
+					</div>
 				</div>
-				<div class="df-chain-node__info">
-					<span class="df-chain-node__name">{{ node.name }}</span>
-					<span v-if="node.statusText" class="df-chain-node__status">
-						{{ node.statusText }}
-					</span>
+
+				<span
+v-if="index < nodes.length - 1 || showEndpoints" class="df-chain-arrow"
+					:class="{ 'df-chain-arrow--done': node.status === 'approved' }">
+					<el-icon>
+						<ArrowRight />
+					</el-icon>
+				</span>
+			</template>
+		</template>
+
+		<!-- 会签模式（并列显示） -->
+		<template v-else>
+			<div class="df-chain-countersign">
+				<div class="df-chain-countersign__label">同时审批</div>
+				<div class="df-chain-countersign__nodes">
+					<div
+v-for="(node, index) in nodes" :key="index" class="df-chain-node" :class="nodeClass(node)"
+						role="listitem">
+						<div class="df-chain-node__avatar" :style="avatarStyle(node)">
+							<template v-if="node.status === 'approved'">
+								<el-icon>
+									<Check />
+								</el-icon>
+							</template>
+							<template v-else-if="node.status === 'rejected'">
+								<el-icon>
+									<Close />
+								</el-icon>
+							</template>
+							<template v-else>
+								{{ node.avatar || (node.name ? node.name[0] : '') }}
+							</template>
+						</div>
+						<div class="df-chain-node__info">
+							<span class="df-chain-node__name">{{ node.name }}</span>
+							<span v-if="node.statusText" class="df-chain-node__status">
+								{{ node.statusText }}
+							</span>
+						</div>
+					</div>
 				</div>
 			</div>
 
-			<span
-v-if="index < nodes.length - 1 || showEndpoints" class="df-chain-arrow"
-				:class="{ 'df-chain-arrow--done': node.status === 'approved' }">
+			<span v-if="showEndpoints" class="df-chain-arrow">
 				<el-icon>
 					<ArrowRight />
 				</el-icon>
@@ -89,6 +131,8 @@ const props = withDefaults(
 	defineProps<{
 		/** 节点数组 */
 		nodes: ChainNode[]
+		/** 审批模式 1=依次 2=会签 */
+		mode?: 1 | 2
 		/** 是否显示首尾端点（提交→发布） */
 		showEndpoints?: boolean
 		/** 紧凑模式 */
@@ -99,6 +143,7 @@ const props = withDefaults(
 		ariaLabel?: string
 	}>(),
 	{
+		mode: 1,
 		showEndpoints: false,
 		compact: false,
 		direction: 'horizontal',

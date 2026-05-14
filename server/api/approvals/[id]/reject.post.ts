@@ -48,6 +48,7 @@ export default defineEventHandler(async (event) => {
 		select: {
 			id: true,
 			status: true,
+			mode: true,
 			initiator_user_id: true,
 			document_id: true,
 			current_node_order: true,
@@ -58,14 +59,26 @@ export default defineEventHandler(async (event) => {
 	if (inst.status !== APPROVAL_STATUS.REVIEWING) {
 		return fail(event, 409, DOCUMENT_STATUS_INVALID, '审批已结束，不可处理')
 	}
-	if (inst.current_node_order == null) {
-		return fail(event, 409, DOCUMENT_STATUS_INVALID, '审批节点状态异常')
-	}
 
-	const currentNode = await prisma.doc_approval_instance_nodes.findFirst({
-		where: { instance_id: instanceId, node_order: inst.current_node_order },
-		select: { id: true, approver_user_id: true, action_status: true },
-	})
+	const isCountersign = (inst.mode ?? 1) === 2
+
+	let currentNode: { id: bigint; approver_user_id: bigint; action_status: number } | null
+
+	if (isCountersign) {
+		// 会签模式：查用户自己的 pending 节点
+		currentNode = await prisma.doc_approval_instance_nodes.findFirst({
+			where: { instance_id: instanceId, approver_user_id: BigInt(user.id), action_status: NODE_ACTION.PENDING },
+			select: { id: true, approver_user_id: true, action_status: true },
+		})
+	} else {
+		if (inst.current_node_order == null) {
+			return fail(event, 409, DOCUMENT_STATUS_INVALID, '审批节点状态异常')
+		}
+		currentNode = await prisma.doc_approval_instance_nodes.findFirst({
+			where: { instance_id: instanceId, node_order: inst.current_node_order },
+			select: { id: true, approver_user_id: true, action_status: true },
+		})
+	}
 	if (!currentNode) {
 		return fail(event, 404, APPROVAL_NOT_FOUND, '当前节点不存在')
 	}

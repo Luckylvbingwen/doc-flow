@@ -47,7 +47,8 @@ v-model:page="page" v-model:page-size="pageSize" :total="total" :page-sizes="[10
 
 		<ApprovalDrawer
 v-model="drawerVisible" :approval="currentApproval" :approve-loading="approveLoading"
-			:reject-loading="rejectLoading" @approve="onApprove" @reject="onReject" @view-file="onViewFile" />
+			:reject-loading="rejectLoading" @approve="onApprove" @reject="onReject" @view-file="onViewFile"
+			@compare="onCompare" />
 	</ListPageShell>
 </template>
 
@@ -199,6 +200,8 @@ async function openApprovalDetail(id: number) {
 }
 
 async function buildApprovalDetail(data: ApprovalFullDetailData): Promise<ApprovalDetail> {
+	const approvalMode = (data.mode ?? 1) as 1 | 2
+
 	// 审批链：每个节点转 ChainNode
 	const chain: ChainNode[] = data.nodes.map((n) => {
 		let status: ChainNode['status']
@@ -209,7 +212,8 @@ async function buildApprovalDetail(data: ApprovalFullDetailData): Promise<Approv
 		} else if (n.actionStatus === 3) {
 			status = 'rejected'
 			statusText = '已驳回'
-		} else if (data.status === 2 && n.order === data.currentNodeOrder) {
+		} else if (data.status === 2 && (approvalMode === 2 || n.order === data.currentNodeOrder)) {
+			// 会签模式：所有 pending 节点都标为 current
 			status = 'current'
 			statusText = '审批中'
 		} else {
@@ -267,6 +271,7 @@ async function buildApprovalDetail(data: ApprovalFullDetailData): Promise<Approv
 		changes,
 		chain,
 		status: drawerStatus,
+		mode: approvalMode,
 	}
 }
 
@@ -315,6 +320,13 @@ function onViewFile(approval: ApprovalDetail) {
 	if (!docId) return
 	drawerVisible.value = false
 	navigateTo(`/docs/file/${docId}`)
+}
+
+function onCompare(approval: ApprovalDetail) {
+	const docId = approval.documentId
+	if (!docId) return
+	drawerVisible.value = false
+	navigateTo(`/docs/file/${docId}?compare=1`)
 }
 </script>
 

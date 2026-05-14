@@ -95,14 +95,27 @@
 							<Memo />
 						</el-icon>
 						变更明细
+						<span v-if="approval.changes.length > 5" class="df-approval-change-count">
+							（共 {{ approval.changes.length }} 项）
+						</span>
 					</div>
-					<div v-for="(item, idx) in approval.changes" :key="idx" class="df-approval-change-item"
+					<div
+v-for="(item, idx) in visibleChanges" :key="idx" class="df-approval-change-item"
 						:class="`df-approval-change-item--${item.type}`">
 						<span class="df-approval-change-icon">
 							{{ item.type === 'add' ? '+' : item.type === 'del' ? '−' : '~' }}
 						</span>
 						<span class="df-approval-change-text">{{ item.text }}</span>
 					</div>
+					<el-button
+v-if="approval.changes.length > 5" link type="primary" class="df-approval-expand-btn"
+						@click="changesExpanded = !changesExpanded">
+						{{ changesExpanded ? '收起' : `展开全部 ${approval.changes.length} 项` }}
+						<el-icon>
+							<ArrowDown v-if="!changesExpanded" />
+							<ArrowUp v-else />
+						</el-icon>
+					</el-button>
 				</div>
 
 				<div class="df-approval-compare-link">
@@ -123,7 +136,7 @@
 					</el-icon>
 					审批链进度
 				</div>
-				<ApprovalChain :nodes="approval.chain" />
+				<ApprovalChain :nodes="approval.chain" :mode="approval.mode" />
 			</div>
 
 			<!-- Section 4: 审批意见 -->
@@ -137,7 +150,8 @@
 						驳回时必须填写意见
 					</span>
 				</div>
-				<el-input ref="opinionRef" v-model="opinion" type="textarea" :rows="3" :maxlength="500" show-word-limit
+				<el-input
+ref="opinionRef" v-model="opinion" type="textarea" :rows="3" :maxlength="500" show-word-limit
 					placeholder="输入审批意见（驳回时必填）…" resize="none"
 					:class="{ 'df-approval-opinion--error': rejectAttempted && !opinion.trim() }" />
 			</div>
@@ -168,6 +182,8 @@ import {
 	Coin,
 	Memo,
 	ArrowRight,
+	ArrowDown,
+	ArrowUp,
 	Finished,
 	ChatLineSquare,
 	CloseBold,
@@ -178,7 +194,7 @@ import type { ApprovalDetail } from '~/types/approval'
 const props = withDefaults(
 	defineProps<{
 		modelValue: boolean
-		approval: ApprovalDetail | null
+		approval?: ApprovalDetail | null
 		approveLoading?: boolean
 		rejectLoading?: boolean
 	}>(),
@@ -228,6 +244,13 @@ const addCount = computed(() => props.approval?.changes.filter((c) => c.type ===
 const modCount = computed(() => props.approval?.changes.filter((c) => c.type === 'mod').length ?? 0)
 const delCount = computed(() => props.approval?.changes.filter((c) => c.type === 'del').length ?? 0)
 
+const changesExpanded = ref(false)
+const visibleChanges = computed(() => {
+	if (!props.approval) return []
+	if (changesExpanded.value || props.approval.changes.length <= 5) return props.approval.changes
+	return props.approval.changes.slice(0, 5)
+})
+
 function handleApprove() {
 	if (!props.approval) return
 	emit('approve', { id: props.approval.id, opinion: opinion.value.trim() })
@@ -256,6 +279,7 @@ watch(
 	() => {
 		opinion.value = ''
 		rejectAttempted.value = false
+		changesExpanded.value = false
 	}
 )
 </script>

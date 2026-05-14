@@ -757,3 +757,31 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
   - 写入 MinIO → 创建个人草稿文档（不归组、不走审批）
   - 通过 Bot 回复用户「文档已归档到个人中心」
 - `server/middleware/auth.ts` — 白名单新增 `/api/integrations/feishu/webhook/bot-message`
+
+---
+
+## 2026-05-14（P2 全部完成）
+
+### feat: P2-1 个人中心操作矩阵完善（PRD §6.5.2）
+- 重写 `utils/personal-matrix.ts` — 按 PRD 操作矩阵表逐行实现 9 种状态×来源组合
+- 新增 `unfavorite`（取消收藏）动作，已发布+收藏来源显示
+- 编辑按钮扩展覆盖：编辑中+分享（可编辑）、已发布+我创建的、已发布+分享（可编辑）
+- 已发布编辑走编辑副本流程（含冲突弹窗）
+- 下载/分享按钮全状态可用（放入更多菜单）
+- `profile.vue` 操作区拆分为直接按钮 + ··· 更多下拉菜单
+- 单元测试全部更新（16 个用例通过）
+
+### feat: P2-3 版本对比变更统计完善（PRD §6.4.2）
+- `ApprovalDrawer.vue` 变更明细列表增加 5 条截断 + 展开/收起切换
+- 审批中心 `@compare` 事件接通 → 跳转文件详情页全屏对比
+
+### feat: P2-4 审批链会签模式（PRD §6.4.2）
+- `server/utils/approval-router.ts` — 返回模板 `mode`（1=依次/2=会签）
+- `server/utils/document-upload.ts` — 创建审批实例时写入真实 mode，会签模式 current_node_order=null
+- `server/api/approvals/[id]/approve.post.ts` — 会签模式：审批人通过后检查是否全部通过
+- `server/api/approvals/[id]/reject.post.ts` — 会签模式：按 approver_user_id 查 pending 节点
+- `server/api/approvals/index.get.ts` — 待审批列表：会签模式所有 pending 节点都算"当前"
+- `server/api/approvals/[id]/index.get.ts` — 审批详情返回 `mode` 字段
+- `components/ApprovalChain.vue` — 新增 `mode` prop：依次=箭头串联，会签=并列显示（「同时审批」标签）
+- `types/approval.ts` — `ApprovalDetail` / `ApprovalFullDetailData` 新增 `mode` 字段
+- `assets/styles/components/_approval.scss` — 新增会签并列布局样式

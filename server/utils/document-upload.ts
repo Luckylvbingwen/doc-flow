@@ -147,10 +147,10 @@ export async function executeUpload(ctx: UploadContext): Promise<UploadResult> {
 					biz_id: ctx.versionId,
 					document_id: ctx.documentId,
 					template_id: routing.templateId,
-					mode: 1,
+					mode: routing.mode,
 					status: 2,
 					initiator_user_id: BigInt(ctx.submitterId),
-					current_node_order: 1,
+					current_node_order: routing.mode === 2 ? null : 1,
 				},
 			})
 			const nodeRows: Prisma.doc_approval_instance_nodesCreateManyInput[] = routing.nodes.map(n => ({

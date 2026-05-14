@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
 		select: {
 			id: true,
 			status: true,
+			mode: true,
 			biz_id: true,
 			document_id: true,
 			initiator_user_id: true,
@@ -79,6 +80,7 @@ export default defineEventHandler(async (event) => {
 	return ok({
 		id:                 Number(inst.id),
 		status:             inst.status,
+		mode:               inst.mode ?? 1,
 		documentId:         Number(inst.document_id),
 		title:              inst.doc_documents?.title ?? '',
 		ext:                inst.doc_documents?.ext ?? '',

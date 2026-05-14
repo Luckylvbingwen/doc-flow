@@ -55,7 +55,7 @@ v-model="filterKeyword" placeholder="搜索文件名..." clearable @keyup.enter=
 		<DataTable
 v-else v-model:page="page" v-model:page-size="pageSize" :data="list" :columns="columns" :total="total"
 			:loading="loading" :page-sizes="[10, 15, 30, 50]" :empty-preset="emptyPreset" row-key="id" fill-height
-			:action-width="180" @page-change="onPageChange">
+			:action-width="260" @page-change="onPageChange">
 			<template #title="{ row }">
 				<div class="profile-title">
 					<div class="profile-file-icon" :class="getFileTypeClass(row.ext)">
@@ -95,7 +95,7 @@ class="profile-status-badge"
 				<span class="profile-time">{{ formatTime(row.updatedAt, 'YYYY-MM-DD HH:mm') }}</span>
 			</template>
 			<template #action="{ row }">
-				<template v-for="act in getRowActions(row)" :key="act.kind">
+				<template v-for="act in getRowPrimaryActions(row)" :key="act.kind">
 					<el-button
 :type="act.type === 'default' ? '' : act.type" text size="small"
 						:loading="busyId === row.id && busyKind === act.kind" :disabled="busyId != null && busyId !== row.id"
@@ -103,6 +103,22 @@ class="profile-status-badge"
 						{{ act.label }}
 					</el-button>
 				</template>
+				<el-dropdown
+v-if="getRowMenuActions(row).length" trigger="click"
+					@command="(cmd: ActionKind) => onActionClick(row, cmd)">
+					<el-button text size="small" :disabled="busyId != null && busyId !== row.id">
+						···
+					</el-button>
+					<template #dropdown>
+						<el-dropdown-menu>
+							<el-dropdown-item
+v-for="act in getRowMenuActions(row)" :key="act.kind" :command="act.kind"
+								:style="act.type === 'danger' ? { color: 'var(--el-color-danger)' } : {}">
+								{{ act.label }}
+							</el-dropdown-item>
+						</el-dropdown-menu>
+					</template>
+				</el-dropdown>
 			</template>
 		</DataTable>
 
@@ -131,10 +147,10 @@ import {
 	getItemSourceMeta,
 	getPermissionLevelMeta,
 } from '~/utils/doc-meta'
-import { getActions, type ActionKind } from '~/utils/personal-matrix'
+import { primaryActions, menuActions, type ActionKind } from '~/utils/personal-matrix'
 import { apiGetPersonalDocs, apiGetPersonalHandover, apiDeleteDraft } from '~/api/personal'
-import { apiDownloadDocumentUrl, apiSubmitPermissionRequest } from '~/api/documents'
-import { apiCreateDraft } from '~/api/document-editor'
+import { apiDownloadDocumentUrl, apiSubmitPermissionRequest, apiUnfavoriteDocument } from '~/api/documents'
+import { apiCreateDraft, apiCreateEditCopy } from '~/api/document-editor'
 import type {
 	PersonalDocItem,
 	HandoverGroup,
@@ -337,8 +353,12 @@ async function handleNewDoc() {
 }
 
 // ── 行操作 ──
-function getRowActions(doc: PersonalDocItem) {
-	return getActions(doc, currentUserId.value)
+function getRowPrimaryActions(doc: PersonalDocItem) {
+	return primaryActions(doc, currentUserId.value)
+}
+
+function getRowMenuActions(doc: PersonalDocItem) {
+	return menuActions(doc, currentUserId.value)
 }
 
 function onView(doc: PersonalDocItem) {
@@ -355,10 +375,45 @@ async function onActionClick(doc: PersonalDocItem, kind: ActionKind) {
 	if (kind === 'transfer') return onTransfer(doc)
 	if (kind === 'requestEdit') return onRequestEdit(doc)
 	if (kind === 'edit') return onEdit(doc)
+	if (kind === 'unfavorite') return onUnfavorite(doc)
 }
 
-function onEdit(doc: PersonalDocItem) {
-	navigateTo(`/docs/editor/${doc.id}`)
+async function onEdit(doc: PersonalDocItem) {
+	// 草稿/编辑中/已驳回 → 直接进编辑器
+	if (doc.status === 1 || doc.status === 2 || doc.status === 5) {
+		await navigateTo(`/docs/editor/${doc.id}`)
+		return
+	}
+	// 已发布 → 走编辑副本流程（含冲突弹窗）
+	busyId.value = doc.id
+	busyKind.value = 'edit'
+	try {
+		const res = await apiCreateEditCopy(doc.id)
+		if (!res.success) {
+			msgError(res.message || '创建编辑副本失败')
+			return
+		}
+		if (res.data.isNew) {
+			await navigateTo(`/docs/editor/${res.data.id}`)
+			return
+		}
+		const isSelf = res.data.ownerUserId === currentUserId.value
+		if (isSelf) {
+			await navigateTo(`/docs/editor/${res.data.id}`)
+			return
+		}
+		const confirmed = await msgConfirm(
+			`${res.data.ownerName} 正在编辑该文档，是否加入协同编辑？`,
+			'加入协同编辑',
+			{ confirmText: '加入协同', type: 'info' },
+		)
+		if (confirmed) {
+			await navigateTo(`/docs/editor/${res.data.id}`)
+		}
+	} finally {
+		busyId.value = null
+		busyKind.value = null
+	}
 }
 
 function onDownload(doc: PersonalDocItem) {
@@ -385,6 +440,26 @@ function onTransfer(doc: PersonalDocItem) {
 
 function onTransferSuccess() {
 	load()
+}
+
+// ── 取消收藏 ──
+async function onUnfavorite(doc: PersonalDocItem) {
+	busyId.value = doc.id
+	busyKind.value = 'unfavorite'
+	try {
+		const res = await apiUnfavoriteDocument(doc.id)
+		if (res.success) {
+			msgSuccess(res.message || '已取消收藏')
+			load()
+		} else {
+			msgError(res.message || '取消收藏失败')
+		}
+	} catch {
+		msgError('取消收藏失败')
+	} finally {
+		busyId.value = null
+		busyKind.value = null
+	}
 }
 
 // ── 申请编辑权限 ──
