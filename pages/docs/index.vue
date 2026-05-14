@@ -23,9 +23,6 @@ ref="treeRef" v-model="selectedGroupId" :categories="treeCategories" mode="nav"
 
 			<!-- Right content panel -->
 			<div class="doc-explorer__content">
-				<div class="doc-explorer__search-bar">
-					<GlobalSearchBox @group-select="onSearchGroupSelect" />
-				</div>
 				<DocExplorerPanel
 :type="selectedType" :data="selectedData" :groups="selectedGroups"
 					:org-units="selectedOrgUnits" :breadcrumb="selectedBreadcrumb" @group-click="onPanelGroupClick"
@@ -120,12 +117,6 @@ function syncUrl(groupId: number | null) {
 	if (groupId == null) delete target.groupId
 	if (route.query.groupId === target.groupId) return  // 避免无意义 replace
 	router.replace({ query: target })
-}
-
-/** 按 groupId 在树中查找节点并选中（用于 URL 恢复 / 跨页跳转）*/
-function onSearchGroupSelect(groupId: number) {
-	selectGroupById(groupId)
-	treeRef.value?.activateGroup(groupId)
 }
 
 function selectGroupById(id: number) {
@@ -681,12 +672,13 @@ onMounted(async () => {
 	}
 })
 
-// 监听外部跳转（如文件详情页"返回 [组名]"跳 /docs?groupId=X）
+// 监听外部跳转（如文件详情页"返回 [组名]"跳 /docs?groupId=X、header 全局搜索）
 watch(() => route.query.groupId, (val) => {
 	if (typeof val !== 'string') return
 	const id = Number(val)
 	if (Number.isNaN(id) || id === selectedGroupId.value) return
 	selectGroupById(id)
+	treeRef.value?.activateGroup(id)
 })
 </script>
 
@@ -758,14 +750,5 @@ watch(() => route.query.groupId, (val) => {
 	overflow: hidden;
 	display: flex;
 	flex-direction: column;
-}
-
-.doc-explorer__search-bar {
-	display: flex;
-	justify-content: flex-end;
-	padding: 8px 16px;
-	border-bottom: 1px solid var(--df-border);
-	background: var(--df-panel);
-	flex-shrink: 0;
 }
 </style>

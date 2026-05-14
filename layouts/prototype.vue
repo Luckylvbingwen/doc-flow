@@ -56,9 +56,8 @@ v-for="item in group.items" :key="item.to" :content="item.label" placement="righ
 					<template v-for="(group, gi) in menuGroups" :key="group.title ?? 'default'">
 						<span v-if="gi > 0" class="pf-topbar-divider" />
 						<el-tooltip
-							v-for="item in group.items" :key="item.to"
-							:content="item.label" placement="bottom" :show-after="300"
-							:disabled="!isTopbarIconOnly">
+v-for="item in group.items" :key="item.to" :content="item.label" placement="bottom"
+							:show-after="300" :disabled="!isTopbarIconOnly">
 							<NuxtLink class="pf-topbar-link" :class="{ active: isItemActive(item) }" :to="item.to">
 								<el-icon class="pf-topbar-link-icon">
 									<component :is="item.icon" />
@@ -72,17 +71,19 @@ v-for="item in group.items" :key="item.to" :content="item.label" placement="righ
 				<!-- 汉堡菜单：仅小屏 (<1024px) 显示 -->
 				<el-dropdown v-show="isTopbarHamburger" class="pf-topbar-hamburger" trigger="click" placement="bottom-start">
 					<button class="pf-dark-toggle" type="button" aria-label="导航菜单">
-						<el-icon :size="18"><Menu /></el-icon>
+						<el-icon :size="18">
+							<Menu />
+						</el-icon>
 					</button>
 					<template #dropdown>
 						<el-dropdown-menu>
 							<template v-for="(group, gi) in menuGroups" :key="group.title ?? 'default'">
 								<el-dropdown-item
-									v-for="(item, ii) in group.items" :key="item.to"
-									:divided="gi > 0 && ii === 0"
-									:class="{ 'pf-hamburger-item--active': isItemActive(item) }"
-									@click="navigateTo(item.to)">
-									<el-icon><component :is="item.icon" /></el-icon>
+v-for="(item, ii) in group.items" :key="item.to" :divided="gi > 0 && ii === 0"
+									:class="{ 'pf-hamburger-item--active': isItemActive(item) }" @click="navigateTo(item.to)">
+									<el-icon>
+										<component :is="item.icon" />
+									</el-icon>
 									{{ item.label }}
 								</el-dropdown-item>
 							</template>
@@ -92,6 +93,10 @@ v-for="item in group.items" :key="item.to" :content="item.label" placement="righ
 			</ClientOnly>
 
 			<div class="pf-topbar-actions">
+				<ClientOnly>
+					<GlobalSearchBox v-if="isTopnav && authStore.isAuthenticated" />
+				</ClientOnly>
+
 				<el-tooltip :content="appStore.darkMode ? '切换亮色模式' : '切换暗黑模式'" placement="bottom" :show-after="400">
 					<button
 class="pf-dark-toggle" type="button" :aria-label="appStore.darkMode ? '切换亮色模式' : '切换暗黑模式'"
@@ -154,6 +159,9 @@ v-show="avatarReady" class="pf-user-entry-avatar" :src="authStore.user.avatar"
 			</Transition>
 			<!-- 侧栏模式保留原 header -->
 			<header v-show="!isTopnav" class="pf-header">
+				<ClientOnly>
+					<GlobalSearchBox v-if="!isTopnav && authStore.isAuthenticated" />
+				</ClientOnly>
 				<div class="pf-header-actions">
 					<el-tooltip :content="appStore.darkMode ? '切换亮色模式' : '切换暗黑模式'" placement="bottom" :show-after="400">
 						<button
