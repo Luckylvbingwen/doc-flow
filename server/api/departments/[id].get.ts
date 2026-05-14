@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
 
 	// 统计下属组数量
 	const groupCount = await prisma.doc_groups.count({
-		where: { department_id: BigInt(deptId), deleted_at: null },
+		where: { scope_type: 2, scope_ref_id: BigInt(deptId), deleted_at: null },
 	})
 
 	return ok({

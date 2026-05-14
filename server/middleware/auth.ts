@@ -16,6 +16,8 @@ export default defineEventHandler(async (event) => {
 		path === '/api/auth/captcha' ||
 		path === '/api/auth/feishu/auth-url' ||
 		path === '/api/auth/feishu/callback' ||
+		path === '/api/integrations/feishu/webhook/employee' ||
+		path === '/api/integrations/feishu/webhook/bot-message' ||
 		path === '/api/health' ||
 		!path.startsWith('/api/')
 	) {

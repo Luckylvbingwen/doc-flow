@@ -30,7 +30,13 @@ export interface DeptGroupItem {
 	ownerName: string | null
 	fileCount: number
 	memberCount: number
+	childCount: number
 	updatedAt: number
+}
+
+export interface DeptGroupListResult {
+	groups: DeptGroupItem[]
+	totalCount: number
 }
 
 export function apiGetDepartment(id: number) {
@@ -55,5 +61,5 @@ export function apiRemoveDeptAdmin(deptId: number, userId: number) {
 }
 
 export function apiGetDeptGroups(deptId: number) {
-	return useAuthFetch<ApiResult<DeptGroupItem[]>>(`/api/departments/${deptId}/groups`)
+	return useAuthFetch<ApiResult<DeptGroupListResult>>(`/api/departments/${deptId}/groups`)
 }

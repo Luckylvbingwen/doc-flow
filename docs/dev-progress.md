@@ -727,3 +727,33 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
   - `pages/docs/index.vue` — `onManageEntity(node)` 按节点类型打开 ProductLineManageDrawer（产品线）或提示暂不支持（部门）
   - `api/product-lines.ts` — 新增 `PLAdminItem` / `PLGroupItem` 类型 + 6 个 API 函数
 - **规格依据**：PRD §6.9（系统管理）§357（产品线负责人由系统管理员指派）
+
+## 2026-05-14
+
+### feat: 飞书消息推送全面接入通知触发点（PRD §6.8.3）
+- 在 `server/utils/notify.ts` 统一入口中集成飞书推送
+  - `createNotification` / `createNotifications` 写入站内通知后自动推送飞书交互卡片
+  - M1-M25 全部覆盖，无需逐 API 修改
+  - 新增 `pushFeishuCard` 内部辅助函数：查询用户 `feishu_open_id` → 构建交互卡片 → 调用 `feishuSendCard`
+  - 新增 `batchGetFeishuOpenIds` 批量查询用户飞书 open_id，避免 N+1
+  - 飞书卡片按通知分类使用不同 header 颜色（审批=蓝 / 系统=橙 / 成员变更=绿）
+  - 推送失败仅记录日志，不阻塞站内通知主流程
+
+### feat: 飞书离职 Webhook 自动触发交接（PRD §2.2 触点5）
+- 抽取 `server/utils/user-deactivation.ts` — 用户停用核心逻辑（停用+组交接+审批链清理+通知），供 API 和 Webhook 共用
+- 重构 `server/api/admin/users/[id]/deactivate.put.ts` — 改为调用 `deactivateUser()` 共享工具
+- 新增 `server/api/integrations/feishu/webhook/employee.post.ts` — 飞书人事事件 Webhook
+  - 支持 `url_verification` 挑战验证
+  - 处理 `contact.user.updated_v3` 事件（检测 `is_resigned=true`）
+  - 通过 `feishu_open_id` 匹配 DocFlow 用户 → 调用 `deactivateUser(source='feishu_webhook')`
+  - `event_id` 去重防止重复处理
+- `server/middleware/auth.ts` — 白名单新增 `/api/integrations/feishu/webhook/employee`
+- `nuxt.config.ts` + `.env.example` — 新增 `FEISHU_VERIFICATION_TOKEN` / `FEISHU_ENCRYPT_KEY` 配置
+
+### feat: 飞书 Bot 文档归档入口（PRD §2.2 触点3）
+- 新增 `server/api/integrations/feishu/webhook/bot-message.post.ts` — 飞书机器人消息 Webhook
+  - 处理 `im.message.receive_v1` 事件（消息接收）
+  - 从文本消息中提取飞书文档 URL → 调飞书 API 获取文档标题 + raw_content
+  - 写入 MinIO → 创建个人草稿文档（不归组、不走审批）
+  - 通过 Bot 回复用户「文档已归档到个人中心」
+- `server/middleware/auth.ts` — 白名单新增 `/api/integrations/feishu/webhook/bot-message`

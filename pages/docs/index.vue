@@ -53,8 +53,9 @@ v-model:visible="plManageDrawerVisible" :pl-id="plManageId" :pl-name="plManageNa
 			@success="refreshTree" @navigate-group="onPLNavigateGroup" />
 
 		<DeptManageDrawer
-v-model:visible="deptManageDrawerVisible" :dept-id="deptManageId" :dept-name="deptManageName"
-			@navigate-group="onPLNavigateGroup" />
+ref="deptManageDrawerRef" v-model:visible="deptManageDrawerVisible" :dept-id="deptManageId"
+			:dept-name="deptManageName" @navigate-group="onPLNavigateGroup" @create-group="onDeptCreateGroup"
+			@delete-group="onDeptDeleteGroup" />
 
 		<!-- Context menu -->
 		<TreeActionMenu
@@ -522,6 +523,7 @@ const plManageName = ref('')
 const deptManageDrawerVisible = ref(false)
 const deptManageId = ref(0)
 const deptManageName = ref('')
+const deptManageDrawerRef = ref<{ refreshGroups: () => void } | null>(null)
 
 function onManageEntity() {
 	const data = selectedData.value
@@ -541,6 +543,31 @@ function onManageDepartment(dept: NavTreeOrgUnit) {
 	deptManageId.value = typeof dept.id === 'string' ? parseInt(dept.id.replace(/\D/g, '')) : Number(dept.id)
 	deptManageName.value = dept.label
 	deptManageDrawerVisible.value = true
+}
+
+function onDeptCreateGroup(deptId: number, deptName: string) {
+	openGroupCreateModal({
+		location: `按部门 / ${deptName}`,
+		scopeType: 2,
+		scopeRefId: deptId,
+	})
+}
+
+async function onDeptDeleteGroup(group: { id: number; name: string }) {
+	const confirmed = await msgConfirm(`确定要删除组「${group.name}」吗？删除后不可恢复。`, '删除组', { danger: true })
+	if (!confirmed) return
+	try {
+		const res = await apiDeleteGroup(group.id)
+		if (res.success) {
+			msgSuccess(res.message || '删除成功')
+			await refreshTree()
+			deptManageDrawerRef.value?.refreshGroups()
+		} else {
+			msgError(res.message || '删除失败')
+		}
+	} catch {
+		msgError('删除失败')
+	}
 }
 
 function onPLNavigateGroup(groupId: number) {

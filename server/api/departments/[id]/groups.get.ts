@@ -15,6 +15,7 @@ interface GroupRow {
 	owner_name: string | null
 	file_count: bigint
 	member_count: bigint
+	child_count: bigint
 	updated_at: Date
 }
 
@@ -31,18 +32,28 @@ export default defineEventHandler(async (event) => {
 	})
 	if (!dept) return fail(event, 404, DEPARTMENT_NOT_FOUND, '部门不存在')
 
+	// 顶级组（parent_id IS NULL）
 	const rows = await prisma.$queryRaw<GroupRow[]>`
 		SELECT
 			g.id, g.name, g.description,
 			u.name AS owner_name,
 			(SELECT COUNT(*) FROM doc_documents d WHERE d.group_id = g.id AND d.deleted_at IS NULL) AS file_count,
 			(SELECT COUNT(*) FROM doc_group_members m WHERE m.group_id = g.id) AS member_count,
+			(SELECT COUNT(*) FROM doc_groups c WHERE c.parent_id = g.id AND c.deleted_at IS NULL) AS child_count,
 			g.updated_at
 		FROM doc_groups g
 		LEFT JOIN doc_users u ON u.id = g.owner_user_id AND u.deleted_at IS NULL
-		WHERE g.department_id = ${BigInt(deptId)}
+		WHERE g.scope_type = 2
+			AND g.scope_ref_id = ${BigInt(deptId)}
+			AND g.parent_id IS NULL
 			AND g.deleted_at IS NULL
 		ORDER BY g.name ASC
+	`
+
+	// 所有组（含子组）的总数
+	const [totalRow] = await prisma.$queryRaw<[{ cnt: bigint }]>`
+		SELECT COUNT(*) AS cnt FROM doc_groups
+		WHERE scope_type = 2 AND scope_ref_id = ${BigInt(deptId)} AND deleted_at IS NULL
 	`
 
 	const list = rows.map(r => ({
@@ -52,8 +63,12 @@ export default defineEventHandler(async (event) => {
 		ownerName: r.owner_name,
 		fileCount: Number(r.file_count),
 		memberCount: Number(r.member_count),
+		childCount: Number(r.child_count),
 		updatedAt: r.updated_at.getTime(),
 	}))
 
-	return ok(list)
+	return ok({
+		groups: list,
+		totalCount: Number(totalRow.cnt),
+	})
 })

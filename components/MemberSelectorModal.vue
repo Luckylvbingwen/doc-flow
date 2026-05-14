@@ -1,6 +1,6 @@
 <template>
 	<el-dialog
-class="df-modal df-member-selector-modal" :model-value="visible" title="选择成员" width="680px"
+class="df-modal df-member-selector-modal" :model-value="visible" title="选择成员" width="780px"
 		:close-on-click-modal="false" destroy-on-close @close="close">
 		<div v-loading="treeLoading" class="ms-body">
 			<!-- 左栏：导航 + 列表 -->
@@ -29,7 +29,8 @@ v-for="user in filteredSearchUsers" :key="user.id" class="ms-item"
 							<el-checkbox
 :model-value="isCheckboxChecked(user)" :disabled="user.joined || isExcluded(user.id)"
 								@click.stop @change="toggleUser(user)" />
-							<span class="ms-item__avatar ms-item__avatar--text">{{ user.name?.slice(0, 1) }}</span>
+							<img v-if="user.avatar" :src="user.avatar" class="ms-item__avatar">
+							<span v-else class="ms-item__avatar ms-item__avatar--text">{{ user.name?.slice(0, 1) }}</span>
 							<span class="ms-item__name">{{ user.name }}</span>
 							<span v-if="user.joined" class="ms-item__tag">已加入</span>
 						</div>
@@ -59,7 +60,8 @@ v-for="user in filteredDeptMembers" :key="user.id" class="ms-item"
 							<el-checkbox
 :model-value="isCheckboxChecked(user)" :disabled="user.joined || isExcluded(user.id)"
 								@click.stop @change="toggleUser(user)" />
-							<span class="ms-item__avatar ms-item__avatar--text">{{ user.name?.slice(0, 1) }}</span>
+							<img v-if="user.avatar" :src="user.avatar" class="ms-item__avatar">
+							<span v-else class="ms-item__avatar ms-item__avatar--text">{{ user.name?.slice(0, 1) }}</span>
 							<span class="ms-item__name">{{ user.name }}</span>
 							<span v-if="user.joined" class="ms-item__tag">已加入</span>
 						</div>
@@ -73,7 +75,9 @@ v-for="user in filteredDeptMembers" :key="user.id" class="ms-item"
 				<div class="ms-right__title">已选：{{ selectedUsers.length }} 个</div>
 				<el-scrollbar class="ms-right__list">
 					<div v-for="user in selectedUsers" :key="user.id" class="ms-selected-item">
-						<span class="ms-item__avatar ms-item__avatar--text ms-selected-item__avatar">{{ user.name?.slice(0, 1)
+						<img v-if="user.avatar" :src="user.avatar" class="ms-item__avatar ms-selected-item__avatar">
+						<span v-else class="ms-item__avatar ms-item__avatar--text ms-selected-item__avatar">{{ user.name?.slice(0,
+							1)
 							}}</span>
 						<span class="ms-selected-item__name">{{ user.name }}</span>
 						<el-icon class="ms-selected-item__remove" @click="removeSelected(user.id)">

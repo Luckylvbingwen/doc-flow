@@ -2,6 +2,7 @@
 	<div class="pla-tab">
 		<div class="pla-toolbar">
 			<span class="pla-toolbar__title">部门管理员</span>
+			<span class="pla-toolbar__count">共 {{ adminList.length }} 人</span>
 			<el-button v-if="canManage" type="primary" size="small" @click="selectorVisible = true">
 				<el-icon :size="13">
 					<Plus />
@@ -17,6 +18,7 @@
 					<span class="pla-item__name">{{ item.name }}</span>
 					<span v-if="item.email" class="pla-item__email">{{ item.email }}</span>
 				</div>
+				<span class="pla-item__time">添加时间: {{ formatTime(item.createdAt, 'YYYY-MM-DD') }}</span>
 				<el-tag v-if="item.isOwner" size="small" type="danger" class="pla-item__badge">
 					部门负责人
 				</el-tag>
@@ -37,6 +39,10 @@ v-if="canManage && !item.isOwner" type="danger" text size="small"
 			</div>
 		</div>
 
+		<div class="pla-hint">
+			管理员和负责人可以创建部门下的组，管理本部门信息和成员。一个部门可以有多个管理员。
+		</div>
+
 		<MemberSelectorModal
 v-model:visible="selectorVisible" :exclude-user-ids="excludeUserIds"
 			:show-role-selector="false" @confirm="handleAddConfirm" />
@@ -48,6 +54,7 @@ import { Plus, User } from '@element-plus/icons-vue'
 import { apiGetDeptAdmins, apiAddDeptAdmin, apiRemoveDeptAdmin } from '~/api/departments'
 import type { DeptAdminItem } from '~/api/departments'
 import type { SelectedUser } from '~/types/group-member'
+import { formatTime } from '~/utils/format'
 
 const props = defineProps<{
 	deptId: number
@@ -117,3 +124,107 @@ async function handleRemove(item: DeptAdminItem) {
 
 watch(() => props.deptId, () => loadAdmins(), { immediate: true })
 </script>
+
+<style lang="scss" scoped>
+.pla-tab {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.pla-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+
+	&__title {
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--df-text);
+	}
+
+	&__count {
+		flex: 1;
+		font-size: 12px;
+		color: var(--df-subtext);
+	}
+}
+
+.pla-list {
+	min-height: 80px;
+}
+
+.pla-item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 0;
+	border-bottom: 1px solid var(--df-border);
+
+	&:last-child {
+		border-bottom: none;
+	}
+
+	&__avatar {
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		background: var(--df-primary-soft);
+		color: var(--df-primary);
+		font-size: 13px;
+		font-weight: 600;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	&__info {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	&__name {
+		font-size: 13px;
+		font-weight: 500;
+		color: var(--df-text);
+	}
+
+	&__email {
+		font-size: 11px;
+		color: var(--df-subtext);
+	}
+
+	&__time {
+		font-size: 11px;
+		color: var(--df-subtext);
+		flex-shrink: 0;
+	}
+
+	&__badge {
+		flex-shrink: 0;
+	}
+}
+
+.pla-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	padding: 40px 0;
+	color: var(--df-subtext);
+	font-size: 13px;
+}
+
+.pla-hint {
+	margin-top: 4px;
+	padding: 10px 14px;
+	background: var(--df-primary-soft);
+	border-radius: 6px;
+	font-size: 12px;
+	color: var(--df-primary);
+}
+</style>

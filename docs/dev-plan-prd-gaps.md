@@ -10,8 +10,8 @@
 
 | 优先级 | 缺口数 | 说明 |
 |--------|--------|------|
-| P0 必须 | 5 项 | 核心业务流程缺失，影响 PRD 交付 |
-| P1 重要 | 6 项 | 交互/体验不完整，需补齐 |
+| P0 必须 | 5 项 ✅ 全部完成 | 核心业务流程缺失，影响 PRD 交付 |
+| P1 重要 | 6 项 ✅ 全部完成 | 交互/体验不完整，需补齐 |
 | P2 增强 | 4 项 | 细节打磨，不阻塞主流程 |
 
 ---
@@ -144,43 +144,16 @@
 
 ## 三、P1 — 重要（体验不完整）
 
-### P1-1 ⬜ 飞书消息推送接入通知触发点（PRD §6.8.3）
+### P1-1 ✅ 飞书消息推送接入通知触发点（PRD §6.8.3）
 
 **PRD 要求**：M1-M25 所有通知不仅写入站内通知，还要同步推送飞书交互式卡片  
-**现状**：`feishuSendCard` 工具函数**已存在**且可用；`/api/integrations/feishu/notify` 也已实现。但**各业务触发点未全面接入飞书推送**
+**现状**：✅ 已在 `server/utils/notify.ts` 统一入口中集成飞书推送。`createNotification` 和 `createNotifications` 写入站内通知后自动推送飞书交互卡片，所有 M1-M25 触发点无需逐个修改。
 
-**开发内容**：
-逐个业务 API 排查，在创建站内通知的同时调用飞书推送。按消息编号排查：
-
-| 消息 | 触发 API | 飞书推送状态 |
-|------|----------|-------------|
-| M1 新审批 | `approvals/submit` | ⬜ 需接入 |
-| M2 审批流转 | `approvals/[id]/approve` | ⬜ 需接入 |
-| M3 审批通过 | `approvals/[id]/approve` | ⬜ 需接入 |
-| M4 审批驳回 | `approvals/[id]/reject` | ⬜ 需接入 |
-| M5 超时催办 | 定时任务 | ⬜ 需接入 |
-| M6 催办达上限 | 定时任务 | ⬜ 需接入 |
-| M7 审批撤回 | `approvals/[id]/withdraw` | ⬜ 需接入 |
-| M8 新版本发布 | `approvals/[id]/approve`（最后一级） | ⬜ 需接入 |
-| M9 文档移除 | `documents/[id]/remove` | ⬜ 需接入 |
-| M10 归属人转移请求 | `documents/[id]/transfer` | ⬜ 需接入 |
-| M11 转移结果 | `documents/[id]/transfer-respond` | ⬜ 需接入 |
-| M12 跨组移动请求 | `documents/[id]/move` | ⬜ 需接入 |
-| M13 跨组移动结果 | `documents/[id]/move-respond` | ⬜ 需接入 |
-| M14 阅读权限申请 | `document-permissions/request` | ⬜ 需接入 |
-| M15 编辑权限申请 | `document-permissions/request` | ⬜ 需接入 |
-| M16 权限审批结果 | `document-permissions/review` | ⬜ 需接入 |
-| M17 收到分享 | `share/create` | ⬜ 需接入 |
-| M18 被添加为成员 | `group-members/add` | ⬜ 需接入 |
-| M19 权限变更 | `group-members/update` | ⬜ 需接入 |
-| M20 被移出组 | `group-members/remove` | ⬜ 需接入 |
-| M21 管理员指派 | `admin/users/role` | ⬜ 需接入 |
-| M22 组负责人变更 | `groups/transfer-leader` | ⬜ 需接入 |
-| M23 离职交接 | `admin/users/deactivate` | ⬜ 需接入 |
-| M24 审批链变更 | 审批链成员被移除时 | ⬜ 需接入 |
-| M25 引用失效 | `cleanupDocumentReferences` | ⬜ 需接入 |
-
-> 建议封装 `server/utils/notify.ts` 统一入口，同时写站内通知 + 推飞书
+**实现方案**：
+- 在 `notify.ts` 中增加 `pushFeishuCard` 内部辅助函数，查询用户 `feishu_open_id` 后调用 `feishuSendCard`
+- 飞书卡片按通知分类（审批/系统/成员变更）使用不同 header 颜色
+- 推送失败仅记录日志，不阻塞站内通知主流程
+- 批量通知场景通过 `batchGetFeishuOpenIds` 一次性查询，避免 N+1
 
 ---
 
@@ -215,39 +188,39 @@
 
 ---
 
-### P1-4 ⬜ 飞书离职 Webhook 自动触发交接（PRD §2.2 触点5）
+### P1-4 ✅ 飞书离职 Webhook 自动触发交接（PRD §2.2 触点5）
 
 **PRD 要求**：飞书人事事件（员工离职）→ Webhook 回调 → 自动触发文档交接流程  
-**现状**：离职交接仅通过管理员手动"停用用户"触发，无 Webhook 入口
+**现状**：✅ 已实现
 
-**开发内容**：
-1. 新建 `server/api/integrations/feishu/webhook/employee.post.ts`
-2. 接收飞书人事事件 Webhook（事件类型：`contact.user.leave`）
-3. 校验签名后，自动调用现有停用逻辑（复用 `deactivate.put.ts` 的核心交接代码）
-4. 鉴权白名单需添加此路径
-
-**涉及文件**：
-- 新建：`server/api/integrations/feishu/webhook/employee.post.ts`
-- 修改：`server/middleware/auth.ts`（白名单）
-- 可能抽取：`server/utils/user-deactivation.ts`（从 deactivate.put.ts 抽离复用逻辑）
+**实现方案**：
+1. 抽取 `server/utils/user-deactivation.ts` — 用户停用核心逻辑（停用+组交接+审批链清理+通知），供 API 和 Webhook 共用
+2. 重构 `server/api/admin/users/[id]/deactivate.put.ts` — 改为调用共享工具
+3. 新建 `server/api/integrations/feishu/webhook/employee.post.ts` — 飞书人事事件 Webhook
+   - 支持 url_verification 挑战验证
+   - 处理 `contact.user.updated_v3` 事件（检测 `is_resigned=true`）
+   - 通过 feishu_open_id 匹配 DocFlow 用户
+   - 调用 `deactivateUser(source='feishu_webhook')` 自动停用并交接
+   - event_id 去重防止重复处理
+4. `server/middleware/auth.ts` — 白名单新增 `/api/integrations/feishu/webhook/employee`
+5. `nuxt.config.ts` + `.env.example` — 新增 `FEISHU_VERIFICATION_TOKEN` / `FEISHU_ENCRYPT_KEY` 配置
 
 ---
 
-### P1-5 ⬜ 飞书 Bot 文档归档入口（PRD §2.2 触点3）
+### P1-5 ✅ 飞书 Bot 文档归档入口（PRD §2.2 触点3）
 
 **PRD 要求**：飞书 Bot + 粘贴飞书文档链接 → 自动归档到 DocFlow  
-**现状**：仅有 DocFlow 内的"导入飞书文档"弹窗，**飞书 Bot 入口未做**
+**现状**：✅ 已实现
 
-**开发内容**：
-1. 新建 `server/api/integrations/feishu/webhook/bot-message.post.ts`
-2. 接收飞书机器人消息事件，解析消息中的飞书文档链接
-3. 自动调用飞书 API 获取文档内容 → 转 MD → 创建 DocFlow 草稿
-4. 通过 Bot 回复用户：「文档已归档到个人中心，请在 DocFlow 中提交发布」
-5. 鉴权白名单需添加此路径
-
-**涉及文件**：
-- 新建：`server/api/integrations/feishu/webhook/bot-message.post.ts`
-- 修改：`server/middleware/auth.ts`（白名单）
+**实现方案**：
+1. 新建 `server/api/integrations/feishu/webhook/bot-message.post.ts` — 飞书机器人消息 Webhook
+   - 支持 url_verification 挑战验证
+   - 处理 `im.message.receive_v1` 事件（消息接收）
+   - 从文本消息中提取飞书文档 URL
+   - 调飞书 API 获取文档标题 + raw_content
+   - 写入 MinIO 存储 → 创建个人草稿文档
+   - 通过 Bot 回复用户：「文档已归档到个人中心」
+2. `server/middleware/auth.ts` — 白名单新增 `/api/integrations/feishu/webhook/bot-message`
 
 ---
 
@@ -351,20 +324,20 @@
 ## 六、建议开发顺序
 
 ```
-Phase 1 — 核心业务补齐（P0）
-  ├── P0-5 编辑副本冲突弹窗（最小改动，立即可做）
-  ├── P0-3 组负责人交接（独立功能，不依赖其他）
-  ├── P0-4 全屏预览器完善（版本侧栏 + 批注 + 审批模式）
-  ├── P0-1 部门管理面板
-  └── P0-2 权限继承机制（最复杂，依赖 P0-1）
+Phase 1 — 核心业务补齐（P0）✅ 全部完成
+  ├── P0-5 编辑副本冲突弹窗 ✅
+  ├── P0-3 组负责人交接 ✅
+  ├── P0-4 全屏预览器完善 ✅
+  ├── P0-1 部门管理面板 ✅
+  └── P0-2 权限继承机制 ✅
 
-Phase 2 — 体验增强（P1）
-  ├── P1-3 共享文档列表行"编辑"入口（最小改动）
-  ├── P1-6 批注冻结规则验证 & 补齐
-  ├── P1-2 10 分钟自动保存快照
-  ├── P1-1 飞书消息推送接入（工作量最大，逐 API 接入）
-  ├── P1-4 飞书离职 Webhook
-  └── P1-5 飞书 Bot 文档归档
+Phase 2 — 体验增强（P1）✅ 全部完成
+  ├── P1-3 共享文档列表行"编辑"入口 ✅
+  ├── P1-6 批注冻结规则验证 & 补齐 ✅
+  ├── P1-2 10 分钟自动保存快照 ✅
+  ├── P1-1 飞书消息推送接入 ✅ 2026-05-14
+  ├── P1-4 飞书离职 Webhook ✅ 2026-05-14
+  └── P1-5 飞书 Bot 文档归档 ✅ 2026-05-14
 
 Phase 3 — 细节打磨（P2）
   ├── P2-1 个人中心操作矩阵

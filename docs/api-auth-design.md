@@ -94,6 +94,8 @@
 | GET | /api/integrations/feishu/users | 是 | 飞书用户列表（本地表） |
 | POST | /api/integrations/feishu/notify | 是 | 发送飞书消息 |
 | POST | /api/integrations/feishu/sync-contacts | 是 | 同步飞书通讯录 |
+| POST | /api/integrations/feishu/webhook/employee | 否 | 飞书人事事件 Webhook（员工离职自动交接） |
+| POST | /api/integrations/feishu/webhook/bot-message | 否 | 飞书 Bot 消息 Webhook（文档链接自动归档） |
 
 ### 文档组管理 (groups)
 
@@ -617,6 +619,85 @@
 ```
 
 **错误码：** FEISHU_SYNC_ERROR
+
+---
+
+### 3.21b POST /api/integrations/feishu/webhook/employee
+
+飞书人事事件 Webhook 回调。接收员工状态变更事件，当检测到 `is_resigned=true` 时自动触发 DocFlow 用户停用和文档交接流程。
+
+**鉴权：** 免登（飞书服务器调用），通过 `verification_token` 校验合法性。
+
+**URL 验证请求（首次配置）：**
+```json
+{ "type": "url_verification", "challenge": "xxx", "token": "xxx" }
+```
+**响应：** `{ "challenge": "xxx" }`
+
+**事件回调 Body（schema 2.0）：**
+```json
+{
+  "schema": "2.0",
+  "header": {
+    "event_id": "xxx",
+    "event_type": "contact.user.updated_v3",
+    "token": "verification_token"
+  },
+  "event": {
+    "object": {
+      "open_id": "ou_xxx",
+      "user_id": "xxx",
+      "name": "张三",
+      "status": { "is_resigned": true }
+    }
+  }
+}
+```
+
+**处理逻辑：**
+1. 通过 `feishu_open_id` 匹配 DocFlow 用户
+2. 调用 `deactivateUser(source='feishu_webhook')` 执行停用+交接
+3. 触发 M22/M23/M24 通知
+
+**响应：** `{ "code": 0, "msg": "..." }`
+
+---
+
+### 3.21c POST /api/integrations/feishu/webhook/bot-message
+
+飞书机器人消息 Webhook 回调。接收文本消息中的飞书文档链接，自动归档到发送者的 DocFlow 个人中心（创建草稿）。
+
+**鉴权：** 免登（飞书服务器调用），通过 `verification_token` 校验合法性。
+
+**事件回调 Body（schema 2.0）：**
+```json
+{
+  "schema": "2.0",
+  "header": {
+    "event_id": "xxx",
+    "event_type": "im.message.receive_v1",
+    "token": "verification_token"
+  },
+  "event": {
+    "message": {
+      "message_type": "text",
+      "content": "{\"text\":\"请归档这个文档 https://xxx.feishu.cn/docx/xxx\"}",
+      "chat_id": "oc_xxx"
+    },
+    "sender": {
+      "sender_id": { "open_id": "ou_xxx" }
+    }
+  }
+}
+```
+
+**处理逻辑：**
+1. 从文本消息中提取飞书文档 URL
+2. 通过 `feishu_open_id` 匹配 DocFlow 用户
+3. 调飞书 API 获取文档标题 + 正文 → 写入 MinIO → 创建个人草稿
+4. 通过 Bot 回复用户归档结果
+
+**响应：** `{ "code": 0, "msg": "ok" }`
 
 ---
 

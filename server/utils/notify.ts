@@ -14,15 +14,133 @@
  *   5. createNotification 内部会推送一条 WS 'badge' 消息更新该用户的
  *      notifications 未读数；批量请用 createNotifications 单次事务+按
  *      用户分组推送，避免 N 次 COUNT + N 次推送
+ *   6. createNotification / createNotifications 已同步推送飞书交互卡片
+ *      （PRD §6.8.3），无需在业务 API 中单独调用 feishuSendCard
  * ═══════════════════════════════════════════════════════════════
  */
 import { prisma } from '~/server/utils/prisma'
 import { generateId } from '~/server/utils/snowflake'
 import { wsSendToUser } from '~/server/utils/ws'
+import { feishuSendCard } from '~/server/utils/feishu'
 import type { WsServerMessage } from '~/types/ws'
 import type { CreateNotificationOpts } from '~/server/types/notification'
 
-/** 创建一条通知并推送 WS 'badge' 消息 */
+// ================================================================
+//  飞书推送 — 内部辅助
+// ================================================================
+
+const logger = useLogger('notify-feishu')
+
+/** 通知分类 → 飞书卡片 header 模板色 */
+const CATEGORY_CARD_TEMPLATE: Record<number, string> = {
+	1: 'blue',    // 审批
+	2: 'orange',  // 系统
+	3: 'green',   // 成员变更
+}
+
+/** 通知分类 → 中文标签 */
+const CATEGORY_LABEL: Record<number, string> = {
+	1: '审批通知',
+	2: '系统通知',
+	3: '成员变更',
+}
+
+/**
+ * 构建飞书交互卡片
+ * @see https://open.feishu.cn/document/ukTMukTMukTM/uczM3QjL3MzN04yNzcDN
+ */
+function buildFeishuCard(opts: CreateNotificationOpts): Record<string, unknown> {
+	const config = useRuntimeConfig()
+	const siteUrl = (config.public?.feishuSiteUrl as string) || 'http://localhost:3000'
+
+	const headerTemplate = CATEGORY_CARD_TEMPLATE[opts.category] || 'blue'
+	const categoryLabel = CATEGORY_LABEL[opts.category] || '通知'
+
+	const elements: Record<string, unknown>[] = [
+		{
+			tag: 'div',
+			text: {
+				tag: 'lark_md',
+				content: opts.title,
+			},
+		},
+	]
+
+	// 如果有 content 副文案，追加灰色说明行
+	if (opts.content) {
+		elements.push({
+			tag: 'div',
+			text: {
+				tag: 'lark_md',
+				content: opts.content,
+			},
+		})
+	}
+
+	elements.push({ tag: 'hr' })
+
+	// 查看详情按钮 — 跳转到通知中心
+	elements.push({
+		tag: 'action',
+		actions: [
+			{
+				tag: 'button',
+				text: { tag: 'plain_text', content: '查看详情' },
+				type: 'primary',
+				url: `${siteUrl}/notifications`,
+			},
+		],
+	})
+
+	return {
+		config: { wide_screen_mode: true },
+		header: {
+			title: { tag: 'plain_text', content: `[DocFlow] ${categoryLabel}` },
+			template: headerTemplate,
+		},
+		elements,
+	}
+}
+
+/**
+ * 批量查询用户 feishu_open_id
+ * @returns Map<userId(string), feishu_open_id>
+ */
+async function batchGetFeishuOpenIds(userIds: bigint[]): Promise<Map<string, string>> {
+	if (userIds.length === 0) return new Map()
+
+	const rows = await prisma.doc_users.findMany({
+		where: { id: { in: userIds }, feishu_open_id: { not: '' } },
+		select: { id: true, feishu_open_id: true },
+	})
+
+	const map = new Map<string, string>()
+	for (const r of rows) {
+		if (r.feishu_open_id) {
+			map.set(String(r.id), r.feishu_open_id)
+		}
+	}
+	return map
+}
+
+/**
+ * 推送飞书卡片给单个用户（fire-and-forget，不阻塞站内通知）
+ */
+async function pushFeishuCard(openId: string, opts: CreateNotificationOpts): Promise<void> {
+	try {
+		const card = buildFeishuCard(opts)
+		await feishuSendCard(openId, card)
+	} catch (err) {
+		// 飞书推送失败不应影响站内通知，仅记录日志
+		logger.warn({ err, userId: String(opts.userId), msgCode: opts.msgCode }, '飞书通知推送失败')
+	}
+}
+
+// ================================================================
+//  站内通知 + 飞书推送
+// ================================================================
+
+/** 创建一条通知并推送 WS 'badge' 消息 + 飞书卡片 */
 export async function createNotification(opts: CreateNotificationOpts): Promise<void> {
 	const userIdBI = BigInt(opts.userId)
 
@@ -40,10 +158,17 @@ export async function createNotification(opts: CreateNotificationOpts): Promise<
 	})
 
 	await pushBadgeToUser(userIdBI)
+
+	// 飞书推送（异步，不阻塞主流程）
+	const openIdMap = await batchGetFeishuOpenIds([userIdBI])
+	const openId = openIdMap.get(String(userIdBI))
+	if (openId) {
+		pushFeishuCard(openId, opts).catch(() => {})
+	}
 }
 
 /**
- * 批量创建通知：单次批量插入，按 userId 分组只推送一次 badge
+ * 批量创建通知：单次批量插入，按 userId 分组只推送一次 badge + 飞书卡片
  * 适用于"组内所有成员""所有审批人"等多目标场景
  */
 export async function createNotifications(list: CreateNotificationOpts[]): Promise<void> {
@@ -64,6 +189,19 @@ export async function createNotifications(list: CreateNotificationOpts[]): Promi
 
 	const uniqueUserIds = Array.from(new Set(rows.map(r => r.user_id)))
 	await Promise.all(uniqueUserIds.map(uid => pushBadgeToUser(uid)))
+
+	// 飞书推送（异步，不阻塞主流程）
+	const openIdMap = await batchGetFeishuOpenIds(uniqueUserIds)
+	const feishuTasks: Promise<void>[] = []
+	for (const opts of list) {
+		const openId = openIdMap.get(String(BigInt(opts.userId)))
+		if (openId) {
+			feishuTasks.push(pushFeishuCard(openId, opts))
+		}
+	}
+	if (feishuTasks.length > 0) {
+		Promise.allSettled(feishuTasks).catch(() => {})
+	}
 }
 
 /**

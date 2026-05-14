@@ -62,6 +62,8 @@ export default defineNuxtConfig({
     feishuAppId: process.env.FEISHU_APP_ID || '',
     feishuAppSecret: process.env.FEISHU_APP_SECRET || '',
     feishuWebhookUrl: process.env.FEISHU_WEBHOOK_URL,
+    feishuVerificationToken: process.env.FEISHU_VERIFICATION_TOKEN || '',
+    feishuEncryptKey: process.env.FEISHU_ENCRYPT_KEY || '',
     authDemoPassword: process.env.AUTH_DEMO_PASSWORD || 'Docflow@123',
     public: {
       appName: 'DocFlow',

@@ -29,8 +29,9 @@ class="dn-node dn-category" :class="{ 'is-active': activeNodeId === cat.id }"
 					<span class="dn-right-zone">
 						<span class="dn-badge">{{ cat.badge }}</span>
 						<span v-if="mode === 'nav'" class="dn-hover-actions">
+							<!-- 部门由飞书同步，不可手动创建，隐藏"+"按钮 -->
 							<button
-class="dn-hover-btn" :title="getCategoryCreateLabel(cat.scope)"
+v-if="cat.scope !== 'department'" class="dn-hover-btn" :title="getCategoryCreateLabel(cat.scope)"
 								@click.stop="$emit('category-create', cat)">
 								<el-icon :size="13">
 									<Plus />
