@@ -1,4 +1,4 @@
-import type { DraftContent, EditCopyResult, AnnotationItem } from '~/types/document-editor'
+import type { DraftContent, EditCopyResult, AnnotationItem, AnnotationReply } from '~/types/document-editor'
 import type { ApiResult } from '~/types/api'
 
 // ── 草稿 ──
@@ -27,3 +27,6 @@ export const apiUpdateAnnotation = (docId: number, annotationId: string, body: {
 
 export const apiDeleteAnnotation = (docId: number, annotationId: string) =>
 	useAuthFetch<ApiResult<null>>(`/api/documents/${docId}/annotations/${annotationId}`, { method: 'DELETE' })
+
+export const apiCreateAnnotationReply = (docId: number, annotationId: string, body: { content: string }) =>
+	useAuthFetch<ApiResult<AnnotationReply>>(`/api/documents/${docId}/annotations/${annotationId}/replies`, { method: 'POST', body })

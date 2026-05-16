@@ -441,6 +441,33 @@
   display: flex;
   min-height: 0;
   overflow: hidden;
+
+  > .el-scrollbar {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+// ── 批注右侧面板（文件详情页） ──
+.df-annotation-sidebar {
+  width: 340px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--df-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  .annotation-panel {
+    height: 100%;
+  }
+}
+
+// 批注按钮 badge
+.df-anno-badge {
+  .el-badge__content {
+    top: -2px;
+    right: 4px;
+  }
 }
 
 .df-toc-sidebar {

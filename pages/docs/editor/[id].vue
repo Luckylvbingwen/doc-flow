@@ -51,7 +51,7 @@
 		<!-- ─── 主体 ─── -->
 		<div class="editor-body">
 			<!-- 编辑区 -->
-			<main class="editor-main">
+			<main ref="editorMainRef" class="editor-main">
 				<!-- 快照预览内容（只读覆盖） -->
 				<div v-if="previewMode" class="editor-preview-content markdown-body" v-html="sanitize(previewHtml)" />
 				<ClientOnly v-else>
@@ -67,7 +67,9 @@ v-if="!loading && content !== null" ref="milkdownRef" :initial-content="content"
 
 			<!-- 批注面板 -->
 			<aside v-if="annotationOpen && !previewMode" class="editor-annotation-aside">
-				<AnnotationPanel :doc-id="docId" />
+				<AnnotationPanel
+ref="annotationPanelRef" :doc-id="docId" :active-annotation-id="activeAnnotationId"
+					@request-add="activeAnnotationId = undefined" @locate="onAnnotationLocate" @close="annotationOpen = false" />
 			</aside>
 		</div>
 
@@ -86,6 +88,9 @@ v-if="docId" v-model="transferModalVisible" :document-id="docId" :document-title
 		<SnapshotDrawer
 v-if="docId" v-model="snapshotDrawerVisible" :doc-id="docId" @preview="onSnapshotPreview"
 			@restored="onSnapshotRestored" />
+
+		<!-- 选字批注浮层 -->
+		<AnnotationSelector :doc-id="docId" :container-ref="editorMainRef" @created="onAnnotationCreated" />
 	</div>
 </template>
 
@@ -168,6 +173,21 @@ function onPublishSuccess() {
 
 // ── 批注面板 ──
 const annotationOpen = ref(false)
+const annotationPanelRef = ref<{ refresh: () => void; scrollTo: (id: string) => void; addAnnotation: (item: any) => void } | null>(null)
+const activeAnnotationId = ref<string>()
+const editorMainRef = ref<HTMLElement | null>(null)
+
+function onAnnotationLocate(item: { id: string }) {
+	activeAnnotationId.value = item.id
+	setTimeout(() => { activeAnnotationId.value = undefined }, 3000)
+}
+
+function onAnnotationCreated(item: any) {
+	// 展开批注面板并刷新
+	annotationOpen.value = true
+	annotationPanelRef.value?.addAnnotation(item)
+	nextTick(() => annotationPanelRef.value?.scrollTo(item.id))
+}
 
 // ── 转移/分享弹窗 ──
 const transferModalVisible = ref(false)

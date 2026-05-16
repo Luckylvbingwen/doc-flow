@@ -196,6 +196,15 @@ v-if="detail.canSubmitApproval" type="primary" size="small" :loading="submitLoad
 						<span>{{ fileTypeText }} 文档</span>
 						<span style="margin-left: auto" />
 						<el-button
+size="small" text :class="{ 'is-active': annotationOpen }"
+							@click="annotationOpen = !annotationOpen">
+							<el-icon>
+								<ChatLineSquare />
+							</el-icon>
+							批注
+							<el-badge v-if="annotationTotalCount > 0" :value="annotationTotalCount" :max="99" class="df-anno-badge" />
+						</el-button>
+						<el-button
 size="small" text :disabled="previewLoading || !previewHtml"
 							@click="fullscreenPreviewVisible = true">
 							<el-icon>
@@ -234,12 +243,19 @@ v-for="item in tocOutline" :key="item.id" class="df-toc-sidebar__item"
 							</el-scrollbar>
 						</aside>
 						<el-scrollbar ref="previewScrollerRef">
-							<div class="df-preview-body">
+							<div ref="previewBodyRef" class="df-preview-body">
 								<DocPreview
 class="df-detail-preview" :file-type="fileType" :html="previewHtml"
 									:loading="previewLoading" />
 							</div>
 						</el-scrollbar>
+
+						<!-- 批注右侧面板 -->
+						<aside v-if="annotationOpen" class="df-annotation-sidebar">
+							<AnnotationPanel
+ref="annotationPanelRef" :doc-id="documentId" :active-annotation-id="activeAnnotationId"
+								@request-add="onAnnotationRequestAdd" @locate="onAnnotationLocate" @close="annotationOpen = false" />
+						</aside>
 					</div>
 				</template>
 
@@ -345,7 +361,7 @@ v-if="detail?.groupId && detail?.canManagePermissions" v-model:visible="permModa
 		<FullscreenPreviewer
 v-model:visible="fullscreenPreviewVisible" :title="detail?.title"
 			:version-no="currentVersion?.versionNo" :file-type="fileType" :html="previewHtml" :loading="previewLoading"
-			:doc-id="documentId" :versions="versions" @download="onDownload" @version-change="onFullscreenVersionChange" />
+			:doc-id="documentId" :versions="versions" @download="onDownload" />
 
 		<!-- 跨组移动弹窗 -->
 		<MoveTargetPicker
@@ -372,7 +388,7 @@ v-if="detail" v-model="permissionReviewVisible" :document-id="documentId"
 v-model="rollbackVisible" :file-name="fileName" :current-version="currentVersionNo"
 			:target-version="rollbackTarget?.versionNo ?? ''" :loading="rollbackLoading" @confirm="confirmRollback" />
 
-		<!-- 底部 TAB 区（PRD §6.3.4：评论 / 飞书评论 / 审批记录） -->
+		<!-- 底部 TAB 区（PRD §6.3.4：评论 / 审批记录） -->
 		<div class="pf-card df-file-tabs">
 			<TabBar v-model="bottomTab" :tabs="bottomTabs" />
 
@@ -380,10 +396,6 @@ v-model="rollbackVisible" :file-name="fileName" :current-version="currentVersion
 				<CommentThread
 :comments="commentList" :current-user="commentCurrentUser" :readonly="false"
 					:loading="commentsLoading" @submit="onCommentSubmit" @reply="onCommentReply" @delete="onCommentDelete" />
-			</div>
-
-			<div v-if="bottomTab === 'annotations'" class="df-file-tabs__panel">
-				<AnnotationPanel :doc-id="documentId" />
 			</div>
 
 			<div v-if="bottomTab === 'approvals'" class="df-file-tabs__panel">
@@ -409,6 +421,9 @@ v-for="item in approvalRecords" :key="item.id" :item="item" tab="submitted"
 
 		<!-- 历史记录抽屉 -->
 		<HistoryDrawer v-model="historyDrawerVisible" :document-id="documentId" />
+
+		<!-- 选字批注浮层 -->
+		<AnnotationSelector :doc-id="documentId" :container-ref="previewBodyRef" @created="onAnnotationCreated" />
 	</section>
 </template>
 
@@ -434,6 +449,7 @@ import {
 	MoreFilled,
 	DArrowLeft,
 	DArrowRight,
+	ChatLineSquare,
 } from '@element-plus/icons-vue'
 import type { VersionInfo, CompareResult } from '~/types/version'
 import type { ApiResponse, PaginatedData } from '~/types/api'
@@ -822,16 +838,6 @@ function onDownload() {
 	handleDownloadCurrent()
 }
 
-async function onFullscreenVersionChange(version: VersionInfo) {
-	previewLoading.value = true
-	try {
-		const res = await apiPreviewDocument(documentId.value, version.id)
-		if (res.success) previewHtml.value = res.data.html
-	} finally {
-		previewLoading.value = false
-	}
-}
-
 // ── 提交审批 ──
 const submitLoading = ref(false)
 const creatingCopy = ref(false)
@@ -896,13 +902,71 @@ function handleViewFile() {
 }
 
 // ── 底部 TAB（PRD §6.3.4） ──
-type BottomTab = 'comments' | 'annotations' | 'approvals'
+type BottomTab = 'comments' | 'approvals'
 const bottomTab = ref<BottomTab>('comments')
 const bottomTabs: Array<{ value: BottomTab; label: string }> = [
 	{ value: 'comments', label: '评论' },
-	{ value: 'annotations', label: '批注' },
 	{ value: 'approvals', label: '审批记录' },
 ]
+
+// ── 批注右侧面板 ──
+const annotationOpen = ref(false)
+const annotationTotalCount = ref(0)
+const annotationPanelRef = ref<{ refresh: () => void; scrollTo: (id: string) => void; addAnnotation: (item: any) => void } | null>(null)
+const activeAnnotationId = ref<string>()
+const previewBodyRef = ref<HTMLElement | null>(null)
+
+function onAnnotationRequestAdd() {
+	// 面板已展开，提示用户在预览区选字
+	msgWarning('请在文档预览区选择文字后添加批注')
+}
+
+function onAnnotationLocate(item: { id: string; quoteText?: string }) {
+	activeAnnotationId.value = item.id
+	// 清除高亮
+	setTimeout(() => { activeAnnotationId.value = undefined }, 3000)
+}
+
+function onAnnotationCreated(item: any) {
+	// 展开批注面板并添加到面板
+	annotationOpen.value = true
+	annotationPanelRef.value?.addAnnotation(item)
+	annotationTotalCount.value++
+	// 滚动到新批注 + 刷新高亮
+	nextTick(() => {
+		annotationPanelRef.value?.scrollTo(item.id)
+		refreshAnnotationHighlights()
+	})
+}
+
+// ── 批注高亮 ──
+let cleanupHighlights: (() => void) | null = null
+
+function refreshAnnotationHighlights() {
+	if (cleanupHighlights) { cleanupHighlights(); cleanupHighlights = null }
+	if (!previewBodyRef.value) return
+	import('~/utils/annotation-highlight').then(({ applyAnnotationHighlights }) => {
+		import('~/api/document-editor').then(({ apiGetAnnotations }) => {
+			apiGetAnnotations(documentId.value).then(res => {
+				if (res.success && previewBodyRef.value) {
+					cleanupHighlights = applyAnnotationHighlights(previewBodyRef.value, res.data, (id) => {
+						annotationOpen.value = true
+						activeAnnotationId.value = id
+						annotationPanelRef.value?.scrollTo(id)
+						setTimeout(() => { activeAnnotationId.value = undefined }, 3000)
+					})
+					// 更新批注总数
+					annotationTotalCount.value = res.data.length
+				}
+			})
+		})
+	})
+}
+
+// 预览内容加载完毕后应用高亮
+watch(() => previewHtml.value, () => {
+	nextTick(() => refreshAnnotationHighlights())
+})
 
 // ── 审批记录 ──
 const approvalRecords = ref<ApprovalItem[]>([])

@@ -1,6 +1,6 @@
 /**
  * GET /api/documents/:id/annotations
- * 获取文档批注列表（仅返回未删除、未解决的批注）
+ * 获取文档批注列表（含回复）
  */
 import { prisma } from '~/server/utils/prisma'
 import { DOCUMENT_NOT_FOUND, INVALID_PARAMS } from '~/server/constants/error-codes'
@@ -21,8 +21,15 @@ export default defineEventHandler(async (event) => {
 
 	const rows = await prisma.doc_document_annotations.findMany({
 		where: { document_id: docId, deleted_at: null },
-		include: { doc_users: { select: { name: true } } },
-		orderBy: { created_at: 'asc' },
+		include: {
+			doc_users: { select: { name: true, avatar_url: true } },
+			doc_annotation_replies: {
+				where: { deleted_at: null },
+				orderBy: { created_at: 'asc' },
+				include: { doc_users: { select: { name: true, avatar_url: true } } },
+			},
+		},
+		orderBy: { created_at: 'desc' },
 	})
 
 	const currentVersionId = doc.current_version_id
@@ -33,9 +40,17 @@ export default defineEventHandler(async (event) => {
 		quoteText: r.quote_text ?? '',
 		anchorData: r.anchor_data,
 		authorName: r.doc_users?.name ?? '',
+		authorAvatar: r.doc_users?.avatar_url ?? null,
 		createdAt: r.created_at.getTime(),
 		status: r.status,
 		resolvedAt: r.resolved_at ? r.resolved_at.getTime() : null,
 		frozen: r.version_id !== null && currentVersionId !== null && r.version_id !== currentVersionId,
+		replies: r.doc_annotation_replies.map(rp => ({
+			id: rp.id.toString(),
+			content: rp.content,
+			authorName: rp.doc_users?.name ?? '',
+			authorAvatar: rp.doc_users?.avatar_url ?? null,
+			createdAt: rp.created_at.getTime(),
+		})),
 	})))
 })

@@ -13,8 +13,8 @@
 							<span v-if="fileTypeLabel" class="fp-header__badge fp-header__badge--type">
 								{{ fileTypeLabel }}
 							</span>
-							<span v-if="versionNo" class="fp-header__badge fp-header__badge--version">
-								{{ versionNo }}
+							<span v-if="displayVersionNo" class="fp-header__badge fp-header__badge--version">
+								{{ displayVersionNo }}
 							</span>
 						</div>
 						<div class="fp-header__right">
@@ -34,6 +34,7 @@
 										<ChatLineSquare />
 									</el-icon>
 									<span class="fp-annot-label">批注</span>
+									<el-badge v-if="fpAnnotationCount > 0" :value="fpAnnotationCount" :max="99" class="df-anno-badge" />
 								</el-button>
 							</el-tooltip>
 							<el-divider direction="vertical" />
@@ -44,6 +45,7 @@
 										<el-icon :size="16">
 											<Download />
 										</el-icon>
+										<span class="fp-annot-label">下载</span>
 									</el-button>
 								</el-tooltip>
 								<el-tooltip content="打印" placement="bottom">
@@ -51,6 +53,7 @@
 										<el-icon :size="16">
 											<Printer />
 										</el-icon>
+										<span class="fp-annot-label">打印</span>
 									</el-button>
 								</el-tooltip>
 							</template>
@@ -102,7 +105,11 @@ v-for="item in outline" :key="item.id" class="fp-outline__item"
 
 						<!-- 预览正文 -->
 						<el-scrollbar ref="scrollerRef" class="fp-content" view-class="fp-content__view">
-							<DocPreview class="fp-doc-preview" :file-type="fileType" :html="html" :loading="loading" />
+							<div ref="fpPreviewBodyRef">
+								<DocPreview
+class="fp-doc-preview" :file-type="fileType" :html="displayHtml"
+									:loading="displayLoading" />
+							</div>
 						</el-scrollbar>
 
 						<!-- 版本侧栏 -->
@@ -134,18 +141,24 @@ v-for="v in versions" :key="v.id" class="fp-ver-item"
 
 						<!-- 批注面板 -->
 						<aside v-if="annotationOpen && docId" class="fp-annot-panel">
-							<AnnotationPanel :doc-id="docId" />
+							<AnnotationPanel
+:doc-id="docId" :active-annotation-id="activeAnnotationId" @locate="onAnnotationLocate"
+								@close="annotationOpen = false" />
 						</aside>
 					</div>
 				</div>
 			</div>
 		</Transition>
+
+		<!-- 选字批注浮层 -->
+		<AnnotationSelector v-if="docId" :doc-id="docId" :container-ref="fpPreviewBodyRef" @created="onAnnotationCreated" />
 	</Teleport>
 </template>
 
 <script setup lang="ts">
 import { Document, Close, ChatLineSquare, Clock, DArrowLeft, DArrowRight, Download, Printer, Switch } from '@element-plus/icons-vue'
 import { useOutline } from '~/composables/useOutline'
+import { apiPreviewDocument } from '~/api/documents'
 import type { VersionInfo } from '~/types/version'
 import { formatTime } from '~/utils/format'
 
@@ -176,7 +189,6 @@ const emit = defineEmits<{
 	'update:visible': [val: boolean]
 	'download': []
 	'compare': []
-	'version-change': [version: VersionInfo]
 }>()
 
 const visible = computed({
@@ -186,9 +198,47 @@ const visible = computed({
 
 const outlineCollapsed = ref(false)
 const annotationOpen = ref(false)
+const activeAnnotationId = ref<string>()
+const fpPreviewBodyRef = ref<HTMLElement | null>(null)
+const fpAnnotationCount = ref(0)
+
+function onAnnotationLocate(item: { id: string }) {
+	activeAnnotationId.value = item.id
+	setTimeout(() => { activeAnnotationId.value = undefined }, 3000)
+}
+
+function onAnnotationCreated(_item: any) {
+	annotationOpen.value = true
+	fpAnnotationCount.value++
+}
+
+// 加载批注未解决数量
+watch(() => props.visible, async (v) => {
+	if (v && props.docId) {
+		const { apiGetAnnotations } = await import('~/api/document-editor')
+		const res = await apiGetAnnotations(props.docId)
+		if (res.success) {
+			fpAnnotationCount.value = res.data.length
+		}
+	}
+})
+
 const versionOpen = ref(false)
 const activeVersionId = ref<number | null>(null)
 const scrollerRef = ref<{ wrapRef?: HTMLElement } | null>(null)
+
+// ── 全屏内部版本切换状态（不影响父页面） ──
+const versionHtml = ref<string | null>(null)
+const versionLoading = ref(false)
+const displayHtml = computed(() => versionHtml.value ?? props.html)
+const displayLoading = computed(() => versionLoading.value || props.loading)
+const displayVersionNo = computed(() => {
+	if (activeVersionId.value) {
+		const v = props.versions.find(ver => ver.id === activeVersionId.value)
+		if (v) return v.versionNo
+	}
+	return props.versionNo
+})
 
 const { outline, activeOutlineId, rebuildOutline, scrollToHeading } = useOutline(scrollerRef, '.fp-doc-preview')
 
@@ -198,9 +248,18 @@ function close() {
 	visible.value = false
 }
 
-function onVersionClick(v: VersionInfo) {
+async function onVersionClick(v: VersionInfo) {
 	activeVersionId.value = v.id
-	emit('version-change', v)
+	if (!props.docId) return
+	versionLoading.value = true
+	try {
+		const res = await apiPreviewDocument(props.docId, v.id)
+		if (res.success) versionHtml.value = res.data.html
+	} catch {
+		// 保持当前预览
+	} finally {
+		versionLoading.value = false
+	}
 }
 
 function handlePrint() {
@@ -234,6 +293,9 @@ watch(visible, (val) => {
 		document.body.style.overflow = 'hidden'
 		annotationOpen.value = false
 		versionOpen.value = false
+		const cur = props.versions.find(v => v.isCurrent)
+		activeVersionId.value = cur?.id ?? null
+		versionHtml.value = null
 		nextTick(rebuildOutline)
 	} else {
 		if (onKeyDown) window.removeEventListener('keydown', onKeyDown)
@@ -243,7 +305,7 @@ watch(visible, (val) => {
 })
 
 /** html / fileType 变化时重建目录 */
-watch(() => [props.html, props.fileType], () => {
+watch(() => [displayHtml.value, props.fileType], () => {
 	if (visible.value) nextTick(rebuildOutline)
 })
 
