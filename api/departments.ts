@@ -8,6 +8,7 @@ export interface DeptDetail {
 	ownerName: string | null
 	feishuDepartmentId: string | null
 	isSynced: boolean
+	feishuRevoked: boolean
 	status: number
 	groupCount: number
 	createdAt: number
@@ -62,4 +63,10 @@ export function apiRemoveDeptAdmin(deptId: number, userId: number) {
 
 export function apiGetDeptGroups(deptId: number) {
 	return useAuthFetch<ApiResult<DeptGroupListResult>>(`/api/departments/${deptId}/groups`)
+}
+
+export function apiDeleteDepartment(deptId: number) {
+	return useAuthFetch<ApiResult<null>>(`/api/departments/${deptId}`, {
+		method: 'DELETE',
+	})
 }

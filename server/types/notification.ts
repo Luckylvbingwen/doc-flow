@@ -2,7 +2,7 @@
 export type NotificationCategory = 1 | 2 | 3
 
 /** biz_type 允许值（A 阶段） */
-export type NotificationBizType = 'document' | 'group' | 'group_approval'
+export type NotificationBizType = 'document' | 'group' | 'group_approval' | 'department'
 
 /** DB 行（Prisma 模型方法返回） */
 export interface NotificationRow {

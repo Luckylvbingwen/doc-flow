@@ -103,6 +103,8 @@ export interface FeishuSyncResult {
 	deptCreated: number
 	/** doc_departments 更新 */
 	deptUpdated: number
+	/** doc_departments 飞书侧已撤销 */
+	deptRevoked: number
 	/** doc_users 新建（§327 全员预落地） */
 	docUserCreated: number
 	/** doc_users 更新 */

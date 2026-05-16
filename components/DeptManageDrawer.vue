@@ -3,7 +3,7 @@
 		<div class="plm-body">
 			<el-tabs v-model="activeTab">
 				<el-tab-pane label="基本信息" name="info">
-					<DeptInfoTab :dept-id="deptId" :dept-name="deptName" />
+					<DeptInfoTab :dept-id="deptId" :dept-name="deptName" @deleted="onDeptDeleted" />
 				</el-tab-pane>
 				<el-tab-pane :label="`管理员 (${adminCount})`" name="admins">
 					<DeptAdminTab :dept-id="deptId" @count-change="adminCount = $event" />
@@ -32,6 +32,7 @@ const emit = defineEmits<{
 	'navigate-group': [groupId: number]
 	'create-group': [deptId: number, deptName: string]
 	'delete-group': [group: DeptGroupItem]
+	'dept-deleted': []
 }>()
 
 const activeTab = ref('info')
@@ -54,6 +55,11 @@ function onCreateGroup() {
 
 function onDeleteGroup(group: DeptGroupItem) {
 	emit('delete-group', group)
+}
+
+function onDeptDeleted() {
+	close()
+	emit('dept-deleted')
 }
 
 watch(() => props.visible, (val) => {

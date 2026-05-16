@@ -35,6 +35,8 @@ export type TriggerModule =
 	| 'group-owner'
 	| 'hr-handover'
 	| 'approval-chain-change'
+	| 'feishu-dept-revoke'
+	| 'document-reference'
 
 export interface NotificationTemplate<P extends object> {
 	category: 1 | 2 | 3
@@ -273,16 +275,32 @@ export const NOTIFICATION_TEMPLATES = {
 		}),
 	},
 
-	// ==================== 文档引用失效 M25 ====================
+	// ==================== 飞书部门撤销 M25 ====================
 	M25: {
 		category: 2,
 		msgCode: 'M25',
+		triggerModule: 'feishu-dept-revoke',
+		triggerPoint: '飞书同步检测到部门已在飞书侧撤销 — 通知部门负责人 + 系统管理员',
+		build: (p: ToUser & { deptName: string, deptId: bigint | number }) => ({
+			userId: p.toUserId,
+			category: 2 as const,
+			msgCode: 'M25',
+			title: `部门「${p.deptName}」在飞书组织架构中已被撤销，请及时处理该部门下的子组和文档`,
+			bizType: 'department' as const,
+			bizId: p.deptId,
+		}),
+	},
+
+	// ==================== 文档引用失效 M26 ====================
+	M26: {
+		category: 2,
+		msgCode: 'M26',
 		triggerModule: 'document-reference',
 		triggerPoint: '源文档被移除/删除，引用自动失效 — 通知目标组管理员',
 		build: (p: ToUser & { fileName: string, sourceGroupName: string, targetGroupName: string }) => ({
 			userId: p.toUserId,
 			category: 2 as const,
-			msgCode: 'M25',
+			msgCode: 'M26',
 			title: `文档《${p.fileName}》已从组《${p.sourceGroupName}》移除，您的组《${p.targetGroupName}》中的引用已自动取消`,
 		}),
 	},

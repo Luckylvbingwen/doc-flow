@@ -381,7 +381,7 @@ export async function feishuSyncContacts(): Promise<FeishuSyncResult> {
 	const emptyResult: FeishuSyncResult = {
 		total: 0, departments: 0,
 		created: 0, updated: 0, hidden: 0,
-		deptCreated: 0, deptUpdated: 0,
+		deptCreated: 0, deptUpdated: 0, deptRevoked: 0,
 		docUserCreated: 0, docUserUpdated: 0,
 		deptHeadAssigned: 0,
 	}
@@ -511,6 +511,77 @@ export async function feishuSyncContacts(): Promise<FeishuSyncResult> {
 	}
 
 	// ──────────────────────────────────────────────────────────────
+	// 4.5 检测飞书侧已撤销的部门 → 标记 feishu_revoked + 发 M25 通知
+	// ──────────────────────────────────────────────────────────────
+	let deptRevoked = 0
+	const fetchedDeptIds = new Set<string>()
+	for (const dept of departments) {
+		const openDeptId = dept.open_department_id || dept.department_id || ''
+		if (openDeptId) fetchedDeptIds.add(openDeptId)
+	}
+
+	// 查找本地有 feishu_department_id 但飞书侧已不存在、且尚未标记撤销的部门
+	const allLocalDepts = await prisma.$queryRawUnsafe<{
+		id: bigint
+		feishu_department_id: string
+		name: string
+		owner_user_id: bigint | null
+		feishu_revoked: number
+	}[]>(
+		`SELECT id, feishu_department_id, name, owner_user_id, feishu_revoked
+		 FROM doc_departments
+		 WHERE feishu_department_id IS NOT NULL AND deleted_at IS NULL`,
+	)
+
+	const { createNotifications } = await import('./notify')
+	const { NOTIFICATION_TEMPLATES } = await import('~/server/constants/notification-templates')
+	const revokeNotifications: Array<ReturnType<typeof NOTIFICATION_TEMPLATES.M25.build>> = []
+
+	for (const localDept of allLocalDepts) {
+		if (!fetchedDeptIds.has(localDept.feishu_department_id) && localDept.feishu_revoked === 0) {
+			// 标记为飞书侧已撤销
+			await prisma.$executeRawUnsafe(
+				`UPDATE doc_departments SET feishu_revoked = 1, updated_at = NOW(3) WHERE id = ?`,
+				localDept.id,
+			)
+			deptRevoked++
+
+			// 通知部门负责人
+			if (localDept.owner_user_id) {
+				revokeNotifications.push(
+					NOTIFICATION_TEMPLATES.M25.build({
+						toUserId: localDept.owner_user_id,
+						deptName: localDept.name,
+						deptId: localDept.id,
+					}),
+				)
+			}
+
+			// 通知系统管理员
+			const superAdmins = await prisma.$queryRawUnsafe<{ user_id: bigint }[]>(
+				`SELECT ur.user_id FROM sys_user_roles ur
+				 JOIN sys_roles r ON r.id = ur.role_id
+				 WHERE r.code = 'super_admin'`,
+			)
+			for (const sa of superAdmins) {
+				// 去重：如果部门负责人也是系统管理员，不重复通知
+				if (localDept.owner_user_id && BigInt(sa.user_id) === BigInt(localDept.owner_user_id)) continue
+				revokeNotifications.push(
+					NOTIFICATION_TEMPLATES.M25.build({
+						toUserId: sa.user_id,
+						deptName: localDept.name,
+						deptId: localDept.id,
+					}),
+				)
+			}
+		}
+	}
+
+	if (revokeNotifications.length > 0) {
+		await createNotifications(revokeNotifications)
+	}
+
+	// ──────────────────────────────────────────────────────────────
 	// 5. upsert doc_users（§327 全员预落地）
 	// ──────────────────────────────────────────────────────────────
 	let docUserCreated = 0
@@ -619,7 +690,7 @@ export async function feishuSyncContacts(): Promise<FeishuSyncResult> {
 		total: userMap.size,
 		departments: departments.length,
 		created, updated, hidden,
-		deptCreated, deptUpdated,
+		deptCreated, deptUpdated, deptRevoked,
 		docUserCreated, docUserUpdated,
 		deptHeadAssigned,
 	}

@@ -151,6 +151,8 @@ export const ADMIN_SELF_DEACTIVATE = 'ADMIN_SELF_DEACTIVATE'
 export const DEPARTMENT_NOT_FOUND = 'DEPARTMENT_NOT_FOUND'
 /** 部门管理员已存在 (409) */
 export const DEPARTMENT_ADMIN_EXISTS = 'DEPARTMENT_ADMIN_EXISTS'
+/** 部门下组含文档，不可删除 (400) */
+export const DEPARTMENT_HAS_DOCUMENTS = 'DEPARTMENT_HAS_DOCUMENTS'
 
 // ─── 文档（document-core A 阶段） ───
 /** 文档不存在 (404) */

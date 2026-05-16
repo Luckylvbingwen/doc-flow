@@ -51,6 +51,7 @@ CREATE TABLE doc_departments (
   description         VARCHAR(500) DEFAULT NULL,
   owner_user_id       BIGINT UNSIGNED DEFAULT NULL COMMENT '部门负责人（飞书主管同步）',
   status              TINYINT      NOT NULL DEFAULT 1 COMMENT '1启用 0停用',
+  feishu_revoked      TINYINT      NOT NULL DEFAULT 0 COMMENT '飞书侧已撤销：0正常 1已撤销',
   created_by          BIGINT UNSIGNED NOT NULL,
   created_at          DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at          DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),

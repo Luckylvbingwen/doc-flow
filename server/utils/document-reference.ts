@@ -3,7 +3,7 @@ import { createNotifications } from '~/server/utils/notify'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 
 /**
- * 清理某个源文档的所有引用关系，并通知各目标组管理员（M25）
+ * 清理某个源文档的所有引用关系，并通知各目标组管理员（M26）
  *
  * 触发场景：
  * - 源文档被管理员从组移除
@@ -28,7 +28,7 @@ export async function cleanupDocumentReferences(sourceDocumentId: bigint | numbe
 
   if (refs.length === 0) return 0
 
-  const notifications: Array<ReturnType<typeof NOTIFICATION_TEMPLATES.M25.build>> = []
+  const notifications: Array<ReturnType<typeof NOTIFICATION_TEMPLATES.M26.build>> = []
 
   for (const ref of refs) {
     const sourceGroupName = ref.doc_groups_doc_document_references_source_group_idTodoc_groups?.name ?? ''
@@ -39,7 +39,7 @@ export async function cleanupDocumentReferences(sourceDocumentId: bigint | numbe
     // 目标组负责人
     if (targetGroup?.owner_user_id) {
       notifications.push(
-        NOTIFICATION_TEMPLATES.M25.build({
+        NOTIFICATION_TEMPLATES.M26.build({
           toUserId: Number(targetGroup.owner_user_id),
           fileName,
           sourceGroupName,
@@ -60,7 +60,7 @@ export async function cleanupDocumentReferences(sourceDocumentId: bigint | numbe
     for (const admin of admins) {
       if (targetGroup?.owner_user_id && Number(admin.user_id) === Number(targetGroup.owner_user_id)) continue
       notifications.push(
-        NOTIFICATION_TEMPLATES.M25.build({
+        NOTIFICATION_TEMPLATES.M26.build({
           toUserId: Number(admin.user_id),
           fileName,
           sourceGroupName,

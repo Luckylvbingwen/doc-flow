@@ -53,6 +53,7 @@ export interface DepartmentRow {
 	name: string
 	owner_user_id: bigint | number | null
 	owner_name: string | null
+	feishu_revoked: number
 }
 
 /** 产品线查询行 */

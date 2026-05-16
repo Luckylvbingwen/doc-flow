@@ -153,6 +153,7 @@ model doc_departments {
   description                                        String?                 @db.VarChar(500)
   owner_user_id                                      BigInt?                 @db.UnsignedBigInt
   status                                             Int                     @default(1) @db.TinyInt
+  feishu_revoked                                     Int                     @default(0) @db.TinyInt
   created_by                                         BigInt                  @db.UnsignedBigInt
   created_at                                         DateTime                @default(now())
   updated_at                                         DateTime                @default(now())

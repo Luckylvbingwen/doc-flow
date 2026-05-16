@@ -1,5 +1,12 @@
 <template>
 	<div class="pli-tab">
+		<el-alert
+v-if="info.feishuRevoked" title="该部门在飞书组织架构中已被撤销" type="warning" :closable="false" show-icon
+			class="dept-revoked-alert">
+			<template #default>
+				请及时处理该部门下的子组和文档。确认无误后可删除该部门。
+			</template>
+		</el-alert>
 		<el-form v-loading="loading" label-position="top" class="pli-form">
 			<el-form-item label="部门名称">
 				<el-input :model-value="info.name" disabled />
@@ -27,26 +34,36 @@ v-model="form.description" type="textarea" :rows="3" maxlength="500" show-word-l
 			<el-form-item v-if="canEdit">
 				<el-button type="primary" :loading="saving" @click="onSave">保存修改</el-button>
 			</el-form-item>
+			<el-form-item v-if="info.feishuRevoked && canDelete">
+				<el-button type="danger" :loading="deleting" @click="onDelete">删除部门</el-button>
+			</el-form-item>
 		</el-form>
 	</div>
 </template>
 
 <script setup lang="ts">
 import { Link } from '@element-plus/icons-vue'
-import { apiGetDepartment } from '~/api/departments'
+import { apiGetDepartment, apiDeleteDepartment } from '~/api/departments'
 
 const props = defineProps<{
 	deptId: number
 	deptName: string
 }>()
 
+const emit = defineEmits<{
+	'deleted': []
+}>()
+
 const { hasRole } = useAuth()
-const { msgSuccess, msgError } = useNotify()
+const authStore = useAuthStore()
+const { msgSuccess, msgError, msgConfirm } = useNotify()
 const canEdit = computed(() => hasRole(['super_admin']))
+const canDelete = computed(() => hasRole(['super_admin']) || info.value.isDeptOwner)
 
 const loading = ref(false)
 const saving = ref(false)
-const info = ref({ name: '', ownerName: '', isSynced: false })
+const deleting = ref(false)
+const info = ref({ name: '', ownerName: '', isSynced: false, feishuRevoked: false, isDeptOwner: false })
 const form = ref({ description: '' })
 
 async function loadInfo() {
@@ -57,6 +74,8 @@ async function loadInfo() {
 			info.value.name = res.data.name
 			info.value.ownerName = res.data.ownerName ?? ''
 			info.value.isSynced = res.data.isSynced
+			info.value.feishuRevoked = res.data.feishuRevoked
+			info.value.isDeptOwner = res.data.ownerUserId === authStore.user?.id
 			form.value.description = res.data.description ?? ''
 		}
 	} finally {
@@ -83,10 +102,33 @@ async function onSave() {
 	}
 }
 
+async function onDelete() {
+	const confirmed = await msgConfirm('确定删除该部门？删除后不可恢复。', '删除部门', { danger: true })
+	if (!confirmed) return
+	deleting.value = true
+	try {
+		const res = await apiDeleteDepartment(props.deptId)
+		if (res.success) {
+			msgSuccess(res.message || '部门已删除')
+			emit('deleted')
+		} else {
+			msgError(res.message || '删除失败')
+		}
+	} catch {
+		msgError('删除失败')
+	} finally {
+		deleting.value = false
+	}
+}
+
 watch(() => props.deptId, () => loadInfo(), { immediate: true })
 </script>
 
 <style lang="scss" scoped>
+.dept-revoked-alert {
+	margin-bottom: 16px;
+}
+
 .pli-sync-hint {
 	display: flex;
 	align-items: center;

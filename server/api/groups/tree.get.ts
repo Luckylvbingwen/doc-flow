@@ -49,7 +49,7 @@ export default defineEventHandler(async () => {
 
 	// 2) 查询部门列表
 	const departments = await prisma.$queryRaw<DepartmentRow[]>`
-		SELECT d.id, d.name, d.owner_user_id, u.name AS owner_name
+		SELECT d.id, d.name, d.owner_user_id, u.name AS owner_name, d.feishu_revoked
 		FROM doc_departments d
 		LEFT JOIN doc_users u ON u.id = d.owner_user_id
 		WHERE d.deleted_at IS NULL AND d.status = 1
@@ -148,6 +148,7 @@ export default defineEventHandler(async () => {
 					id: `dept_${d.id}`,
 					label: d.name,
 					badge: dGroups.length,
+					feishuRevoked: d.feishu_revoked === 1,
 					groups: dGroups,
 				}
 			}),
