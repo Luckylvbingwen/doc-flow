@@ -170,19 +170,19 @@
 }
 
 .df-compare-pane:first-child .cp-header {
-  background: #fef2f2;
-  color: #991b1b;
+  background: var(--df-diff-old-bg, #fef2f2);
+  color: var(--df-diff-old-text, #991b1b);
 }
 
 .df-compare-pane:last-child .cp-header {
-  background: #f0fdf4;
-  color: #166534;
+  background: var(--df-diff-new-bg, #f0fdf4);
+  color: var(--df-diff-new-text, #166534);
 }
 
 .df-compare-pane .cp-body {
   flex: 1;
   overflow-y: auto;
-  background: #fff;
+  background: var(--df-panel);
   padding: 24px 32px;
   font-size: 13px;
   line-height: 1.8;
@@ -193,7 +193,7 @@
   position: fixed;
   inset: 0;
   z-index: 2000;
-  background: #fff;
+  background: var(--df-panel);
   display: flex;
   flex-direction: column;
 }
@@ -314,13 +314,13 @@
 }
 
 .compare-pane-header .ver-new {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--df-diff-new-bg, #dcfce7);
+  color: var(--df-diff-new-text, #166534);
 }
 
 .compare-pane-header .ver-old {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--df-diff-old-bg, #fee2e2);
+  color: var(--df-diff-old-text, #991b1b);
 }
 
 .compare-canvas {
@@ -330,11 +330,11 @@
   align-items: flex-start;
   justify-content: center;
   padding: 20px;
-  background: #e5e7eb;
+  background: var(--df-bg);
 }
 
 .compare-doc {
-  background: #fff;
+  background: var(--df-panel);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border-radius: 2px;
   width: 100%;
@@ -350,17 +350,17 @@
 
 /* ── Diff 高亮 ── */
 .diff-add {
-  background: #bbf7d0;
+  background: var(--df-diff-add-bg, #bbf7d0);
   padding: 1px 2px;
   border-radius: 2px;
 }
 
 .diff-del {
-  background: #fecaca;
+  background: var(--df-diff-del-bg, #fecaca);
   padding: 1px 2px;
   border-radius: 2px;
   text-decoration: line-through;
-  color: #991b1b;
+  color: var(--df-diff-old-text, #991b1b);
 }
 
 .diff-doc {
@@ -419,18 +419,18 @@
   flex-shrink: 0;
 
   &.cs-add {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--df-diff-new-bg, #dcfce7);
+    color: var(--df-diff-new-text, #166534);
   }
 
   &.cs-del {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--df-diff-old-bg, #fee2e2);
+    color: var(--df-diff-old-text, #991b1b);
   }
 
   &.cs-modify {
-    background: #fef3c7;
-    color: #854d0e;
+    background: var(--df-diff-mod-bg, #fef3c7);
+    color: var(--df-diff-mod-text, #854d0e);
   }
 }
 

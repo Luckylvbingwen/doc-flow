@@ -785,3 +785,34 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
 - `components/ApprovalChain.vue` — 新增 `mode` prop：依次=箭头串联，会签=并列显示（「同时审批」标签）
 - `types/approval.ts` — `ApprovalDetail` / `ApprovalFullDetailData` 新增 `mode` 字段
 - `assets/styles/components/_approval.scss` — 新增会签并列布局样式
+
+## 2026-05-16
+
+### feat: 文档批注功能完整交付（PRD §6.3.9）
+
+- **后端（5 个接口）**
+  - `GET /api/documents/:id/annotations` — 批注列表（含回复，created_at DESC）
+  - `POST /api/documents/:id/annotations` — 创建批注（content + quoteText + anchorData）
+  - `PUT /api/documents/:id/annotations/:annotationId` — 更新批注（内容/状态）
+  - `DELETE /api/documents/:id/annotations/:annotationId` — 删除批注（仅作者）
+  - `POST /api/documents/:id/annotations/:annotationId/replies` — 批注回复
+  - Zod schema 全字段 trim + 长度校验，frozen 批注只读保护
+- **前端组件**
+  - `components/AnnotationPanel.vue` — 右侧批注面板（筛选 TAB / 回复 / 头像 / 关闭 / 删除确认）
+  - `components/AnnotationSelector.vue` — 选字浮层 + 批注输入面板（Teleport，10s 自动隐藏，边缘碰撞检测）
+  - `utils/annotation-highlight.ts` — 文档正文批注高亮（`<mark>` 包裹 + 点击定位）
+  - `assets/styles/components/_annotation.scss` — 批注相关全部样式
+  - `assets/styles/components/_version.scss` — 右侧面板 / badge 样式
+- **页面集成**
+  - `pages/docs/file/[id].vue` — 预览工具栏批注按钮 + badge + 右侧面板 + 高亮
+  - `pages/docs/editor/[id].vue` — 编辑器页批注面板 + 选字批注
+  - `components/FullscreenPreviewer.vue` — 全屏预览批注面板 + 选字批注 + badge
+- **规格依据**：PRD §6.3.9（文档批注功能）
+
+### fix: 全屏预览版本切换报错
+
+- **根因**：FullscreenPreviewer 与父页面共享 `previewHtml` / `previewLoading` ref，全屏版本切换触发父页面 DocPreview + annotation highlight DOM 操作冲突，导致 Vue patch null VNode
+- **修复**：FullscreenPreviewer 内部管理 `versionHtml` / `versionLoading`，通过 `displayHtml` / `displayLoading` 计算属性合并 props 与内部状态，版本切换自行调 `apiPreviewDocument` 不再 emit `version-change`
+- 关闭全屏时自动重置内部状态，恢复到 props.html
+- 版本列表默认选中当前版本（`isCurrent`）
+- 下载/打印按钮增加文字标签（与版本/批注按钮风格统一）

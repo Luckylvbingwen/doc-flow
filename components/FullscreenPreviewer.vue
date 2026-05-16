@@ -524,7 +524,7 @@ onBeforeUnmount(() => {
 .fp-content {
 	flex: 1;
 	min-width: 0;
-	background: #fff;
+	background: var(--df-panel);
 }
 
 :deep(.fp-content__view) {

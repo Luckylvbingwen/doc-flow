@@ -251,6 +251,16 @@
 | POST | /api/share/create | 是 | doc:read | 创建分享链接（幂等，permission 2=可编辑/4=可阅读） |
 | GET | /api/share/:token | 是 | doc:read | 打开分享链接（权限不降级，M17 通知链接创建者） |
 
+### 文档批注 (annotations)
+
+| 方法 | 路径 | 鉴权 | 权限 | 说明 |
+| --- | --- | --- | --- | --- |
+| GET | /api/documents/:id/annotations | 是 | doc:read | 批注列表（含回复，按创建时间倒序） |
+| POST | /api/documents/:id/annotations | 是 | doc:read | 创建批注（content + quoteText + anchorData） |
+| PUT | /api/documents/:id/annotations/:annotationId | 是 | doc:read | 更新批注（修改内容 / 标记已解决） |
+| DELETE | /api/documents/:id/annotations/:annotationId | 是 | doc:read | 删除批注（仅作者可删） |
+| POST | /api/documents/:id/annotations/:annotationId/replies | 是 | doc:read | 添加批注回复 |
+
 ### 定时任务
 
 | 任务名 | cron | 说明 |
