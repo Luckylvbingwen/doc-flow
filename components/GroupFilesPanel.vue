@@ -606,7 +606,17 @@ function clearSelection() {
 async function onBatchDownload() {
 	for (const row of selectedRows.value) {
 		const res = await apiDownloadDocument(row.id)
-		if (res.success && res.data) window.location.href = res.data.url
+		if (res.success && res.data) {
+			const a = document.createElement('a')
+			a.href = res.data.url
+			a.download = res.data.filename || row.title
+			a.style.display = 'none'
+			document.body.appendChild(a)
+			a.click()
+			document.body.removeChild(a)
+			// 间隔 300ms 避免浏览器吞请求
+			await new Promise(r => setTimeout(r, 300))
+		}
 	}
 }
 

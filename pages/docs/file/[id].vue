@@ -1196,16 +1196,18 @@ function backToGroup() {
 
 // ── 编辑副本 ──
 async function handleEdit() {
-	try {
-		await msgConfirm(
-			'将为此文档创建一份编辑副本，原已发布版本不受影响。一份文档同时只有一份活跃副本。',
-			'确认编辑'
-		)
-	} catch { return }
+	const ok = await msgConfirm(
+		'将为此文档创建一份编辑副本，原已发布版本不受影响。一份文档同时只有一份活跃副本。',
+		'确认编辑'
+	)
+	if (!ok) return
 	creatingCopy.value = true
 	try {
 		const res = await apiCreateEditCopy(documentId.value)
-		if (!res.success) return
+		if (!res.success) {
+			msgError(res.message || '创建编辑副本失败')
+			return
+		}
 
 		if (res.data.isNew) {
 			// 提示未解决批注数

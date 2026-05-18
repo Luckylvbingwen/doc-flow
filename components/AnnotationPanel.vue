@@ -197,24 +197,35 @@ function onReplyMentionSelect(user: MentionUser, replaceStart: number, replaceEn
 async function submitReply(annotationId: string) {
 	if (!replyContent.value.trim()) return
 	replySubmitting.value = true
-	const res = await apiCreateAnnotationReply(props.docId, annotationId, {
-		content: replyContent.value,
-		mentionedUserIds: replyMentionedUserIds.value.length > 0 ? replyMentionedUserIds.value : undefined,
-	})
-	if (res.success && res.data) {
-		const ann = annotations.value.find(a => a.id === annotationId)
-		if (ann) ann.replies.push(res.data)
+	try {
+		const res = await apiCreateAnnotationReply(props.docId, annotationId, {
+			content: replyContent.value,
+			mentionedUserIds: replyMentionedUserIds.value.length > 0 ? replyMentionedUserIds.value : undefined,
+		})
+		if (res.success && res.data) {
+			const ann = annotations.value.find(a => a.id === annotationId)
+			if (ann) ann.replies.push(res.data)
+		} else {
+			msgError(res.message || '回复发送失败')
+		}
+	} catch {
+		msgError('回复发送失败')
+	} finally {
+		replyingId.value = ''
+		replyContent.value = ''
+		replyMentionedUserIds.value = []
+		replySubmitting.value = false
 	}
-	replyingId.value = ''
-	replyContent.value = ''
-	replyMentionedUserIds.value = []
-	replySubmitting.value = false
 }
 
 async function handleResolve(id: string) {
-	await apiUpdateAnnotation(props.docId, id, { status: 2 })
-	const ann = annotations.value.find(a => a.id === id)
-	if (ann) ann.status = 2
+	const res = await apiUpdateAnnotation(props.docId, id, { status: 2 })
+	if (res.success) {
+		const ann = annotations.value.find(a => a.id === id)
+		if (ann) ann.status = 2
+	} else {
+		msgError(res.message || '标记解决失败')
+	}
 }
 
 async function handleDelete(id: string) {

@@ -149,8 +149,9 @@ import {
 } from '~/utils/doc-meta'
 import { primaryActions, menuActions, type ActionKind } from '~/utils/personal-matrix'
 import { apiGetPersonalDocs, apiGetPersonalHandover, apiDeleteDraft } from '~/api/personal'
-import { apiDownloadDocument, apiSubmitPermissionRequest, apiUnfavoriteDocument } from '~/api/documents'
+import { apiDownloadDocument, apiSubmitPermissionRequest, apiUnfavoriteDocument, apiGetDocumentApprovals } from '~/api/documents'
 import { apiCreateDraft, apiCreateEditCopy } from '~/api/document-editor'
+import { apiWithdrawApproval } from '~/api/approvals'
 import type {
 	PersonalDocItem,
 	HandoverGroup,
@@ -493,16 +494,39 @@ function onPublish(doc: PersonalDocItem) {
 }
 
 async function onWithdraw(doc: PersonalDocItem) {
-	// 个人中心"撤回"对应"审批中"文档 → 查 approval instance id
-	// 简化实现：直接把 doc.id 传 withdraw 接口是不对的，需先查 instance id
-	// 但本 A 阶段范围不含"通过 documentId 找 active instance"的新接口
-	// 权宜做法：提示用户去审批中心操作，保留 UI 入口但不直接调 API
 	const ok = await msgConfirm(
-		`请前往审批中心撤回「${doc.title}」的审批。`,
+		`确定撤回「${doc.title}」的审批吗？撤回后文档将回到编辑中状态。`,
 		'撤回审批',
-		{ type: 'info', confirmText: '去审批中心' },
+		{ type: 'warning', confirmText: '确认撤回', danger: true },
 	)
-	if (ok) navigateTo('/approvals?tab=submitted')
+	if (!ok) return
+	busyId.value = doc.id
+	busyKind.value = 'withdraw'
+	try {
+		// 查找该文档的活跃审批实例
+		const appRes = await apiGetDocumentApprovals(doc.id)
+		if (!appRes.success) {
+			msgError(appRes.message || '获取审批信息失败')
+			return
+		}
+		const activeInstance = appRes.data.find(a => a.status === 2)
+		if (!activeInstance) {
+			msgWarning('未找到进行中的审批实例')
+			return
+		}
+		const res = await apiWithdrawApproval(activeInstance.id)
+		if (res.success) {
+			msgSuccess(res.message || '撤回成功')
+			load()
+		} else {
+			msgError(res.message || '撤回失败')
+		}
+	} catch {
+		msgError('撤回失败')
+	} finally {
+		busyId.value = null
+		busyKind.value = null
+	}
 }
 
 async function onDelete(doc: PersonalDocItem) {
