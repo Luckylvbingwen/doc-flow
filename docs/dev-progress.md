@@ -588,7 +588,7 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
 | P2 | 操作日志 | ✅ A 阶段完成于 2026-04-17（埋点随各业务补） |
 | P2 | 回收站 | ✅ A 阶段完成于 2026-04-18（30 天自动清理 cron 后续排期） |
 | P2 | 收藏 / 置顶 | ✅ B 阶段完成于 2026-04-24（读端 A 阶段 + 写端 B 阶段 + UI + 级联清理）|
-| P2 | 评论 / 批注、文档引用、搜索、分享 | ⏳ 待排期 |
+| P2 | 评论 / 批注、文档引用、搜索、分享 | ✅ 完成（批注含 @提及+重叠高亮 P3，文档引用+搜索+分享 2026-05-14） |
 | P3 | M24 审批链成员因离职/调岗移除 | 🕓 待产品讨论（归"离职交接运行时"整体设计）|
 
 ---
@@ -871,3 +871,14 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
 - `utils/annotation-highlight.ts` — 检测重叠批注（同一文本被多条批注覆盖），复用已有 mark 并追加 annotation ID
 - 重叠 mark 添加 `.annotation-highlight--overlap` 样式（橙色背景）和数字角标 badge
 - 清理函数正确移除 badge 元素避免文本污染
+
+### fix: 文档下载鉴权失败及体验问题
+
+- **根因**：原实现 `sendRedirect(event, presignedUrl, 302)` 让浏览器 302 跳转 MinIO 预签名链接，但前端通过 `window.open` / `<a>` 导航时不携带 Authorization header，导致鉴权中间件返回 401
+- **修复**：
+  - `server/api/documents/[id]/download.get.ts` — 改为 `ok({ url, filename })` 返回 JSON，前端先调接口获取预签名 URL 再跳转
+  - `server/utils/storage/minio.ts` — `presignGetUrl(key, seconds, filename?)` 支持可选 `filename` 参数，传入时设置 `ResponseContentDisposition: attachment; filename="..."` 强制浏览器下载
+  - `server/utils/storage/types.ts` — 接口签名同步更新
+  - `api/documents.ts` — `apiDownloadDocumentUrl()` 改为 `apiDownloadDocument()`，使用 `useAuthFetch` 携带 token 调用
+  - `pages/docs/file/[id].vue` — 下载逻辑改为 `apiDownloadDocument` → `window.location.href = url`（Content-Disposition 阻止页面跳转）+ 成功后 `downloadCount++`
+- **解决的问题**：下载时 AUTH_TOKEN_MISSING 401 错误、浏览器直接打开文件而非下载、页面闪白、下载次数不更新

@@ -956,7 +956,32 @@
 
 ---
 
-### 3.39 GET /api/groups/:id/approval-template
+### 3.39 GET /api/users/search
+
+轻量用户搜索，供批注 @提及等场景使用。
+
+**权限：** `doc:read`（任何已登录用户）
+
+**Query：**
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| keyword | string | 是 | 搜索关键词（1-50 字符），按用户名模糊匹配 |
+
+**成功响应 data：**
+
+```json
+[
+  { "id": 10001, "name": "张三", "avatar": "https://..." },
+  { "id": 10002, "name": "张四", "avatar": null }
+]
+```
+
+最多返回 10 条，按 ID 正序。仅搜索 `status=1` 且未删除的用户。
+
+---
+
+### 3.40 GET /api/groups/:id/approval-template
 
 读取组审批配置。模板不存在时兜底返回默认值（不写库）。
 
@@ -982,7 +1007,7 @@
 
 ---
 
-### 3.40 PUT /api/groups/:id/approval-template
+### 3.41 PUT /api/groups/:id/approval-template
 
 整包保存审批配置。服务端在一个事务内 upsert 模板、批量重建审批人 nodes、更新组总开关。
 
@@ -1000,7 +1025,7 @@
 
 ---
 
-### 3.41 GET /api/product-lines
+### 3.42 GET /api/product-lines
 
 产品线列表（含负责人名称）。
 
@@ -1015,7 +1040,7 @@
 
 ---
 
-### 3.42 POST /api/product-lines
+### 3.43 POST /api/product-lines
 
 创建产品线。创建者自动成为负责人。**权限：** super_admin。
 
@@ -1030,7 +1055,7 @@
 
 ---
 
-### 3.43 PUT /api/product-lines/:id
+### 3.44 PUT /api/product-lines/:id
 
 编辑产品线。**权限：** super_admin。
 
@@ -1045,7 +1070,7 @@
 
 ---
 
-### 3.44 DELETE /api/product-lines/:id
+### 3.45 DELETE /api/product-lines/:id
 
 删除产品线（软删除）。含组时拒绝。**权限：** super_admin。
 
@@ -1053,7 +1078,7 @@
 
 ---
 
-### 3.45 GET /api/logs
+### 3.46 GET /api/logs
 
 操作日志列表。**权限：** `log:read`（super_admin / company_admin / dept_head / pl_head）。
 
@@ -1089,7 +1114,7 @@
 
 ---
 
-### 3.45b GET /api/documents/:id/history
+### 3.46b GET /api/documents/:id/history
 
 文档级操作历史。按 `document_id` 过滤 `doc_operation_logs`，返回该文档相关的所有操作记录。
 
@@ -1120,7 +1145,7 @@
 
 ---
 
-### 3.46 GET /api/notifications
+### 3.47 GET /api/notifications
 
 **路径**：`GET /api/notifications`
 **鉴权**：JWT（不挂 `requirePermission`，仅通过 `event.context.user.id` 过滤，用户只能读自己的通知）
@@ -1163,7 +1188,7 @@
 
 ---
 
-### 3.47 GET /api/notifications/unread-count
+### 3.48 GET /api/notifications/unread-count
 
 **路径**：`GET /api/notifications/unread-count`
 **鉴权**：同上
@@ -1183,7 +1208,7 @@
 
 ---
 
-### 3.48 PUT /api/notifications/:id/read
+### 3.49 PUT /api/notifications/:id/read
 
 **路径**：`PUT /api/notifications/:id/read`
 **鉴权**：JWT，仅 owner（非 owner 返回 404）
@@ -1203,7 +1228,7 @@
 
 ---
 
-### 3.49 PUT /api/notifications/read-all
+### 3.50 PUT /api/notifications/read-all
 
 **路径**：`PUT /api/notifications/read-all`
 **鉴权**：JWT，仅影响当前用户
@@ -1226,7 +1251,7 @@
 
 ---
 
-### 3.50 GET /api/recycle-bin
+### 3.51 GET /api/recycle-bin
 
 **路径**：`GET /api/recycle-bin`
 **鉴权**：JWT + `recycle:read`
@@ -1273,7 +1298,7 @@
 
 ---
 
-### 3.51 GET /api/recycle-bin/filter-groups
+### 3.52 GET /api/recycle-bin/filter-groups
 
 **路径**：`GET /api/recycle-bin/filter-groups`
 **鉴权**：JWT + `recycle:read`
@@ -1299,7 +1324,7 @@
 
 ---
 
-### 3.52 POST /api/recycle-bin/restore
+### 3.53 POST /api/recycle-bin/restore
 
 **路径**：`POST /api/recycle-bin/restore`
 **鉴权**：JWT + `recycle:restore`
@@ -1344,7 +1369,7 @@
 
 ---
 
-### 3.53 POST /api/recycle-bin/purge
+### 3.54 POST /api/recycle-bin/purge
 
 **路径**：`POST /api/recycle-bin/purge`
 **鉴权**：JWT + `recycle:delete`
@@ -1374,7 +1399,7 @@
 
 ---
 
-### 3.54 GET /api/approvals
+### 3.55 GET /api/approvals
 
 **路径**：`GET /api/approvals`
 **鉴权**：JWT 登录即可；**不挂** `approval:read`，仅按 `event.context.user.id` 过滤
@@ -1428,7 +1453,7 @@
 
 ---
 
-### 3.55 POST /api/approvals/:id/withdraw
+### 3.56 POST /api/approvals/:id/withdraw
 
 **路径**：`POST /api/approvals/:id/withdraw`
 **鉴权**：JWT 登录即可（仅对自己发起的审批生效）
@@ -1445,7 +1470,7 @@
 
 ---
 
-### 3.56 GET /api/documents/:id/comments
+### 3.57 GET /api/documents/:id/comments
 
 **路径**：`GET /api/documents/:id/comments`
 **鉴权**：JWT + `doc:read`
@@ -1481,7 +1506,7 @@
 
 ---
 
-### 3.57 POST /api/documents/:id/comments
+### 3.58 POST /api/documents/:id/comments
 
 **路径**：`POST /api/documents/:id/comments`
 **鉴权**：JWT + `doc:read`
@@ -1507,7 +1532,7 @@
 
 ---
 
-### 3.58 DELETE /api/documents/:id/comments/:commentId
+### 3.59 DELETE /api/documents/:id/comments/:commentId
 
 **路径**：`DELETE /api/documents/:id/comments/:commentId`
 **鉴权**：JWT + `doc:read`（仅评论创建人可删）
@@ -1525,7 +1550,7 @@
 
 ---
 
-### 3.59 POST /api/documents/batch-remove
+### 3.60 POST /api/documents/batch-remove
 
 **路径**：`POST /api/documents/batch-remove`
 **鉴权**：JWT + `doc:remove`
@@ -1559,7 +1584,7 @@
 
 ---
 
-### 3.60 POST /api/documents/:id/move
+### 3.61 POST /api/documents/:id/move
 
 **路径**：`POST /api/documents/:id/move`
 **鉴权**：JWT + `doc:move`
@@ -1591,7 +1616,7 @@
 
 ---
 
-### 3.61 PUT /api/documents/cross-move/:id/review
+### 3.62 PUT /api/documents/cross-move/:id/review
 
 **路径**：`PUT /api/documents/cross-move/:id/review`
 **鉴权**：JWT + `doc:move`
@@ -1619,7 +1644,7 @@
 
 ---
 
-### 3.62 POST /api/share/create
+### 3.63 POST /api/share/create
 
 **路径**：`POST /api/share/create`
 **鉴权**：JWT + `doc:read`
@@ -1649,7 +1674,7 @@
 
 ---
 
-### 3.63 GET /api/share/:token
+### 3.64 GET /api/share/:token
 
 **路径**：`GET /api/share/:token`
 **鉴权**：JWT + `doc:read`

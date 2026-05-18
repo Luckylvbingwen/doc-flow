@@ -225,10 +225,13 @@
 | M22 | group-owner | 组负责人变更 | ✅ 2026-05-13（`groups/[id].put.ts` ownerId 字段 + M22 通知全组成员） |
 | M23 | hr-handover | 员工离职交接 | ✅ 2026-05-13（`admin/users/[id]/deactivate.put.ts` — 部门范围组交接时通知部门负责人） |
 | M24 | approval-chain-change | 审批链成员因离职/调岗移除 | ✅ 2026-05-13（`admin/users/[id]/deactivate.put.ts` — 移除审批链节点时通知组负责人） |
+| M25 | feishu-dept-revoke | 飞书部门撤销 — 通知部门负责人+系统管理员 | ✅ 2026-05-14（`server/utils/feishu.ts` 飞书同步检测） |
+| M26 | document-reference | 源文档被移除/删除，引用自动失效 — 通知目标组管理员 | ✅ 2026-05-14（`server/utils/document-reference.ts`） |
+| M27 | annotation-mention | 批注中 @提及用户 — 通知被提及人 | ✅ 2026-05-18（`annotations.post.ts` + `replies.post.ts`） |
 
 **开发流程：** 做某业务模块前 → `grep "triggerModule: 'xxx'" server/constants/notification-templates.ts` 反查 M 码 → 依模板接入 → 本表打 ✅ + 日期。
 
-**飞书推送：** ✅ 2026-05-14 已在 `server/utils/notify.ts` 统一入口中集成。`createNotification` / `createNotifications` 写入站内通知后自动推送飞书交互卡片，M1-M25 全部覆盖，无需逐 API 修改。
+**飞书推送：** ✅ 2026-05-14 已在 `server/utils/notify.ts` 统一入口中集成。`createNotification` / `createNotifications` 写入站内通知后自动推送飞书交互卡片，M1-M27 全部覆盖，无需逐 API 修改。
 
 **延迟项**：
 - `/docs/repo/[id].vue` 页的 `?openSettings=approval` query 自动打开组设置审批配置 Tab，因 repo 页当前未集成 GroupSettingsModal，推迟到 repo 页整合时一并实现。通知中心 M24 卡片点击会跳到 `/docs/repo/:id?openSettings=approval`，目前只跳转不自动开弹窗。
