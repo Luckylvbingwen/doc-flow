@@ -80,10 +80,13 @@
 }
 
 .annotation-item {
-  padding: 10px 0;
+  padding: 10px 8px;
   border-bottom: 1px solid var(--df-border);
+  border-top: 3px solid transparent;
   cursor: pointer;
-  transition: background 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 
   &:hover {
     background: var(--df-surface);
@@ -91,6 +94,7 @@
 
   &--active {
     background: var(--df-primary-soft);
+    border-top-color: var(--df-primary);
   }
 
   &__header {

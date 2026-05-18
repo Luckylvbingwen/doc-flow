@@ -24,6 +24,7 @@ ref="inputRef" v-model="content" type="textarea" :rows="3" placeholder="输入�
 <script setup lang="ts">
 import { apiCreateAnnotation } from '~/api/document-editor'
 import type { AnnotationItem } from '~/types/document-editor'
+import { useAuthStore } from '~/stores/auth'
 
 const props = defineProps<{
 	docId: number
@@ -36,6 +37,7 @@ const emit = defineEmits<{
 }>()
 
 const { msgSuccess, msgError } = useNotify()
+const authStore = useAuthStore()
 
 const showFloating = ref(false)
 const showInput = ref(false)
@@ -162,8 +164,8 @@ async function submit() {
 				content: trimmedContent,
 				quoteText: quoteText.value,
 				anchorData: anchorData.value,
-				authorName: '',
-				authorAvatar: null,
+				authorName: authStore.user?.name || '',
+				authorAvatar: authStore.user?.avatar || null,
 				createdAt: Date.now(),
 				status: 1,
 				resolvedAt: null,

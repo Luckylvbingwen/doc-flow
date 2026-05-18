@@ -243,7 +243,7 @@ v-for="item in tocOutline" :key="item.id" class="df-toc-sidebar__item"
 							</el-scrollbar>
 						</aside>
 						<el-scrollbar ref="previewScrollerRef">
-							<div ref="previewBodyRef" class="df-preview-body">
+							<div ref="previewBodyRef" class="df-preview-body" @click="activeAnnotationId = undefined">
 								<DocPreview
 class="df-detail-preview" :file-type="fileType" :html="previewHtml"
 									:loading="previewLoading" />
@@ -923,8 +923,6 @@ function onAnnotationRequestAdd() {
 
 function onAnnotationLocate(item: { id: string; quoteText?: string }) {
 	activeAnnotationId.value = item.id
-	// 清除高亮
-	setTimeout(() => { activeAnnotationId.value = undefined }, 3000)
 }
 
 function onAnnotationCreated(item: any) {
@@ -953,7 +951,6 @@ function refreshAnnotationHighlights() {
 						annotationOpen.value = true
 						activeAnnotationId.value = id
 						annotationPanelRef.value?.scrollTo(id)
-						setTimeout(() => { activeAnnotationId.value = undefined }, 3000)
 					})
 					// 更新批注总数
 					annotationTotalCount.value = res.data.length

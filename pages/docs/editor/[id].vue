@@ -51,7 +51,7 @@
 		<!-- ─── 主体 ─── -->
 		<div class="editor-body">
 			<!-- 编辑区 -->
-			<main ref="editorMainRef" class="editor-main">
+			<main ref="editorMainRef" class="editor-main" @click="activeAnnotationId = undefined">
 				<!-- 快照预览内容（只读覆盖） -->
 				<div v-if="previewMode" class="editor-preview-content markdown-body" v-html="sanitize(previewHtml)" />
 				<ClientOnly v-else>
@@ -179,7 +179,6 @@ const editorMainRef = ref<HTMLElement | null>(null)
 
 function onAnnotationLocate(item: { id: string }) {
 	activeAnnotationId.value = item.id
-	setTimeout(() => { activeAnnotationId.value = undefined }, 3000)
 }
 
 function onAnnotationCreated(item: any) {

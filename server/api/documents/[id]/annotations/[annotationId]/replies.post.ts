@@ -51,12 +51,18 @@ export default defineEventHandler(async (event) => {
 		},
 	})
 
+	// 查询用户头像
+	const userInfo = await prisma.doc_users.findUnique({
+		where: { id: BigInt(user.id) },
+		select: { avatar_url: true },
+	})
+
 	// 返回新回复数据
 	return ok({
 		id: id.toString(),
 		content: body.content,
 		authorName: user.name,
-		authorAvatar: null,
+		authorAvatar: userInfo?.avatar_url || null,
 		createdAt: Date.now(),
 	}, '回复成功')
 })

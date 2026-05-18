@@ -105,7 +105,7 @@ v-for="item in outline" :key="item.id" class="fp-outline__item"
 
 						<!-- 预览正文 -->
 						<el-scrollbar ref="scrollerRef" class="fp-content" view-class="fp-content__view">
-							<div ref="fpPreviewBodyRef">
+							<div ref="fpPreviewBodyRef" @click="activeAnnotationId = undefined">
 								<DocPreview
 class="fp-doc-preview" :file-type="fileType" :html="displayHtml"
 									:loading="displayLoading" />
@@ -204,7 +204,6 @@ const fpAnnotationCount = ref(0)
 
 function onAnnotationLocate(item: { id: string }) {
 	activeAnnotationId.value = item.id
-	setTimeout(() => { activeAnnotationId.value = undefined }, 3000)
 }
 
 function onAnnotationCreated(_item: any) {
