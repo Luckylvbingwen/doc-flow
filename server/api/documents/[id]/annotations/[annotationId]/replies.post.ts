@@ -5,6 +5,8 @@
 import { prisma } from '~/server/utils/prisma'
 import { generateId } from '~/server/utils/snowflake'
 import { createReplySchema } from '~/server/schemas/annotation'
+import { createNotifications } from '~/server/utils/notify'
+import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import { INVALID_PARAMS, ANNOTATION_FROZEN } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
@@ -23,14 +25,14 @@ export default defineEventHandler(async (event) => {
 	// 查文档获取当前版本
 	const doc = await prisma.doc_documents.findFirst({
 		where: { id: docId, deleted_at: null },
-		select: { current_version_id: true },
+		select: { id: true, title: true, current_version_id: true },
 	})
 	if (!doc) return fail(event, 400, INVALID_PARAMS, '文档不存在')
 
 	// 查批注
 	const ann = await prisma.doc_document_annotations.findFirst({
 		where: { id: annId, document_id: docId, deleted_at: null },
-		select: { id: true, version_id: true, is_frozen: true },
+		select: { id: true, version_id: true, is_frozen: true, quote_text: true },
 	})
 	if (!ann) return fail(event, 400, INVALID_PARAMS, '批注不存在')
 
@@ -56,6 +58,20 @@ export default defineEventHandler(async (event) => {
 		where: { id: BigInt(user.id) },
 		select: { avatar_url: true },
 	})
+
+	// @提及通知
+	if (body.mentionedUserIds.length > 0) {
+		const validIds = body.mentionedUserIds.filter(uid => uid !== user.id)
+		if (validIds.length > 0) {
+			await createNotifications(validIds.map(uid => NOTIFICATION_TEMPLATES.M27.build({
+				toUserId: uid,
+				mentioner: user.name,
+				fileName: doc.title,
+				fileId: doc.id,
+				quoteText: ann.quote_text ?? undefined,
+			})))
+		}
+	}
 
 	// 返回新回复数据
 	return ok({

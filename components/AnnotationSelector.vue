@@ -11,8 +11,9 @@
 				"{{ displayQuote }}"
 			</div>
 			<el-input
-ref="inputRef" v-model="content" type="textarea" :rows="3" placeholder="输入批注内容..." maxlength="1000"
-				show-word-limit autofocus />
+ref="inputRef" v-model="content" type="textarea" :rows="3" placeholder="输入批注内容，@ 可提及用户" maxlength="1000"
+				show-word-limit autofocus @input="onTextInput" @keydown="onTextKeydown" />
+			<MentionPopup ref="mentionRef" :textarea-el="textareaEl" @select="onMentionSelect" />
 			<div class="annotation-input-panel__actions">
 				<el-button size="small" @click="cancel">取消</el-button>
 				<el-button size="small" type="primary" :loading="submitting" @click="submit">提交批注</el-button>
@@ -23,6 +24,7 @@ ref="inputRef" v-model="content" type="textarea" :rows="3" placeholder="输入�
 
 <script setup lang="ts">
 import { apiCreateAnnotation } from '~/api/document-editor'
+import type { MentionUser } from '~/api/document-editor'
 import type { AnnotationItem } from '~/types/document-editor'
 import { useAuthStore } from '~/stores/auth'
 
@@ -46,7 +48,12 @@ const inputStyle = ref<Record<string, string>>({})
 const quoteText = ref('')
 const content = ref('')
 const submitting = ref(false)
-const inputRef = ref<{ focus: () => void } | null>(null)
+const inputRef = ref<{ focus: () => void; textarea?: HTMLTextAreaElement } | null>(null)
+const mentionRef = ref<{ handleInput: () => void; handleKeydown: (e: KeyboardEvent) => void; hide: () => void } | null>(null)
+
+// @提及
+const mentionedUserIds = ref<number[]>([])
+const textareaEl = computed(() => inputRef.value?.textarea ?? null)
 
 // 选区信息，创建批注时作为 anchorData
 const anchorData = ref<Record<string, unknown>>({})
@@ -141,6 +148,37 @@ function onClickAdd() {
 function cancel() {
 	showInput.value = false
 	content.value = ''
+	mentionedUserIds.value = []
+	mentionRef.value?.hide()
+}
+
+function onTextInput() {
+	mentionRef.value?.handleInput()
+}
+
+function onTextKeydown(e: KeyboardEvent | Event) {
+	mentionRef.value?.handleKeydown(e as KeyboardEvent)
+}
+
+function onMentionSelect(user: MentionUser, replaceStart: number, replaceEnd: number) {
+	// 替换 @keyword 为 @name
+	const before = content.value.slice(0, replaceStart)
+	const after = content.value.slice(replaceEnd)
+	content.value = `${before}@${user.name} ${after}`
+	// 记录用户 ID（去重）
+	if (!mentionedUserIds.value.includes(user.id)) {
+		mentionedUserIds.value.push(user.id)
+	}
+	// 移动光标到插入文字后
+	nextTick(() => {
+		const pos = replaceStart + user.name.length + 2 // @name + space
+		const el = textareaEl.value
+		if (el) {
+			el.selectionStart = pos
+			el.selectionEnd = pos
+			el.focus()
+		}
+	})
 }
 
 async function submit() {
@@ -155,6 +193,7 @@ async function submit() {
 			content: trimmedContent,
 			quoteText: quoteText.value,
 			anchorData: anchorData.value,
+			mentionedUserIds: mentionedUserIds.value.length > 0 ? mentionedUserIds.value : undefined,
 		})
 		if (res.success && res.data) {
 			msgSuccess('批注已添加')
@@ -175,6 +214,7 @@ async function submit() {
 			emit('created', item)
 			showInput.value = false
 			content.value = ''
+			mentionedUserIds.value = []
 		} else {
 			msgError((res as any).message || '批注保存失败，请重试')
 		}

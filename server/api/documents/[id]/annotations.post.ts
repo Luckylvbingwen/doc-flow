@@ -5,6 +5,8 @@
 import { prisma } from '~/server/utils/prisma'
 import { generateId } from '~/server/utils/snowflake'
 import { createAnnotationSchema } from '~/server/schemas/annotation'
+import { createNotifications } from '~/server/utils/notify'
+import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import { DOCUMENT_NOT_FOUND, INVALID_PARAMS } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
@@ -18,7 +20,7 @@ export default defineEventHandler(async (event) => {
 
 	const doc = await prisma.doc_documents.findFirst({
 		where: { id: docId, deleted_at: null },
-		select: { id: true, current_version_id: true },
+		select: { id: true, title: true, current_version_id: true },
 	})
 	if (!doc) return fail(event, 404, DOCUMENT_NOT_FOUND, '文档不存在')
 
@@ -37,6 +39,20 @@ export default defineEventHandler(async (event) => {
 			status: 1,
 		},
 	})
+
+	// @提及通知
+	if (body.mentionedUserIds.length > 0) {
+		const validIds = body.mentionedUserIds.filter(uid => uid !== user.id)
+		if (validIds.length > 0) {
+			await createNotifications(validIds.map(uid => NOTIFICATION_TEMPLATES.M27.build({
+				toUserId: uid,
+				mentioner: user.name,
+				fileName: doc.title,
+				fileId: doc.id,
+				quoteText: body.quoteText,
+			})))
+		}
+	}
 
 	return ok({ id: id.toString() }, '批注已添加')
 })

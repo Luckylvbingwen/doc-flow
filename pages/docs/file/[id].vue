@@ -254,7 +254,8 @@ class="df-detail-preview" :file-type="fileType" :html="previewHtml"
 						<aside v-if="annotationOpen" class="df-annotation-sidebar">
 							<AnnotationPanel
 ref="annotationPanelRef" :doc-id="documentId" :active-annotation-id="activeAnnotationId"
-								@request-add="onAnnotationRequestAdd" @locate="onAnnotationLocate" @close="annotationOpen = false" />
+								@request-add="onAnnotationRequestAdd" @locate="onAnnotationLocate" @close="annotationOpen = false"
+								@changed="refreshAnnotationHighlights" />
 						</aside>
 					</div>
 				</template>
@@ -464,7 +465,7 @@ import type {
 import {
 	apiGetDocument,
 	apiPreviewDocument,
-	apiDownloadDocumentUrl,
+	apiDownloadDocument,
 	apiRemoveDocument,
 	apiRollbackVersion,
 	apiFavoriteDocument,
@@ -711,12 +712,20 @@ function openFullscreenCompare() {
 }
 
 // ── 下载 ──
-function handleDownloadVersion(version: VersionInfo) {
-	window.location.href = apiDownloadDocumentUrl(documentId.value, version.id)
+async function handleDownloadVersion(version: VersionInfo) {
+	const res = await apiDownloadDocument(documentId.value, version.id)
+	if (res.success && res.data) {
+		window.location.href = res.data.url
+		if (detail.value) detail.value.downloadCount++
+	}
 }
 
-function handleDownloadCurrent() {
-	window.location.href = apiDownloadDocumentUrl(documentId.value)
+async function handleDownloadCurrent() {
+	const res = await apiDownloadDocument(documentId.value)
+	if (res.success && res.data) {
+		window.location.href = res.data.url
+		if (detail.value) detail.value.downloadCount++
+	}
 }
 
 // ── 版本回滚（PRD §6.3.4 — 回滚生成新版本，不删除中间版本） ──

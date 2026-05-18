@@ -852,3 +852,22 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
 - `pages/approvals.vue` — 查看文件/全屏对比跳转时附加 `?from=approval` 查询参数
 - `pages/docs/file/[id].vue` — 检测 `from=approval` 或 `annotation=1` 参数，初始化后自动展开批注面板
 - 审批人在文件预览页可直接选字添加批注作为审批修改意见，批注绑定当前版本，新版本发布后自动冻结
+
+### feat: 批注 @提及用户 + 通知（P3）
+
+- **后端**：
+  - `server/api/users/search.get.ts` — 轻量用户搜索接口 `GET /api/users/search?keyword=xxx`，返回 id/name/avatar（最多 10 条）
+  - `createAnnotationSchema` / `createReplySchema` 新增 `mentionedUserIds` 可选字段
+  - 创建批注/回复时自动向被提及用户发送 M27 通知（annotation-mention 模板）
+  - `server/constants/notification-templates.ts` 新增 M27 模板
+- **前端**：
+  - `components/MentionPopup.vue` — @ 提及弹窗组件（300ms 防抖搜索、键盘导航、定位在 textarea 下方）
+  - `AnnotationSelector.vue` — 批注输入集成 @提及，提交时传递 mentionedUserIds
+  - `AnnotationPanel.vue` — 回复输入集成 @提及
+  - `api/document-editor.ts` — `apiSearchMentionUsers()` + API 签名更新
+
+### feat: 多批注重叠高亮 + 数字角标（P3）
+
+- `utils/annotation-highlight.ts` — 检测重叠批注（同一文本被多条批注覆盖），复用已有 mark 并追加 annotation ID
+- 重叠 mark 添加 `.annotation-highlight--overlap` 样式（橙色背景）和数字角标 badge
+- 清理函数正确移除 badge 元素避免文本污染

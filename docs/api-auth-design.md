@@ -116,6 +116,7 @@
 | PUT | /api/groups/:id/members/:memberId | 是 | 组管理权限 | 修改成员权限 |
 | DELETE | /api/groups/:id/members/:memberId | 是 | 组管理权限 | 移除成员（软删除） |
 | GET | /api/users/tree | 是 | 登录即可 | 部门 + 部门下用户树（成员选择器数据源） |
+| GET | /api/users/search | 是 | doc:read | 用户搜索（@提及，最多 10 条） |
 
 > 组管理权限：组负责人、对应 scope 的管理角色（company_admin / dept_head / pl_head）或组内管理员（role=1 的成员）。
 

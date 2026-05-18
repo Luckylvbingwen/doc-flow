@@ -19,7 +19,7 @@ export const apiCreateEditCopy = (id: number) =>
 export const apiGetAnnotations = (docId: number) =>
 	useAuthFetch<ApiResult<AnnotationItem[]>>(`/api/documents/${docId}/annotations`)
 
-export const apiCreateAnnotation = (docId: number, body: { content: string; quoteText: string; anchorData?: Record<string, unknown> }) =>
+export const apiCreateAnnotation = (docId: number, body: { content: string; quoteText: string; anchorData?: Record<string, unknown>; mentionedUserIds?: number[] }) =>
 	useAuthFetch<ApiResult<AnnotationItem>>(`/api/documents/${docId}/annotations`, { method: 'POST', body })
 
 export const apiUpdateAnnotation = (docId: number, annotationId: string, body: { content?: string; status?: number }) =>
@@ -28,5 +28,11 @@ export const apiUpdateAnnotation = (docId: number, annotationId: string, body: {
 export const apiDeleteAnnotation = (docId: number, annotationId: string) =>
 	useAuthFetch<ApiResult<null>>(`/api/documents/${docId}/annotations/${annotationId}`, { method: 'DELETE' })
 
-export const apiCreateAnnotationReply = (docId: number, annotationId: string, body: { content: string }) =>
+export const apiCreateAnnotationReply = (docId: number, annotationId: string, body: { content: string; mentionedUserIds?: number[] }) =>
 	useAuthFetch<ApiResult<AnnotationReply>>(`/api/documents/${docId}/annotations/${annotationId}/replies`, { method: 'POST', body })
+
+// ── @提及用户搜索 ──
+export interface MentionUser { id: number; name: string; avatar: string | null }
+
+export const apiSearchMentionUsers = (keyword: string) =>
+	useAuthFetch<ApiResult<MentionUser[]>>(`/api/users/search?keyword=${encodeURIComponent(keyword)}`)

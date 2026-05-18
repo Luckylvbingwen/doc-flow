@@ -73,9 +73,12 @@ v-for="item in filteredAnnotations" :key="item.id" :ref="el => setItemRef(item.i
 
 				<!-- 回复输入框 -->
 				<div v-if="replyingId === item.id" class="annotation-item__reply-input" @click.stop>
-					<el-input v-model="replyContent" type="textarea" :rows="2" placeholder="回复..." maxlength="1000" />
+					<el-input
+ref="replyInputRef" v-model="replyContent" type="textarea" :rows="2" placeholder="回复...（@ 可提及用户）"
+						maxlength="1000" @input="onReplyInput" @keydown="onReplyKeydown" />
+					<MentionPopup ref="replyMentionRef" :textarea-el="replyTextareaEl" @select="onReplyMentionSelect" />
 					<div class="annotation-item__reply-actions">
-						<el-button size="small" @click="replyingId = ''">取消</el-button>
+						<el-button size="small" @click="cancelReply">取消</el-button>
 						<el-button size="small" type="primary" :loading="replySubmitting" @click="submitReply(item.id)">
 							发送
 						</el-button>
@@ -92,6 +95,7 @@ v-for="item in filteredAnnotations" :key="item.id" :ref="el => setItemRef(item.i
 <script setup lang="ts">
 import { Close } from '@element-plus/icons-vue'
 import { apiGetAnnotations, apiUpdateAnnotation, apiDeleteAnnotation, apiCreateAnnotationReply } from '~/api/document-editor'
+import type { MentionUser } from '~/api/document-editor'
 import { formatTime } from '~/utils/format'
 import type { AnnotationItem } from '~/types/document-editor'
 
@@ -100,10 +104,11 @@ const props = defineProps<{
 	activeAnnotationId?: string
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
 	'request-add': []
 	'locate': [item: AnnotationItem]
 	'close': []
+	'changed': []
 }>()
 
 const annotations = ref<AnnotationItem[]>([])
@@ -130,6 +135,10 @@ const filteredAnnotations = computed(() => {
 const replyingId = ref('')
 const replyContent = ref('')
 const replySubmitting = ref(false)
+const replyInputRef = ref<{ textarea?: HTMLTextAreaElement } | null>(null)
+const replyMentionRef = ref<{ handleInput: () => void; handleKeydown: (e: KeyboardEvent) => void; hide: () => void } | null>(null)
+const replyMentionedUserIds = ref<number[]>([])
+const replyTextareaEl = computed(() => replyInputRef.value?.textarea ?? null)
 
 // DOM 引用，用于面板滚动定位
 const itemRefs = new Map<string, HTMLElement>()
@@ -150,18 +159,55 @@ async function load() {
 function startReply(id: string) {
 	replyingId.value = id
 	replyContent.value = ''
+	replyMentionedUserIds.value = []
+}
+
+function cancelReply() {
+	replyingId.value = ''
+	replyMentionedUserIds.value = []
+	replyMentionRef.value?.hide()
+}
+
+function onReplyInput() {
+	replyMentionRef.value?.handleInput()
+}
+
+function onReplyKeydown(e: KeyboardEvent | Event) {
+	replyMentionRef.value?.handleKeydown(e as KeyboardEvent)
+}
+
+function onReplyMentionSelect(user: MentionUser, replaceStart: number, replaceEnd: number) {
+	const before = replyContent.value.slice(0, replaceStart)
+	const after = replyContent.value.slice(replaceEnd)
+	replyContent.value = `${before}@${user.name} ${after}`
+	if (!replyMentionedUserIds.value.includes(user.id)) {
+		replyMentionedUserIds.value.push(user.id)
+	}
+	nextTick(() => {
+		const pos = replaceStart + user.name.length + 2
+		const el = replyTextareaEl.value
+		if (el) {
+			el.selectionStart = pos
+			el.selectionEnd = pos
+			el.focus()
+		}
+	})
 }
 
 async function submitReply(annotationId: string) {
 	if (!replyContent.value.trim()) return
 	replySubmitting.value = true
-	const res = await apiCreateAnnotationReply(props.docId, annotationId, { content: replyContent.value })
+	const res = await apiCreateAnnotationReply(props.docId, annotationId, {
+		content: replyContent.value,
+		mentionedUserIds: replyMentionedUserIds.value.length > 0 ? replyMentionedUserIds.value : undefined,
+	})
 	if (res.success && res.data) {
 		const ann = annotations.value.find(a => a.id === annotationId)
 		if (ann) ann.replies.push(res.data)
 	}
 	replyingId.value = ''
 	replyContent.value = ''
+	replyMentionedUserIds.value = []
 	replySubmitting.value = false
 }
 
@@ -176,11 +222,12 @@ async function handleDelete(id: string) {
 	if (!confirmed) return
 	await apiDeleteAnnotation(props.docId, id)
 	annotations.value = annotations.value.filter(a => a.id !== id)
+	emit('changed')
 }
 
 /** 供父组件调用：添加新批注后刷新列表 */
 function addAnnotation(item: AnnotationItem) {
-	annotations.value.push(item)
+	annotations.value.unshift(item)
 }
 
 /** 供父组件调用：滚动到指定批注 */

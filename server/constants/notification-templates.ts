@@ -37,6 +37,7 @@ export type TriggerModule =
 	| 'approval-chain-change'
 	| 'feishu-dept-revoke'
 	| 'document-reference'
+	| 'annotation-mention'
 
 export interface NotificationTemplate<P extends object> {
 	category: 1 | 2 | 3
@@ -427,6 +428,22 @@ export const NOTIFICATION_TEMPLATES = {
 			title: `成员 ${p.memberName} 已从组《${p.groupName}》的审批链中移除（${p.reason}），请检查审批配置`,
 			bizType: 'group_approval' as const,
 			bizId: p.groupId,
+		}),
+	},
+
+	// ==================== 批注@提及 M27 ====================
+	M27: {
+		category: 2,
+		msgCode: 'M27',
+		triggerModule: 'annotation-mention',
+		triggerPoint: '批注中 @提及用户 — 通知被提及人',
+		build: (p: ToUser & { mentioner: string, fileName: string, fileId: bigint | number, quoteText?: string }) => ({
+			userId: p.toUserId,
+			category: 2 as const,
+			msgCode: 'M27',
+			title: `${p.mentioner} 在文档《${p.fileName}》的批注中提及了你${p.quoteText ? `：“${p.quoteText.slice(0, 30)}”` : ''}`,
+			bizType: 'document' as const,
+			bizId: p.fileId,
 		}),
 	},
 } as const

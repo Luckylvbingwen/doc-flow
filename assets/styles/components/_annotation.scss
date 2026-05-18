@@ -219,6 +219,7 @@
   border-bottom: 2px solid #eab308;
   cursor: pointer;
   transition: background-color 0.15s;
+  position: relative;
 
   &:hover {
     background-color: #fde047;
@@ -230,6 +231,33 @@
       font-size: 10px;
       color: #92400e;
     }
+  }
+
+  &--overlap {
+    background-color: #fed7aa;
+    border-bottom-color: #f97316;
+
+    &:hover {
+      background-color: #fdba74;
+    }
+  }
+
+  &__badge {
+    position: absolute;
+    top: -8px;
+    right: -6px;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: #fff;
+    background: #f97316;
+    border-radius: 8px;
+    padding: 0 4px;
+    pointer-events: none;
+    user-select: none;
   }
 }
 
@@ -291,5 +319,42 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+// ── @提及弹窗 ──
+.mention-popup {
+  background: var(--df-panel);
+  border: 1px solid var(--df-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 12%);
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 4px 0;
+
+  &__loading,
+  &__empty {
+    padding: 8px 12px;
+    color: var(--df-subtext);
+    font-size: 12px;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover,
+    &--active {
+      background: var(--df-primary-soft);
+    }
+  }
+
+  &__name {
+    font-size: 13px;
+    color: var(--df-text);
   }
 }
