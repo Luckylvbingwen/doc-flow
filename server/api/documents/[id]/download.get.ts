@@ -67,9 +67,11 @@ export default defineEventHandler(async (event) => {
 	})
 	if (!version) return fail(event, 404, VERSION_NOT_FOUND, '版本不存在')
 
+	const filename = `${doc.title}${doc.ext ? '.' + doc.ext : ''}`
+
 	let preUrl: string
 	try {
-		preUrl = await storage.presignGetUrl(version.storage_key, 600)
+		preUrl = await storage.presignGetUrl(version.storage_key, 600, filename)
 	} catch (e) {
 		console.error('[download] presign failed', e)
 		return fail(event, 500, STORAGE_GET_FAILED, '生成下载链接失败')
@@ -91,5 +93,8 @@ export default defineEventHandler(async (event) => {
 		detail: { desc: `下载文件「${doc.title}」${version.version_no}`, versionNo: version.version_no },
 	})
 
-	return sendRedirect(event, preUrl, 302)
+	return ok({
+		url: preUrl,
+		filename: `${doc.title}${doc.ext ? '.' + doc.ext : ''}`,
+	})
 })

@@ -25,5 +25,5 @@ export interface ObjectStorage {
 	deleteObject(key: string): Promise<void>
 
 	/** 生成预签名下载链接（默认 600 秒有效） */
-	presignGetUrl(key: string, seconds?: number): Promise<string>
+	presignGetUrl(key: string, seconds?: number, filename?: string): Promise<string>
 }

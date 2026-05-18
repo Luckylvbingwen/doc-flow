@@ -60,10 +60,15 @@ export class MinioStorage implements ObjectStorage {
 		)
 	}
 
-	async presignGetUrl(key: string, seconds = 600): Promise<string> {
+	async presignGetUrl(key: string, seconds = 600, filename?: string): Promise<string> {
+		const command = new GetObjectCommand({
+			Bucket: this.bucket,
+			Key: key,
+			...(filename ? { ResponseContentDisposition: `attachment; filename="${encodeURIComponent(filename)}"` } : {}),
+		})
 		return getSignedUrl(
 			this.client,
-			new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+			command,
 			{ expiresIn: seconds },
 		)
 	}

@@ -281,7 +281,7 @@ import type { TableColumn } from '~/components/DataTable.vue'
 import {
 	apiGetDocuments,
 	apiRemoveDocument,
-	apiDownloadDocumentUrl,
+	apiDownloadDocument,
 	apiFavoriteDocument,
 	apiUnfavoriteDocument,
 	apiPinDocument,
@@ -417,7 +417,8 @@ function fileIconClass(row: DocumentListItem): string {
 
 async function onRowCommand(cmd: string | number | object, row: DocumentListItem) {
 	if (cmd === 'download') {
-		window.location.href = apiDownloadDocumentUrl(row.id)
+		const res = await apiDownloadDocument(row.id)
+		if (res.success && res.data) window.location.href = res.data.url
 	} else if (cmd === 'unreference') {
 		await onUnreference(row)
 	} else if (cmd === 'remove') {
@@ -602,9 +603,10 @@ function clearSelection() {
 	tableRef.value?.clearSelection()
 }
 
-function onBatchDownload() {
+async function onBatchDownload() {
 	for (const row of selectedRows.value) {
-		window.open(apiDownloadDocumentUrl(row.id), '_blank')
+		const res = await apiDownloadDocument(row.id)
+		if (res.success && res.data) window.location.href = res.data.url
 	}
 }
 

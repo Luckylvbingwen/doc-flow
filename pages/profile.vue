@@ -149,7 +149,7 @@ import {
 } from '~/utils/doc-meta'
 import { primaryActions, menuActions, type ActionKind } from '~/utils/personal-matrix'
 import { apiGetPersonalDocs, apiGetPersonalHandover, apiDeleteDraft } from '~/api/personal'
-import { apiDownloadDocumentUrl, apiSubmitPermissionRequest, apiUnfavoriteDocument } from '~/api/documents'
+import { apiDownloadDocument, apiSubmitPermissionRequest, apiUnfavoriteDocument } from '~/api/documents'
 import { apiCreateDraft, apiCreateEditCopy } from '~/api/document-editor'
 import type {
 	PersonalDocItem,
@@ -416,8 +416,9 @@ async function onEdit(doc: PersonalDocItem) {
 	}
 }
 
-function onDownload(doc: PersonalDocItem) {
-	window.location.href = apiDownloadDocumentUrl(doc.id)
+async function onDownload(doc: PersonalDocItem) {
+	const res = await apiDownloadDocument(doc.id)
+	if (res.success && res.data) window.location.href = res.data.url
 }
 
 // ── 分享 ──

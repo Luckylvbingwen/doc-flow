@@ -75,13 +75,11 @@ export function apiPreviewDocument(id: number, versionId?: number) {
 }
 
 /**
- * 生成下载 URL（给 <a href> 或 window.location.href 直接跳转用）
- *
- * 后端返回 302 redirect 到 MinIO presigned URL，浏览器自动走下载
+ * 下载文档 — 通过 useAuthFetch 获取 presigned URL，再触发浏览器下载
  */
-export function apiDownloadDocumentUrl(id: number, versionId?: number): string {
+export function apiDownloadDocument(id: number, versionId?: number) {
 	const q = versionId ? `?versionId=${versionId}` : ''
-	return `/api/documents/${id}/download${q}`
+	return useAuthFetch<ApiResult<{ url: string; filename: string }>>(`/api/documents/${id}/download${q}`)
 }
 
 /** 收藏文档（幂等；返回最终 isFavorited 值供前端对账） */
