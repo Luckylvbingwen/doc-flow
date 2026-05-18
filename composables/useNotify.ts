@@ -40,18 +40,27 @@ interface ConfirmOptions {
 
 // ─── 轻量 Toast ─────────────────────────────────
 // 顶部居中，自动消失，适合 CRUD 即时反馈
+// 每次弹出前关闭已有实例，保证同时只显示一条
 
-export const msgSuccess = (msg: string) =>
-	ElMessage({ message: msg, type: 'success', grouping: true, duration: 2000 })
+export const msgSuccess = (msg: string) => {
+	ElMessage.closeAll()
+	return ElMessage({ message: msg, type: 'success', grouping: true, duration: 2000 })
+}
 
-export const msgError = (msg: string) =>
-	ElMessage({ message: msg, type: 'error', grouping: true, duration: 3500 })
+export const msgError = (msg: string) => {
+	ElMessage.closeAll()
+	return ElMessage({ message: msg, type: 'error', grouping: true, duration: 3500 })
+}
 
-export const msgWarning = (msg: string) =>
-	ElMessage({ message: msg, type: 'warning', grouping: true, duration: 3000 })
+export const msgWarning = (msg: string) => {
+	ElMessage.closeAll()
+	return ElMessage({ message: msg, type: 'warning', grouping: true, duration: 3000 })
+}
 
-export const msgInfo = (msg: string) =>
-	ElMessage({ message: msg, type: 'info', grouping: true, duration: 2000 })
+export const msgInfo = (msg: string) => {
+	ElMessage.closeAll()
+	return ElMessage({ message: msg, type: 'info', grouping: true, duration: 2000 })
+}
 
 // ─── 右上角通知卡片 ─────────────────────────────
 // 支持标题 + 正文，适合异步任务完成、WebSocket 推送、带详情的反馈

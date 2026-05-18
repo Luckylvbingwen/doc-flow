@@ -6,8 +6,6 @@
  * - 非 401 错误自动重试（指数退避，最多 2 次）
  * - 离线检测与 toast 提示
  */
-import { ElMessage } from 'element-plus'
-
 type FetchOptions = Parameters<typeof $fetch>[1]
 
 type AuthFetchOptions = FetchOptions & {
@@ -65,7 +63,7 @@ export function useAuthFetch<T = unknown>(url: string, options: AuthFetchOptions
 		if (import.meta.client && !navigator.onLine) {
 			if (!offlineToastShown) {
 				offlineToastShown = true
-				ElMessage.warning('当前网络不可用，请检查网络连接')
+				msgWarning('当前网络不可用，请检查网络连接')
 				setTimeout(() => { offlineToastShown = false }, 5000)
 			}
 			throw new Error('Network offline')
@@ -92,7 +90,7 @@ export function useAuthFetch<T = unknown>(url: string, options: AuthFetchOptions
 						}
 
 						authStore.clearSession()
-						ElMessage.error('登录已过期，请重新登录')
+						msgError('登录已过期，请重新登录')
 						await navigateTo('/login')
 					}
 				}

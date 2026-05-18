@@ -42,7 +42,8 @@
 				<div class="upload-modal-label">第 1 步：选择要更新的文件</div>
 				<el-scrollbar max-height="200px" class="upload-target-list">
 					<template v-if="publishedFiles.length > 0">
-						<div v-for="file in publishedFiles" :key="file.id" class="upload-target-item"
+						<div
+v-for="file in publishedFiles" :key="file.id" class="upload-target-item"
 							:class="{ active: selectedTargetId === file.id }" @click="selectTarget(file)">
 							<div class="df-upload-file-icon" :class="getFileTypeClass(file.name)">
 								{{ getFileTypeLabel(file.name) }}
@@ -70,7 +71,8 @@
 						自动递增，文件名以首次上传文件名为准。
 						仅允许上传 <strong>{{ targetExtLabel }}</strong> 格式文件。
 					</el-alert>
-					<FileUploader ref="updateUploaderRef" :multiple="false" :accept="targetAccept" :version-tag="nextVersion"
+					<FileUploader
+ref="updateUploaderRef" :multiple="false" :accept="targetAccept" :version-tag="nextVersion"
 						@change="onFileChange" />
 				</div>
 			</div>
@@ -90,7 +92,7 @@
 
 <script setup>
 import { Document, RefreshRight, Check, Upload } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+
 
 const props = defineProps({
 	modelValue: { type: Boolean, default: false },
@@ -194,7 +196,7 @@ function handleSubmit() {
 						const msg = uploadMode.value === 'update'
 							? '新版本上传成功！已进入审批流程'
 							: '文件上传成功！已自动标记 v1.0，已进入审批流程'
-						ElMessage.success(msg)
+						msgSuccess(msg)
 						emit('submit', {
 							mode: uploadMode.value,
 							files: validFiles.map(f => f.raw),

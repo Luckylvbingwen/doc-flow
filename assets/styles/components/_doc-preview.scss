@@ -300,6 +300,45 @@
   flex: 1;
 }
 
+/* 返回按钮 */
+.df-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px 5px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--df-primary);
+  background: var(--df-primary-soft);
+  border: 1px solid color-mix(in srgb, var(--df-primary) 15%, transparent);
+  border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  line-height: 1.4;
+  flex-shrink: 0;
+
+  .el-icon {
+    font-size: 14px;
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--df-primary) 15%, transparent);
+    border-color: color-mix(in srgb, var(--df-primary) 30%, transparent);
+  }
+
+  &:active {
+    background: color-mix(in srgb, var(--df-primary) 20%, transparent);
+  }
+}
+
+.df-back-btn__text {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .df-file-topbar__sep {
   width: 1px;
   height: 18px;
@@ -872,14 +911,36 @@
   user-select: none;
 
   &--pending,
-  &--reviewing { background: #fef3c7; color: #854d0e; }
+  &--reviewing {
+    background: #fef3c7;
+    color: #854d0e;
+  }
   &--approved,
-  &--published  { background: #dcfce7; color: #166534; }
-  &--rejected   { background: #fef2f2; color: #b91c1c; }
-  &--draft      { background: var(--df-surface); color: var(--df-subtext); }
-  &--editing    { background: #e0f2fe; color: #0369a1; }
-  &--lg { padding: 3px 12px; font-size: 13px; border-radius: 12px; }
-  &--sm { padding: 1px 7px; font-size: 11px; }
+  &--published {
+    background: #dcfce7;
+    color: #166534;
+  }
+  &--rejected {
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+  &--draft {
+    background: var(--df-surface);
+    color: var(--df-subtext);
+  }
+  &--editing {
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+  &--lg {
+    padding: 3px 12px;
+    font-size: 13px;
+    border-radius: 12px;
+  }
+  &--sm {
+    padding: 1px 7px;
+    font-size: 11px;
+  }
 }
 
 /* ── PDF canvas 逐页渲染 ── */

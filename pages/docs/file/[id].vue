@@ -3,12 +3,12 @@
 		<!-- 顶栏：返回 + 文件标识 + 核心操作 + 更多菜单 -->
 		<div class="df-file-topbar">
 			<div class="df-file-topbar__left">
-				<el-button text @click="backToGroup">
-					<el-icon>
+				<button class="df-back-btn" @click="backToGroup">
+					<el-icon :size="14">
 						<Back />
 					</el-icon>
-					{{ backLabel }}
-				</el-button>
+					<span class="df-back-btn__text">{{ backLabel }}</span>
+				</button>
 				<span class="df-file-topbar__sep" />
 				<div class="df-file-icon df-file-icon--sm" :class="`df-file-icon--${fileType}`">
 					{{ fileTypeAbbr }}
