@@ -19,6 +19,7 @@ import { prisma } from '~/server/utils/prisma'
 import { generateId } from '~/server/utils/snowflake'
 import { incrementVersion } from '~/server/utils/document-upload'
 import { writeLog } from '~/server/utils/operation-log'
+import { freezeOldAnnotations } from '~/server/utils/annotation-freeze'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { requireMemberPermission } from '~/server/utils/group-permission'
 import { documentRollbackSchema } from '~/server/schemas/document'
@@ -138,6 +139,8 @@ export default defineEventHandler(async (event) => {
 				updated_at: new Date(),
 			},
 		})
+
+		await freezeOldAnnotations(docId, newVersionId, tx)
 	})
 
 	// 7. 操作日志

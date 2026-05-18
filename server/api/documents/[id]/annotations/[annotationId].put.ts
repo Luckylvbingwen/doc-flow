@@ -27,12 +27,12 @@ export default defineEventHandler(async (event) => {
 
 	const ann = await prisma.doc_document_annotations.findFirst({
 		where: { id: annId, document_id: docId, deleted_at: null },
-		select: { id: true, created_by: true, version_id: true },
+		select: { id: true, created_by: true, version_id: true, is_frozen: true },
 	})
 	if (!ann) return fail(event, 404, INVALID_PARAMS, '批注不存在')
 
-	const isFrozen = ann.version_id !== null && doc.current_version_id !== null
-		&& ann.version_id !== doc.current_version_id
+	const isFrozen = ann.is_frozen === 1 || (ann.version_id !== null && doc.current_version_id !== null
+		&& ann.version_id !== doc.current_version_id)
 	if (isFrozen) return fail(event, 409, ANNOTATION_FROZEN, '该批注已冻结，旧版本批注不可编辑')
 
 	if (Number(ann.created_by) !== user.id) return fail(event, 403, PERMISSION_DENIED, '仅批注作者可修改')

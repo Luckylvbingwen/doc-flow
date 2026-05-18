@@ -1253,6 +1253,10 @@ function handleMoreCommand(command: string) {
 onMounted(async () => {
 	await loadDetail()
 	await Promise.all([fetchVersions(), loadPreview(), loadApprovalRecords(), loadComments()])
+	// 从审批中心跳转：自动打开批注面板供审批人添加审批意见
+	if (route.query.annotation === '1' || route.query.from === 'approval') {
+		annotationOpen.value = true
+	}
 })
 </script>
 

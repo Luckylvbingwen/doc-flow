@@ -18,6 +18,7 @@ import { generateId } from '~/server/utils/snowflake'
 import { resolveApprovalPath } from '~/server/utils/approval-router'
 import { writeLog } from '~/server/utils/operation-log'
 import { createNotification, createNotifications } from '~/server/utils/notify'
+import { freezeOldAnnotations } from '~/server/utils/annotation-freeze'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import type { UploadResult } from '~/types/document'
@@ -123,6 +124,7 @@ export async function executeUpload(ctx: UploadContext): Promise<UploadResult> {
 					where: { id: ctx.documentId },
 					data: { current_version_id: ctx.versionId },
 				})
+				await freezeOldAnnotations(ctx.documentId, ctx.versionId, tx)
 			}
 		} else {
 			await tx.doc_documents.update({
@@ -134,6 +136,9 @@ export async function executeUpload(ctx: UploadContext): Promise<UploadResult> {
 					updated_at: new Date(),
 				},
 			})
+			if (routing.path === 'direct_publish') {
+				await freezeOldAnnotations(ctx.documentId, ctx.versionId, tx)
+			}
 		}
 
 		// ─── 起审批 → 创建 instance + nodes ───

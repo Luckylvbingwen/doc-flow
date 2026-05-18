@@ -19,6 +19,7 @@ import { documentPublishSchema } from '~/server/schemas/document'
 import { executeUpload, incrementVersion } from '~/server/utils/document-upload'
 import { generateId } from '~/server/utils/snowflake'
 import { writeLog } from '~/server/utils/operation-log'
+import { freezeOldAnnotations } from '~/server/utils/annotation-freeze'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { storage } from '~/server/utils/storage'
 import {
@@ -115,9 +116,10 @@ export default defineEventHandler(async (event) => {
 			where: { id: doc.id },
 			data: { current_version_id: BigInt(versionId) },
 		})
+		await freezeOldAnnotations(doc.id, BigInt(versionId))
 
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		;(currentVersion as any) = newVersion
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			; (currentVersion as any) = newVersion
 	}
 
 	if (!currentVersion) {

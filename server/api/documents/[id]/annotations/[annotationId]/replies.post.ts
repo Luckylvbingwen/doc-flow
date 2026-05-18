@@ -30,13 +30,13 @@ export default defineEventHandler(async (event) => {
 	// 查批注
 	const ann = await prisma.doc_document_annotations.findFirst({
 		where: { id: annId, document_id: docId, deleted_at: null },
-		select: { id: true, version_id: true },
+		select: { id: true, version_id: true, is_frozen: true },
 	})
 	if (!ann) return fail(event, 400, INVALID_PARAMS, '批注不存在')
 
 	// 冻结检查
-	const isFrozen = ann.version_id !== null && doc.current_version_id !== null
-		&& ann.version_id !== doc.current_version_id
+	const isFrozen = ann.is_frozen === 1 || (ann.version_id !== null && doc.current_version_id !== null
+		&& ann.version_id !== doc.current_version_id)
 	if (isFrozen) return fail(event, 409, ANNOTATION_FROZEN, '该批注已冻结，不可回复')
 
 	const body = await readValidatedBody(event, createReplySchema.parse)

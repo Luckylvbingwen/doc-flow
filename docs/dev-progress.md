@@ -816,3 +816,39 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
 - 关闭全屏时自动重置内部状态，恢复到 props.html
 - 版本列表默认选中当前版本（`isCurrent`）
 - 下载/打印按钮增加文字标签（与版本/批注按钮风格统一）
+
+## 2026-05-18
+
+### fix: 批注创建后头像和姓名不显示
+
+- **根因**：`AnnotationSelector.vue` 创建批注后本地构造 `AnnotationItem` 时 `authorName` 为空、`authorAvatar` 为 null，未使用当前登录用户信息
+- **修复**：
+  - `components/AnnotationSelector.vue` — 引入 `useAuthStore`，创建后使用 `authStore.user.name` / `authStore.user.avatar` 填充
+  - `server/api/documents/[id]/annotations/[annotationId]/replies.post.ts` — 回复接口从 DB 查询用户 `avatar_url` 返回，替代硬编码 null
+
+### fix: 批注激活状态 3 秒后自动消失
+
+- **根因**：点击文档高亮文字或面板定位时，`activeAnnotationId` 被 `setTimeout 3s` 自动清除，不符合飞书持续激活的交互
+- **修复**：
+  - 移除 `pages/docs/file/[id].vue`、`pages/docs/editor/[id].vue`、`components/FullscreenPreviewer.vue` 三处 setTimeout 自动清除逻辑
+  - 改为点击文档正文区域时清除激活（高亮 click 已有 stopPropagation 不受影响）
+  - 点击其他批注卡片时自动切换（原有 locate emit 机制天然支持）
+
+### style: 批注激活项增加顶部色条标识
+
+- `assets/styles/components/_annotation.scss` — 激活批注卡片顶部显示 3px 蓝色色条 + 浅蓝背景
+- 批注卡片增加左右 8px 内边距，避免内容贴边
+
+### feat: 批注冻结不可逆持久化
+
+- 新增 `server/utils/annotation-freeze.ts` — `freezeOldAnnotations(documentId, newVersionId, tx?)` 工具
+- 当文档 `current_version_id` 变更时（发布/审批通过/回滚），自动将旧版本批注 `is_frozen=1` 持久化写入 DB
+- 触发点集成：`document-upload.ts`（直发布）、`approve.post.ts`（审批最终通过，会签+依次两条路径）、`rollback.post.ts`、`publish.post.ts`
+- GET/PUT/DELETE/Reply 四个批注接口改为优先读取 `is_frozen` 字段（兼容运行时 version_id 比较作为兜底）
+- 版本回退时旧批注不会"解冻"，实现不可逆语义
+
+### feat: 审批中心批注集成（PRD §6.4 审批人修改意见）
+
+- `pages/approvals.vue` — 查看文件/全屏对比跳转时附加 `?from=approval` 查询参数
+- `pages/docs/file/[id].vue` — 检测 `from=approval` 或 `annotation=1` 参数，初始化后自动展开批注面板
+- 审批人在文件预览页可直接选字添加批注作为审批修改意见，批注绑定当前版本，新版本发布后自动冻结

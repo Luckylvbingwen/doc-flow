@@ -21,6 +21,7 @@ import { prisma } from '~/server/utils/prisma'
 import { writeLog } from '~/server/utils/operation-log'
 import { createNotification } from '~/server/utils/notify'
 import { notifyPublishToGroupMembers } from '~/server/utils/document-upload'
+import { freezeOldAnnotations } from '~/server/utils/annotation-freeze'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import { APPROVAL_STATUS, NODE_ACTION } from '~/server/constants/approval'
@@ -159,6 +160,7 @@ export default defineEventHandler(async (event) => {
 					where: { id: versionId },
 					data: { published_at: now },
 				})
+				await freezeOldAnnotations(documentId, versionId, tx)
 			}
 		})
 	} else {
@@ -230,6 +232,7 @@ export default defineEventHandler(async (event) => {
 					where: { id: versionId },
 					data: { published_at: now },
 				})
+				await freezeOldAnnotations(documentId, versionId, tx)
 			} else {
 				await tx.doc_approval_instances.update({
 					where: { id: instanceId },

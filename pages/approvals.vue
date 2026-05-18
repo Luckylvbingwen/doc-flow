@@ -319,14 +319,14 @@ function onViewFile(approval: ApprovalDetail) {
 	const docId = approval.documentId
 	if (!docId) return
 	drawerVisible.value = false
-	navigateTo(`/docs/file/${docId}`)
+	navigateTo(`/docs/file/${docId}?from=approval`)
 }
 
 function onCompare(approval: ApprovalDetail) {
 	const docId = approval.documentId
 	if (!docId) return
 	drawerVisible.value = false
-	navigateTo(`/docs/file/${docId}?compare=1`)
+	navigateTo(`/docs/file/${docId}?compare=1&from=approval`)
 }
 </script>
 

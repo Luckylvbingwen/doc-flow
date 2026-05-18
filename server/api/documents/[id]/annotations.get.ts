@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
 		createdAt: r.created_at.getTime(),
 		status: r.status,
 		resolvedAt: r.resolved_at ? r.resolved_at.getTime() : null,
-		frozen: r.version_id !== null && currentVersionId !== null && r.version_id !== currentVersionId,
+		frozen: r.is_frozen === 1 || (r.version_id !== null && currentVersionId !== null && r.version_id !== currentVersionId),
 		replies: r.doc_annotation_replies.map(rp => ({
 			id: rp.id.toString(),
 			content: rp.content,
