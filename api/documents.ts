@@ -128,6 +128,14 @@ export function apiRequestCrossMove(documentId: number, targetGroupId: number) {
 	})
 }
 
+/** 批量跨组移动 */
+export function apiBatchCrossMove(documentIds: number[], targetGroupId: number) {
+	return useAuthFetch<ApiResult<{ movedCount: number; skippedCount: number }>>('/api/documents/batch-move', {
+		method: 'POST',
+		body: { documentIds, targetGroupId },
+	})
+}
+
 /** 审核跨组移动 */
 export function apiReviewCrossMove(moveId: number, action: 'approve' | 'reject') {
 	return useAuthFetch<ApiResult<null>>(`/api/documents/cross-move/${moveId}/review`, {

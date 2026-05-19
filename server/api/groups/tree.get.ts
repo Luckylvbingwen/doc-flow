@@ -10,6 +10,7 @@ interface TreeGroup {
 	id: number
 	name: string
 	fileCount: number
+	memberCount: number
 	owner: string
 	desc: string | null
 	scopeType: number
@@ -71,7 +72,8 @@ export default defineEventHandler(async (event) => {
 			g.name, g.description, g.owner_user_id,
 			u.name AS owner_name,
 			g.approval_enabled, g.file_size_limit_mb, g.status,
-			COALESCE(dc.cnt, 0) AS file_count
+			COALESCE(dc.cnt, 0) AS file_count,
+			COALESCE(mc.cnt, 0) AS member_count
 		FROM doc_groups g
 		LEFT JOIN doc_users u ON u.id = g.owner_user_id
 		LEFT JOIN (
@@ -80,6 +82,12 @@ export default defineEventHandler(async (event) => {
 			WHERE status = 4 AND deleted_at IS NULL
 			GROUP BY group_id
 		) dc ON dc.group_id = g.id
+		LEFT JOIN (
+			SELECT group_id, COUNT(*) AS cnt
+			FROM doc_group_members
+			WHERE deleted_at IS NULL
+			GROUP BY group_id
+		) mc ON mc.group_id = g.id
 		WHERE g.deleted_at IS NULL AND g.status = 1
 		ORDER BY g.created_at ASC
 	`
@@ -134,6 +142,7 @@ export default defineEventHandler(async (event) => {
 			id: gid,
 			name: g.name,
 			fileCount: Number(g.file_count),
+			memberCount: Number(g.member_count),
 			owner: g.owner_name || '',
 			desc: g.description,
 			scopeType: g.scope_type,

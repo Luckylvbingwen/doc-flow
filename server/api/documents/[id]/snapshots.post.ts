@@ -9,6 +9,8 @@
 import { prisma } from '~/server/utils/prisma'
 import { storage } from '~/server/utils/storage/index'
 import { generateId } from '~/server/utils/snowflake'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { z } from 'zod'
 import crypto from 'node:crypto'
 import {
@@ -86,6 +88,15 @@ export default defineEventHandler(async (event) => {
 			file_size: BigInt(buffer.byteLength),
 			created_by: BigInt(user.id),
 		},
+	})
+
+	await writeLog({
+		actorUserId: user.id,
+		action: LOG_ACTIONS.DOC_SNAPSHOT_CREATE,
+		targetType: 'document',
+		targetId: Number(docId),
+		documentId: Number(docId),
+		detail: { desc: `创建快照「${body.name}」`, snapshotId: Number(snapshotId) },
 	})
 
 	return ok({ id: Number(snapshotId) }, '快照已保存')

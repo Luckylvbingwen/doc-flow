@@ -9,12 +9,12 @@ class="df-modal" :model-value="visible" :title="mode === 'create' ? '创建组' 
 			</el-form-item>
 
 			<el-form-item label="组名称" prop="name">
-				<el-input v-model="form.name" placeholder="请输入组名称（全局唯一）" maxlength="150" show-word-limit />
+				<el-input v-model="form.name" placeholder="请输入组名称（全局唯一）" maxlength="50" show-word-limit />
 			</el-form-item>
 
 			<el-form-item label="描述" prop="description">
 				<el-input
-v-model="form.description" type="textarea" placeholder="可选，简要描述该组用途" maxlength="500" show-word-limit
+v-model="form.description" type="textarea" placeholder="可选，简要描述该组用途" maxlength="200" show-word-limit
 					:rows="3" />
 			</el-form-item>
 		</el-form>
@@ -56,7 +56,10 @@ const form = ref({
 })
 
 const rules: FormRules = {
-	name: [{ required: true, message: '请输入组名称', trigger: 'blur' }],
+	name: [
+		{ required: true, message: '请输入组名称', trigger: 'blur' },
+		{ pattern: /^[^/\\:?"<>|]*$/, message: '不能包含 /:?"<>| 等特殊字符', trigger: 'blur' },
+	],
 }
 
 // ── 打开时填充编辑数据 ──

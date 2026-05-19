@@ -563,7 +563,7 @@ async function loadDetail() {
 		detail.value = res.data
 		// 在线草稿 → 自动跳转编辑器
 		if (detail.value.docType === 2 && (detail.value.status === 1 || detail.value.status === 2)) {
-			await navigateTo(`/docs/editor/${detail.value.id}`, { replace: true })
+			await navigateTo(`/docs/editor/${detail.value.id}?from=repos`, { replace: true })
 			return
 		}
 		await loadPendingPermissionRequestCount()
@@ -1256,7 +1256,7 @@ async function handleEdit() {
 				)
 				if (!proceed) return
 			}
-			await navigateTo(`/docs/editor/${res.data.id}`)
+			await navigateTo(`/docs/editor/${res.data.id}?from=repos`)
 			return
 		}
 
@@ -1264,7 +1264,7 @@ async function handleEdit() {
 		const isSelf = res.data.ownerUserId === authStore.user?.id
 		if (isSelf) {
 			// 自己的副本，直接打开
-			await navigateTo(`/docs/editor/${res.data.id}`)
+			await navigateTo(`/docs/editor/${res.data.id}?from=repos`)
 			return
 		}
 
@@ -1275,7 +1275,7 @@ async function handleEdit() {
 			{ confirmText: '加入协同', type: 'info' }
 		)
 		if (confirmed) {
-			await navigateTo(`/docs/editor/${res.data.id}`)
+			await navigateTo(`/docs/editor/${res.data.id}?from=repos`)
 		}
 	} finally {
 		creatingCopy.value = false

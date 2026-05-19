@@ -4,6 +4,8 @@
  */
 import { prisma } from '~/server/utils/prisma'
 import { updateAnnotationSchema } from '~/server/schemas/annotation'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { DOCUMENT_NOT_FOUND, INVALID_PARAMS, PERMISSION_DENIED, ANNOTATION_FROZEN } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
@@ -52,6 +54,17 @@ export default defineEventHandler(async (event) => {
 		where: { id: annId },
 		data: updateData,
 	})
+
+	if (body.status !== undefined) {
+		await writeLog({
+			actorUserId: user.id,
+			action: LOG_ACTIONS.ANNOTATION_RESOLVE,
+			targetType: 'document',
+			targetId: Number(docId),
+			documentId: Number(docId),
+			detail: { desc: '解决批注', annotationId: Number(annId) },
+		})
+	}
 
 	return ok(null, '已更新')
 })

@@ -147,6 +147,6 @@ export default defineEventHandler(async (event) => {
 			id: Number(instanceId),
 			status: 'rejected' as const,
 		},
-		'已驳回',
+		'已驳回，驳回原因已通知提交人',
 	)
 })

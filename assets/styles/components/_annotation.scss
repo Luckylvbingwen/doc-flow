@@ -97,6 +97,11 @@
     border-top-color: var(--df-primary);
   }
 
+  &--frozen {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
   &__header {
     display: flex;
     align-items: center;

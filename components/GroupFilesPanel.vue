@@ -87,6 +87,7 @@
 				<WarningFilled />
 			</el-icon>
 			<span>当前有 <strong>{{ reviewingCount }}</strong> 个文件正在审批中，审批通过后会自动出现在此列表</span>
+			<NuxtLink to="/approvals" class="gfp__banner-link">前往审批中心→</NuxtLink>
 		</div>
 
 		<!-- 子组卡片（如有） -->
@@ -112,6 +113,12 @@
 								<User />
 							</el-icon>
 							{{ g.owner || g.ownerName }}
+						</span>
+						<span>
+							<el-icon :size="12">
+								<User />
+							</el-icon>
+							{{ g.memberCount ?? 0 }} 人
 						</span>
 						<span>
 							<el-icon :size="12">
@@ -147,8 +154,8 @@ v-model="filterKeyword" placeholder="搜索文件名…" clearable size="default
 		<DataTable
 ref="tableRef" v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list"
 			:columns="columns" :total="total" :loading="loading" :page-sizes="[10, 15, 30, 50]" empty-preset="no-docs"
-			row-key="id" show-selection :selection-selectable="isSelectableRow" @page-change="onPageChange"
-			@selection-change="onSelectionChange">
+			row-key="id" show-selection :selection-selectable="isSelectableRow" :row-class-name="getRowClassName"
+			@page-change="onPageChange" @selection-change="onSelectionChange">
 			<template #title="{ row }">
 				<div class="gfp-title-cell">
 					<div class="gfp-file-icon" :class="fileIconClass(row)">
@@ -171,7 +178,7 @@ v-if="row.isPinned || row.isFavorited || row.hasCustomPermissions || row.isRefer
 								<Lock />
 							</el-icon>
 							<el-tooltip v-if="row.isReference" :content="`引用自：${row.sourceGroupName || '其他组'}`" placement="top">
-								<el-icon color="#10b981">
+								<el-icon color="var(--df-primary)">
 									<Link />
 								</el-icon>
 							</el-tooltip>
@@ -184,6 +191,12 @@ v-if="row.isPinned || row.isFavorited || row.hasCustomPermissions || row.isRefer
 			</template>
 			<template #updatedAt="{ row }">
 				<span class="gfp-time">{{ formatTime(row.updatedAt, 'YYYY-MM-DD HH:mm') }}</span>
+			</template>
+			<template #favorite="{ row }">
+				<el-icon class="gfp-fav-btn" :class="{ 'is-active': row.isFavorited }" @click.stop="onToggleFavorite(row)">
+					<StarFilled v-if="row.isFavorited" />
+					<Star v-else />
+				</el-icon>
 			</template>
 			<template #actions="{ row }">
 				<div class="gfp-row-actions">
@@ -199,6 +212,7 @@ link type="primary"
 						<template #dropdown>
 							<el-dropdown-menu>
 								<el-dropdown-item command="download" :icon="Download">下载</el-dropdown-item>
+								<el-dropdown-item command="copy-link" :icon="Link">复制分享链接</el-dropdown-item>
 								<el-dropdown-item
 									v-if="canEdit && row.fileType === 'md' && (canEditInGroup || row.ownerId === authStore.user?.id)"
 									command="edit" :icon="Edit">编辑</el-dropdown-item>
@@ -242,6 +256,12 @@ v-if="canRemoveDoc" command="remove" :icon="Delete" divided
 				</el-icon>
 				批量下载
 			</el-button>
+			<el-button v-if="canMoveDoc" size="small" plain :loading="batchMoveLoading" @click="onBatchMove">
+				<el-icon>
+					<Rank />
+				</el-icon>
+				批量移动
+			</el-button>
 			<el-button
 v-if="canRemoveDoc" size="small" type="danger" plain :loading="batchRemoveLoading"
 				@click="onBatchRemove">
@@ -268,10 +288,11 @@ v-if="permModalRow && data?.id" v-model:visible="permModalVisible"
 			:document-id="permModalRow.id" :file-name="permModalRow.title" :group-id="Number(data.id)"
 			@saved="onPermissionsSaved" />
 
-		<!-- 跨组移动弹窗 -->
+		<!-- 跨组移动弹窗（单文件 & 批量共用） -->
 		<MoveTargetPicker
-v-if="moveRow && groupId" v-model="movePickerVisible" v-model:loading="moveLoading"
-			:document-id="moveRow.id" :exclude-group-id="groupId" @confirm="onMoveConfirm" />
+v-if="(moveRow || batchMoveMode) && groupId" v-model="movePickerVisible"
+			v-model:loading="moveLoading" :document-id="moveRow?.id ?? 0" :exclude-group-id="groupId"
+			@confirm="onMoveConfirm" />
 
 		<!-- 飞书文档导入弹窗 -->
 		<FeishuImportModal v-if="groupId" v-model:visible="feishuImportVisible" :group-id="groupId" @success="refresh" />
@@ -281,7 +302,7 @@ v-if="moveRow && groupId" v-model="movePickerVisible" v-model:loading="moveLoadi
 <script setup lang="ts">
 import {
 	FolderOpened, Folder, Setting, Plus, Upload, Link, WarningFilled,
-	Search, Document, User, Clock, Top, Star, Lock, MoreFilled,
+	Search, Document, User, Clock, Top, Star, StarFilled, Lock, MoreFilled,
 	Download, Delete, Rank, Edit,
 } from '@element-plus/icons-vue'
 import type { TableColumn } from '~/components/DataTable.vue'
@@ -295,6 +316,7 @@ import {
 	apiUnpinDocument,
 	apiBatchRemoveDocuments,
 	apiRequestCrossMove,
+	apiBatchCrossMove,
 } from '~/api/documents'
 import { apiDeleteReference } from '~/api/document-references'
 import { apiCreateEditCopy } from '~/api/document-editor'
@@ -371,6 +393,7 @@ const columns: TableColumn[] = [
 	{ label: '版本', slot: 'version', minWidth: 80 },
 	{ prop: 'ownerName', label: '归属人', minWidth: 100 },
 	{ label: '更新时间', slot: 'updatedAt', width: 170 },
+	{ label: '', slot: 'favorite', width: 50 },
 	{ label: '操作', slot: 'actions', width: 160, fixed: 'right' },
 ]
 
@@ -425,10 +448,18 @@ function fileIconClass(row: DocumentListItem): string {
 	return 'is-other'
 }
 
+function getRowClassName({ row }: { row: Record<string, unknown> }) {
+	return (row as unknown as DocumentListItem).isReference ? 'gfp-row--reference' : ''
+}
+
 async function onRowCommand(cmd: string | number | object, row: DocumentListItem) {
 	if (cmd === 'download') {
 		const res = await apiDownloadDocument(row.id)
 		if (res.success && res.data) window.location.href = res.data.url
+	} else if (cmd === 'copy-link') {
+		const link = `${window.location.origin}/docs/file/${row.id}`
+		await navigator.clipboard.writeText(link)
+		msgSuccess('链接已复制')
 	} else if (cmd === 'unreference') {
 		await onUnreference(row)
 	} else if (cmd === 'remove') {
@@ -659,27 +690,49 @@ async function onBatchRemove() {
 	}
 }
 
-// ── 跨组移动 ──
+// ── 跨组移动（单文件 & 批量） ──
 const movePickerVisible = ref(false)
 const moveLoading = ref(false)
 const moveRow = ref<DocumentListItem | null>(null)
+const batchMoveMode = ref(false)
+const batchMoveLoading = ref(false)
 
 function openMovePicker(row: DocumentListItem) {
+	batchMoveMode.value = false
 	moveRow.value = row
 	movePickerVisible.value = true
 }
 
+function onBatchMove() {
+	batchMoveMode.value = true
+	moveRow.value = null
+	movePickerVisible.value = true
+}
+
 async function onMoveConfirm(targetGroupId: number) {
-	if (!moveRow.value) return
 	moveLoading.value = true
 	try {
-		const res = await apiRequestCrossMove(moveRow.value.id, targetGroupId)
-		if (res.success) {
-			msgSuccess(res.message || '移动请求已发起')
-			movePickerVisible.value = false
-			refresh()
+		if (batchMoveMode.value) {
+			const ids = selectedRows.value.map(r => r.id)
+			const res = await apiBatchCrossMove(ids, targetGroupId)
+			if (res.success) {
+				msgSuccess(res.message || '批量移动请求已发起')
+				movePickerVisible.value = false
+				clearSelection()
+				refresh()
+			} else {
+				msgError(res.message || '批量移动失败')
+			}
 		} else {
-			msgError(res.message || '发起移动失败')
+			if (!moveRow.value) return
+			const res = await apiRequestCrossMove(moveRow.value.id, targetGroupId)
+			if (res.success) {
+				msgSuccess(res.message || '移动请求已发起')
+				movePickerVisible.value = false
+				refresh()
+			} else {
+				msgError(res.message || '发起移动失败')
+			}
 		}
 	} catch {
 		msgError('发起移动失败')
@@ -809,6 +862,18 @@ async function onMoveConfirm(targetGroupId: number) {
 
 	.el-icon {
 		color: #f59e0b;
+	}
+}
+
+.gfp__banner-link {
+	margin-left: auto;
+	color: var(--df-primary);
+	font-size: 13px;
+	text-decoration: none;
+	white-space: nowrap;
+
+	&:hover {
+		text-decoration: underline;
 	}
 }
 
@@ -993,6 +1058,25 @@ async function onMoveConfirm(targetGroupId: number) {
 .gfp-time {
 	font-size: 12px;
 	color: var(--df-subtext);
+}
+
+:deep(.gfp-row--reference) {
+	background-color: #fafcff !important;
+}
+
+.gfp-fav-btn {
+	cursor: pointer;
+	font-size: 16px;
+	color: var(--df-subtext);
+	transition: color 0.15s;
+
+	&:hover {
+		color: #f59e0b;
+	}
+
+	&.is-active {
+		color: #f59e0b;
+	}
 }
 
 .gfp-row-actions {

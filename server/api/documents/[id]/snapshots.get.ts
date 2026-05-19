@@ -48,31 +48,71 @@ export default defineEventHandler(async (event) => {
 
 	const doc = await prisma.doc_documents.findFirst({
 		where: { id: docId, deleted_at: null },
-		select: { id: true, owner_user_id: true },
+		select: { id: true, owner_user_id: true, group_id: true },
 	})
 	if (!doc) return fail(event, 404, DOCUMENT_NOT_FOUND, '文档不存在')
 
-	// 权限：归属人 或 有编辑权限（permission <= 2）
+	// 权限判定：归属人 / 组成员(role 1-2) / 文档级权限(permission <= 4)
+	// canEditSnapshots = 归属人 / 组管理员或可编辑(role 1-2) / 文档级可编辑(permission <= 2)
+	let canEditSnapshots = false
 	const isOwner = Number(doc.owner_user_id) === user.id
-	if (!isOwner) {
-		const perm = await prisma.doc_document_permissions.findFirst({
-			where: { document_id: docId, user_id: BigInt(user.id), deleted_at: null },
-			select: { permission: true },
-		})
-		if (!perm || perm.permission > 2) return fail(event, 403, PERMISSION_DENIED, '无权访问此文档的快照')
+	if (isOwner) {
+		canEditSnapshots = true
+	} else {
+		// 先查组成员角色
+		let hasGroupEditAccess = false
+		if (doc.group_id) {
+			const member = await prisma.doc_group_members.findFirst({
+				where: { group_id: doc.group_id, user_id: BigInt(user.id), deleted_at: null },
+				select: { role: true },
+			})
+			if (member && member.role <= 2) {
+				hasGroupEditAccess = true
+				canEditSnapshots = true
+			}
+		}
+		// 再查文档级权限
+		if (!hasGroupEditAccess) {
+			const perm = await prisma.doc_document_permissions.findFirst({
+				where: { document_id: docId, user_id: BigInt(user.id), deleted_at: null },
+				select: { permission: true },
+			})
+			if (!perm) return fail(event, 403, PERMISSION_DENIED, '无权访问此文档')
+			if (perm.permission <= 2) canEditSnapshots = true
+		}
 	}
 
-	// 查询快照列表（最近 50 条）
-	const snapshots = await prisma.$queryRaw<SnapshotRow[]>`
-		SELECT
-			s.id, s.type, s.name, s.created_by, s.created_at,
-			u.name AS author_name
-		FROM doc_document_snapshots s
-		JOIN doc_users u ON u.id = s.created_by
-		WHERE s.document_id = ${docId}
-		ORDER BY s.created_at DESC
-		LIMIT 50
-	`
+	// 查询快照列表（仅编辑权限用户可见，共享只读用户跳过）
+	let snapshotItems: TimelineItem[] = []
+	if (canEditSnapshots) {
+		const snapshots = await prisma.$queryRaw<SnapshotRow[]>`
+			SELECT
+				s.id, s.type, s.name, s.created_by, s.created_at,
+				u.name AS author_name
+			FROM doc_document_snapshots s
+			JOIN doc_users u ON u.id = s.created_by
+			WHERE s.document_id = ${docId}
+			ORDER BY s.created_at DESC
+			LIMIT 50
+		`
+		snapshotItems = snapshots.map(s => {
+			let label: string
+			if (s.name) {
+				label = s.name
+			} else if (s.type === 1) {
+				label = '自动保存'
+			} else {
+				label = '快照'
+			}
+			return {
+				id: Number(s.id),
+				kind: 'snapshot' as const,
+				label,
+				authorName: s.author_name,
+				createdAt: s.created_at.getTime(),
+			}
+		})
+	}
 
 	// 查询已发布版本列表
 	const versions = await prisma.$queryRaw<VersionRow[]>`
@@ -85,25 +125,6 @@ export default defineEventHandler(async (event) => {
 		  AND v.deleted_at IS NULL
 		ORDER BY v.created_at DESC
 	`
-
-	// 合并并构建时间轴条目
-	const snapshotItems: TimelineItem[] = snapshots.map(s => {
-		let label: string
-		if (s.name) {
-			label = s.name
-		} else if (s.type === 1) {
-			label = '自动保存'
-		} else {
-			label = '快照'
-		}
-		return {
-			id: Number(s.id),
-			kind: 'snapshot',
-			label,
-			authorName: s.author_name,
-			createdAt: s.created_at.getTime(),
-		}
-	})
 
 	const versionItems: TimelineItem[] = versions.map(v => ({
 		id: Number(v.id),

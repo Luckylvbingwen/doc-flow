@@ -11,9 +11,11 @@
 			<el-scrollbar>
 				<div v-if="list.length" class="snapshot-timeline">
 					<div
-v-for="item in list" :key="`${item.kind}-${item.id}`" class="snapshot-item"
+v-for="(item, idx) in list" :key="`${item.kind}-${item.id}`" class="snapshot-item"
 						:class="{ 'snapshot-item--version': item.kind === 'version' }">
-						<div class="snapshot-item__dot" :class="{ 'snapshot-item__dot--version': item.kind === 'version' }" />
+						<div
+class="snapshot-item__dot"
+							:class="{ 'snapshot-item__dot--version': item.kind === 'version', 'snapshot-item__dot--active': idx === 0 }" />
 						<div class="snapshot-item__card">
 							<div class="snapshot-item__header">
 								<span class="snapshot-item__label">
@@ -45,6 +47,7 @@ import {
 	apiGetDocSnapshots,
 	apiCreateSnapshot,
 	apiGetSnapshotPreview,
+	apiPreviewDocument,
 	apiRestoreSnapshot,
 	apiRestoreVersionToDraft,
 } from '~/api/documents'
@@ -118,7 +121,12 @@ async function handlePreview(item: SnapshotTimelineItem) {
 			msgError(res.message || '加载预览失败')
 		}
 	} else {
-		msgError('版本预览暂不支持，请使用「还原」后在编辑器查看')
+		const res = await apiPreviewDocument(props.docId, item.id)
+		if (res.success) {
+			emit('preview', res.data.html, item.label)
+		} else {
+			msgError(res.message || '加载版本预览失败')
+		}
 	}
 }
 
@@ -197,6 +205,13 @@ async function handleRestore(item: SnapshotTimelineItem) {
 		background: var(--el-color-success);
 		width: 12px;
 		height: 12px;
+	}
+
+	&--active {
+		background: var(--el-color-primary);
+		width: 12px;
+		height: 12px;
+		box-shadow: 0 0 0 3px var(--el-color-primary-light-8);
 	}
 }
 

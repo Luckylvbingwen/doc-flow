@@ -649,6 +649,23 @@ CREATE TABLE doc_operation_logs (
   CONSTRAINT fk_logs_actor FOREIGN KEY (actor_user_id) REFERENCES doc_users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志（§6.7，仅INSERT）';
 
+-- 操作日志不可篡改保障：禁止 UPDATE / DELETE（PRD §6.7）
+DROP TRIGGER IF EXISTS trg_operation_logs_no_update;
+CREATE TRIGGER trg_operation_logs_no_update
+BEFORE UPDATE ON doc_operation_logs
+FOR EACH ROW
+BEGIN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '操作日志不可修改';
+END;
+
+DROP TRIGGER IF EXISTS trg_operation_logs_no_delete;
+CREATE TRIGGER trg_operation_logs_no_delete
+BEFORE DELETE ON doc_operation_logs
+FOR EACH ROW
+BEGIN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '操作日志不可删除';
+END;
+
 -- =========================================================
 -- 7. 全文检索索引（可选，不用 ES 时启用）
 -- =========================================================

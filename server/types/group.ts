@@ -16,6 +16,7 @@ export interface GroupTreeRow {
 	file_size_limit_mb: number
 	status: number
 	file_count: bigint | number
+	member_count: bigint | number
 }
 
 /** 组详情查询行 */

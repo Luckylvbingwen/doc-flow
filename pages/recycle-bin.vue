@@ -1,7 +1,7 @@
 <template>
 	<ListPageShell>
 		<template #header>
-			<PageTitle title="回收站" subtitle="已删除的文件在此保留 30 天" :refreshing="loading" @refresh="fetchList" />
+			<PageTitle title="回收站" :subtitle="`已删除文件 ${total} 个文件，在此保留 30 天`" :refreshing="loading" @refresh="fetchList" />
 		</template>
 
 		<template #filter>

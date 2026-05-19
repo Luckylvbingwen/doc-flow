@@ -16,6 +16,8 @@ import { feishuGet, getFeishuTenantToken } from '~/server/utils/feishu'
 import { storage, buildStorageKey } from '~/server/utils/storage'
 import { generateId } from '~/server/utils/snowflake'
 import { executeUpload } from '~/server/utils/document-upload'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { feishuImportSchema } from '~/server/schemas/group'
 import {
 	INVALID_PARAMS,
@@ -154,6 +156,16 @@ export default defineEventHandler(async (event) => {
 		fileSize: buffer.byteLength,
 		mimeType,
 		checksum,
+	})
+
+	await writeLog({
+		actorUserId: user.id,
+		action: LOG_ACTIONS.DOC_IMPORT_FEISHU,
+		targetType: 'document',
+		targetId: Number(documentId),
+		groupId,
+		documentId: Number(documentId),
+		detail: { desc: `飞书导入文档「${title}」`, feishuUrl: body.feishuUrl },
 	})
 
 	return ok(result, '文档已导入并自动转为 Markdown，正在进入审批流程')

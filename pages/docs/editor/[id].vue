@@ -8,11 +8,17 @@
 						<ArrowLeft />
 					</el-icon>
 				</el-button>
-				<input v-model="title" class="editor-title-input" placeholder="未命名文档" maxlength="255" @input="onTitleInput">
+				<input v-model="title" class="editor-title-input" placeholder="未命名文档" maxlength="100" @input="onTitleInput">
 				<span class="editor-save-status" :class="`is-${saveStatus}`">{{ saveStatusLabel }}</span>
 			</div>
 
 			<div class="editor-topbar__right">
+				<!-- 下载 -->
+				<el-button size="small" @click="handleDownload">
+					<el-icon>
+						<Download />
+					</el-icon>
+				</el-button>
 				<!-- 批注面板切换 -->
 				<el-button size="small" @click="annotationOpen = !annotationOpen">批注</el-button>
 				<!-- 提交发布 -->
@@ -29,6 +35,7 @@
 					<template #dropdown>
 						<el-dropdown-menu>
 							<el-dropdown-item @click="snapshotDrawerVisible = true">历史记录</el-dropdown-item>
+							<el-dropdown-item @click="handleQuickSnapshot">保存快照</el-dropdown-item>
 							<el-dropdown-item divided @click="handleTransfer">转移归属人</el-dropdown-item>
 							<el-dropdown-item @click="handleShare">分享</el-dropdown-item>
 							<el-dropdown-item divided style="color: #ef4444" @click="handleDeleteOrCancel">
@@ -85,7 +92,9 @@ v-if="docId" v-model="transferModalVisible" :document-id="docId" :document-title
 			:exclude-user-id="currentUserId" @success="handleBack" />
 
 		<!-- 分享弹窗复用 -->
-		<ShareLinkModal v-if="docId" v-model="shareModalVisible" :document-id="docId" :file-name="`${title}.md`" />
+		<ShareLinkModal
+v-if="docId" v-model="shareModalVisible" :document-id="docId" :file-name="`${title}.md`"
+			:can-edit="true" />
 
 		<!-- 历史记录 / 快照抽屉 -->
 		<SnapshotDrawer
@@ -98,9 +107,10 @@ v-if="docId" v-model="snapshotDrawerVisible" :doc-id="docId" @preview="onSnapsho
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, MoreFilled } from '@element-plus/icons-vue'
+import { ArrowLeft, Download, MoreFilled } from '@element-plus/icons-vue'
 import { sanitize } from '~/composables/useSanitize'
 import { apiGetDocContent } from '~/api/document-editor'
+import { apiCreateSnapshot } from '~/api/documents'
 import { apiDeleteDraft } from '~/api/personal'
 import { useDocEditor } from '~/composables/useDocEditor'
 import type { PersonalDocItem } from '~/types/personal'
@@ -146,7 +156,32 @@ function onEditorUpdate(markdown: string) {
 }
 
 function onTitleInput() {
+	title.value = title.value.replace(/[/\\:*?"<>|]/g, '')
 	onContentChange(milkdownRef.value?.getMarkdown() ?? '', title.value)
+}
+
+// ── 下载 ──
+function handleDownload() {
+	const markdown = milkdownRef.value?.getMarkdown() ?? ''
+	const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' })
+	const url = URL.createObjectURL(blob)
+	const a = document.createElement('a')
+	a.href = url
+	a.download = `${title.value || '未命名文档'}.md`
+	a.click()
+	URL.revokeObjectURL(url)
+	msgSuccess('已下载')
+}
+
+// ── 快速保存快照 ──
+async function handleQuickSnapshot() {
+	await flushSave()
+	const res = await apiCreateSnapshot(docId.value, `手动快照 ${new Date().toLocaleString()}`)
+	if (res.success) {
+		msgSuccess('快照已保存')
+	} else {
+		msgError(res.message || '保存快照失败')
+	}
 }
 
 // ── Presence ──
@@ -168,7 +203,16 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 // ── 返回 ──
 async function handleBack() {
 	await flushSave()
-	router.back()
+	// PRD: 返回时自动保存快照
+	apiCreateSnapshot(docId.value, '自动保存').catch(() => { })
+	const from = route.query.from as string | undefined
+	if (from === 'personal') {
+		router.replace('/personal')
+	} else if (from === 'repos') {
+		router.replace('/repos')
+	} else {
+		router.back()
+	}
 }
 
 // ── 发布 ──
@@ -178,7 +222,13 @@ const publishTarget = computed<PersonalDocItem | null>(() => {
 	return { id: docId.value, title: title.value, ext: 'md', status: 1 } as PersonalDocItem
 })
 
-function handlePublish() {
+async function handlePublish() {
+	const confirmed = await msgConfirm(
+		'提交后将进入审批流程，审批期间文档不可编辑，确认提交？',
+		'提交发布',
+		{ type: 'warning' },
+	)
+	if (!confirmed) return
 	publishModalVisible.value = true
 }
 

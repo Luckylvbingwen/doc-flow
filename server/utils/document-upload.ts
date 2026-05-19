@@ -19,6 +19,7 @@ import { resolveApprovalPath } from '~/server/utils/approval-router'
 import { writeLog } from '~/server/utils/operation-log'
 import { createNotification, createNotifications } from '~/server/utils/notify'
 import { freezeOldAnnotations } from '~/server/utils/annotation-freeze'
+import { grantGroupMembersEditPermission } from '~/server/utils/grant-group-edit'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import type { UploadResult } from '~/types/document'
@@ -190,6 +191,9 @@ export async function executeUpload(ctx: UploadContext): Promise<UploadResult> {
 	}
 
 	if (routing.path === 'direct_publish') {
+		// 发布后自动为组成员分配可编辑权限
+		await grantGroupMembersEditPermission(ctx.documentId, ctx.groupId, ctx.submitterId)
+
 		await writeLog({
 			actorUserId: ctx.submitterId,
 			action: LOG_ACTIONS.DOC_PUBLISH,

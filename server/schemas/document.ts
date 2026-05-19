@@ -21,7 +21,7 @@ export type DocumentListQuery = z.infer<typeof documentListQuerySchema>
  */
 export const documentUploadFieldsSchema = z.object({
 	groupId: z.coerce.number().int().positive(),
-	title: z.string().trim().min(1).max(255).optional(),
+	title: z.string().trim().min(1).max(100).optional(),
 	changeNote: z.string().trim().max(500).optional(),
 })
 export type DocumentUploadFields = z.infer<typeof documentUploadFieldsSchema>

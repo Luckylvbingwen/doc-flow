@@ -14,6 +14,8 @@
  */
 import { prisma } from '~/server/utils/prisma'
 import { createNotification } from '~/server/utils/notify'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import { submitPermissionRequestSchema } from '~/server/schemas/permission-request'
 import { generateId } from '~/server/utils/snowflake'
@@ -110,5 +112,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const permLabel = body.type === 1 ? '阅读' : '编辑'
+
+  await writeLog({
+    actorUserId: user.id,
+    action: LOG_ACTIONS.SHARE_REQUEST_EDIT,
+    targetType: 'document',
+    targetId: Number(docId),
+    documentId: Number(docId),
+    groupId: doc.group_id ? Number(doc.group_id) : undefined,
+    detail: { desc: `申请${permLabel}权限「${doc.title}」`, type: body.type },
+  })
+
   return ok({ requestId: reqId.toString() }, `${permLabel}权限申请已发送，等待归属人处理`)
 })

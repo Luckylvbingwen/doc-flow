@@ -81,6 +81,7 @@ function parseDocumentId(documentName: string): number | null {
 
 const server = Server.configure({
 	port: PORT,
+	timeout: 5000,
 
 	async onAuthenticate({ token, documentName }: { token: string; documentName: string }) {
 		if (!token) throw new Error('缺少 token')

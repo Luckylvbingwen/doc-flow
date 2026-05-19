@@ -23,6 +23,7 @@ import { createNotification } from '~/server/utils/notify'
 import { notifyPublishToGroupMembers } from '~/server/utils/document-upload'
 import { freezeOldAnnotations } from '~/server/utils/annotation-freeze'
 import { closeCollabRoom } from '~/server/utils/hocuspocus'
+import { grantGroupMembersEditPermission } from '~/server/utils/grant-group-edit'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import { APPROVAL_STATUS, NODE_ACTION } from '~/server/constants/approval'
@@ -293,6 +294,11 @@ export default defineEventHandler(async (event) => {
 
 		// 关闭协同编辑房间（文档已发布，不可再编辑）
 		await closeCollabRoom(documentId, '审批通过，文档已发布')
+
+		// 发布后自动为组成员分配可编辑权限
+		if (groupId != null) {
+			await grantGroupMembersEditPermission(documentId, groupId, Number(initiatorId))
+		}
 
 		// M3 通知提交人
 		await createNotification(NOTIFICATION_TEMPLATES.M3.build({

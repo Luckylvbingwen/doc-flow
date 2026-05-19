@@ -38,7 +38,9 @@ export default defineEventHandler(async (event) => {
 		FROM doc_documents d
 		JOIN doc_document_versions v ON v.id = d.current_version_id
 		WHERE d.id = ${docId}
-		  AND d.deleted_at IS NOT NULL
+		  AND d.status = 6
+		  AND d.deleted_at_real IS NOT NULL
+		  AND d.deleted_at IS NULL
 		  AND (${scopeFilter})
 		LIMIT 1
 	`

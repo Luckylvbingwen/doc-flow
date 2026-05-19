@@ -75,7 +75,7 @@ function onMouseUp() {
 	}
 
 	const text = sel.toString().trim()
-	if (text.length <= 1 || text.length >= 500) {
+	if (text.length < 1 || text.length > 500) {
 		showFloating.value = false
 		return
 	}

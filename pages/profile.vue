@@ -46,7 +46,9 @@ v-model="filterKeyword" placeholder="搜索文件名..." clearable @keyup.enter=
 			<el-scrollbar>
 				<div class="profile-handover-inner">
 					<EmptyState v-if="handoverForbidden" preset="no-content" title="无权访问" description="离职交接仅部门负责人可见" />
-					<HandoverAccordion v-else-if="!loading" :groups="handoverGroups" @view="onView" />
+					<HandoverAccordion
+v-else-if="!loading" :groups="handoverGroups" @view="onView" @download="onDownload"
+						@delete="onDelete" />
 				</div>
 			</el-scrollbar>
 		</div>
@@ -125,7 +127,7 @@ v-for="act in getRowMenuActions(row)" :key="act.kind" :command="act.kind"
 		<!-- 分享链接弹窗 -->
 		<ShareLinkModal
 v-if="shareTarget" v-model="shareModalVisible" :document-id="shareTarget.id"
-			:file-name="`${shareTarget.title}.${shareTarget.ext || 'md'}`" />
+			:file-name="`${shareTarget.title}.${shareTarget.ext || 'md'}`" :can-edit="true" />
 
 		<!-- 提交发布弹窗 -->
 		<PublishModal v-model="publishModalVisible" :doc="publishTarget" @success="load" />
@@ -205,6 +207,13 @@ watch(canViewHandover, (can) => {
 const filterStatus = ref<1 | 2 | 3 | 4 | null>(null)
 const filterKeyword = ref('')
 
+// 关键词实时防抖过滤
+let keywordDebounce: ReturnType<typeof setTimeout>
+watch(filterKeyword, () => {
+	clearTimeout(keywordDebounce)
+	keywordDebounce = setTimeout(() => onFilterChange(), 300)
+})
+
 // handover 特殊状态
 const handoverGroups = ref<HandoverGroup[]>([])
 const handoverForbidden = ref(false)
@@ -247,7 +256,7 @@ const columns: TableColumn[] = [
 /** PRD: 文件名可点击跳转（草稿/编辑中→编辑器，其他→详情页） */
 function getDocLink(row: PersonalDocItem): string {
 	if ((row.status === 1 || row.status === 2) && row.docType === 2) {
-		return `/docs/editor/${row.id}`
+		return `/docs/editor/${row.id}?from=personal`
 	}
 	return `/docs/file/${row.id}`
 }
@@ -357,7 +366,7 @@ onMounted(load)
 async function handleNewDoc() {
 	const res = await apiCreateDraft({ title: '未命名文档' })
 	if (res.success) {
-		await navigateTo(`/docs/editor/${res.data.id}`)
+		await navigateTo(`/docs/editor/${res.data.id}?from=personal`)
 	}
 }
 
@@ -390,7 +399,7 @@ async function onActionClick(doc: PersonalDocItem, kind: ActionKind) {
 async function onEdit(doc: PersonalDocItem) {
 	// 草稿/编辑中/已驳回 → 直接进编辑器
 	if (doc.status === 1 || doc.status === 2 || doc.status === 5) {
-		await navigateTo(`/docs/editor/${doc.id}`)
+		await navigateTo(`/docs/editor/${doc.id}?from=personal`)
 		return
 	}
 	// 已发布 → 走编辑副本流程（含冲突弹窗）
@@ -403,12 +412,12 @@ async function onEdit(doc: PersonalDocItem) {
 			return
 		}
 		if (res.data.isNew) {
-			await navigateTo(`/docs/editor/${res.data.id}`)
+			await navigateTo(`/docs/editor/${res.data.id}?from=personal`)
 			return
 		}
 		const isSelf = res.data.ownerUserId === currentUserId.value
 		if (isSelf) {
-			await navigateTo(`/docs/editor/${res.data.id}`)
+			await navigateTo(`/docs/editor/${res.data.id}?from=personal`)
 			return
 		}
 		const confirmed = await msgConfirm(
@@ -417,7 +426,7 @@ async function onEdit(doc: PersonalDocItem) {
 			{ confirmText: '加入协同', type: 'info' },
 		)
 		if (confirmed) {
-			await navigateTo(`/docs/editor/${res.data.id}`)
+			await navigateTo(`/docs/editor/${res.data.id}?from=personal`)
 		}
 	} finally {
 		busyId.value = null

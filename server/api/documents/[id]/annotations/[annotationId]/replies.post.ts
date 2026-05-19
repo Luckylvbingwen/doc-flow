@@ -6,6 +6,8 @@ import { prisma } from '~/server/utils/prisma'
 import { generateId } from '~/server/utils/snowflake'
 import { createReplySchema } from '~/server/schemas/annotation'
 import { createNotifications } from '~/server/utils/notify'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import { INVALID_PARAMS, ANNOTATION_FROZEN } from '~/server/constants/error-codes'
 
@@ -72,6 +74,15 @@ export default defineEventHandler(async (event) => {
 			})))
 		}
 	}
+
+	await writeLog({
+		actorUserId: user.id,
+		action: LOG_ACTIONS.ANNOTATION_REPLY,
+		targetType: 'document',
+		targetId: Number(docId),
+		documentId: Number(docId),
+		detail: { desc: `回复批注`, annotationId: Number(annId) },
+	})
 
 	// 返回新回复数据
 	return ok({

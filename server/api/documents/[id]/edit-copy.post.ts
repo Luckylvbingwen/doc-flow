@@ -7,6 +7,8 @@
 import { prisma } from '~/server/utils/prisma'
 import { generateId } from '~/server/utils/snowflake'
 import { storage } from '~/server/utils/storage'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { DOCUMENT_NOT_FOUND, DOCUMENT_STATUS_INVALID, PERMISSION_DENIED, INVALID_PARAMS } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
@@ -110,6 +112,16 @@ export default defineEventHandler(async (event) => {
 			group_id: doc.group_id,
 			draft_content: initialContent,
 		},
+	})
+
+	await writeLog({
+		actorUserId: user.id,
+		action: LOG_ACTIONS.DOC_DRAFT_CREATE,
+		targetType: 'document',
+		targetId: Number(docId),
+		groupId: doc.group_id ? Number(doc.group_id) : undefined,
+		documentId: Number(docId),
+		detail: { desc: `创建编辑副本「${doc.title}」`, copyId: copyId.toString() },
 	})
 
 	return ok({ id: copyId.toString(), isNew: true, unresolvedAnnotationCount }, '编辑副本已创建')

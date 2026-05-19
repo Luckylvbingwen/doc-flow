@@ -97,6 +97,14 @@ export default defineEventHandler(async (event) => {
           result: '已同意',
         }),
       ),
+      // 通知新归属人（自己）：转移成功确认
+      createNotification(
+        NOTIFICATION_TEMPLATES.M11.build({
+          toUserId: user.id,
+          fileName: doc.title,
+          result: '转移成功，您已成为归属人',
+        }),
+      ),
     ])
 
     // 操作日志

@@ -4,6 +4,8 @@
  */
 import { prisma } from '~/server/utils/prisma'
 import { saveContentSchema } from '~/server/schemas/document-editor'
+import { writeLog } from '~/server/utils/operation-log'
+import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { DOCUMENT_NOT_FOUND, PERMISSION_DENIED, DOCUMENT_STATUS_INVALID, INVALID_PARAMS } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
@@ -45,6 +47,15 @@ export default defineEventHandler(async (event) => {
 	if (body.title) updateData.title = body.title
 
 	await prisma.doc_documents.update({ where: { id: docId }, data: updateData })
+
+	await writeLog({
+		actorUserId: user.id,
+		action: LOG_ACTIONS.DOC_EDIT_SAVE,
+		targetType: 'document',
+		targetId: Number(docId),
+		documentId: Number(docId),
+		detail: { desc: '在线编辑保存' },
+	})
 
 	return ok(null, '已保存')
 })

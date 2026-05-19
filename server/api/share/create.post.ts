@@ -35,35 +35,39 @@ export default defineEventHandler(async (event) => {
 	})
 	if (!doc) return fail(event, 404, DOCUMENT_NOT_FOUND, '文档不存在')
 
-	// 校验权限不越级（简化：有 doc:edit 权限可分享编辑权，否则只能分享阅读权）
+	// 校验权限不越级：分享权限不能超过分享人对该文档的权限级别
 	if (body.permission === 2) {
-		// PRD §4.3：role=3（上传下载）分享仅可选"可阅读"
-		if (doc.group_id) {
-			const member = await prisma.doc_group_members.findFirst({
-				where: { group_id: doc.group_id, user_id: BigInt(user.id), deleted_at: null },
-				select: { role: true },
-			})
-			if (member && member.role === 3) {
-				return fail(event, 403, SHARE_PERMISSION_EXCEEDED, '上传下载角色仅可分享可阅读权限')
-			}
-		}
+		const isOwner = Number(doc.id) && await prisma.doc_documents.findFirst({
+			where: { id: doc.id, owner_user_id: BigInt(user.id) },
+			select: { id: true },
+		})
 
-		const roles = await prisma.$queryRaw<Array<{ code: string }>>`
-			SELECT DISTINCT r.code FROM sys_user_roles ur
-			JOIN sys_roles r ON r.id = ur.role_id AND r.deleted_at IS NULL
-			WHERE ur.user_id = ${user.id}
-		`
-		const perms = await prisma.$queryRaw<Array<{ code: string }>>`
-			SELECT DISTINCT p.code FROM sys_user_roles ur
-			JOIN sys_roles r ON r.id = ur.role_id AND r.deleted_at IS NULL
-			JOIN sys_role_permissions rp ON rp.role_id = r.id
-			JOIN sys_permissions p ON p.id = rp.permission_id AND p.deleted_at IS NULL
-			WHERE ur.user_id = ${user.id}
-		`
-		const isSuperAdmin = roles.some(r => r.code === 'super_admin')
-		const hasEditPerm = perms.some(p => p.code === 'doc:edit')
-		if (!isSuperAdmin && !hasEditPerm) {
-			return fail(event, 403, SHARE_PERMISSION_EXCEEDED, '您无编辑权限，只能分享可阅读权限')
+		if (!isOwner) {
+			// 检查组角色
+			let hasDocEditAccess = false
+			if (doc.group_id) {
+				const member = await prisma.doc_group_members.findFirst({
+					where: { group_id: doc.group_id, user_id: BigInt(user.id), deleted_at: null },
+					select: { role: true },
+				})
+				if (member) {
+					if (member.role === 3) {
+						return fail(event, 403, SHARE_PERMISSION_EXCEEDED, '上传下载角色仅可分享可阅读权限')
+					}
+					if (member.role <= 2) hasDocEditAccess = true
+				}
+			}
+
+			// 检查文档级权限
+			if (!hasDocEditAccess) {
+				const docPerm = await prisma.doc_document_permissions.findFirst({
+					where: { document_id: doc.id, user_id: BigInt(user.id), deleted_at: null },
+					select: { permission: true },
+				})
+				if (!docPerm || docPerm.permission > 2) {
+					return fail(event, 403, SHARE_PERMISSION_EXCEEDED, '您对此文档无编辑权限，只能分享可阅读权限')
+				}
+			}
 		}
 	}
 

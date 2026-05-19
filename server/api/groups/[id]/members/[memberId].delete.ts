@@ -35,12 +35,16 @@ export default defineEventHandler(async (event) => {
 
 	const member = await prisma.doc_group_members.findFirst({
 		where: { id: BigInt(memberId), group_id: BigInt(groupId), deleted_at: null },
-		select: { id: true, user_id: true, immutable_flag: true },
+		select: { id: true, user_id: true, immutable_flag: true, source_type: true },
 	})
 	if (!member) return fail(event, 404, INVALID_PARAMS, '成员不存在')
 
 	if (member.immutable_flag === 1) {
 		return fail(event, 403, MEMBER_IMMUTABLE, '该成员不可移除')
+	}
+
+	if (member.source_type === 2) {
+		return fail(event, 403, MEMBER_IMMUTABLE, '飞书同步成员不可手动移除')
 	}
 
 	if (Number(member.user_id) === userId) {

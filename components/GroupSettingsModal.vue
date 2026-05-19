@@ -14,7 +14,7 @@ class="df-modal" :model-value="visible" :title="`「${groupName}」设置`" widt
 			<el-tab-pane label="基本设置" name="basic">
 				<el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="gs-basic-form">
 					<el-form-item label="组名称" prop="name">
-						<el-input v-model="form.name" maxlength="150" show-word-limit />
+						<el-input v-model="form.name" maxlength="50" show-word-limit />
 					</el-form-item>
 
 					<el-form-item label="归属层级">
@@ -22,7 +22,7 @@ class="df-modal" :model-value="visible" :title="`「${groupName}」设置`" widt
 					</el-form-item>
 
 					<el-form-item label="描述" prop="description">
-						<el-input v-model="form.description" type="textarea" maxlength="500" show-word-limit :rows="3" />
+						<el-input v-model="form.description" type="textarea" maxlength="200" show-word-limit :rows="3" />
 					</el-form-item>
 
 					<el-form-item label="创建时间">
@@ -76,7 +76,10 @@ const memberPanelRef = ref<{ refresh: () => void } | null>(null)
 const form = ref({ name: '', description: '' })
 
 const rules: FormRules = {
-	name: [{ required: true, message: '请输入组名称', trigger: 'blur' }],
+	name: [
+		{ required: true, message: '请输入组名称', trigger: 'blur' },
+		{ pattern: /^[^/\\:?"<>|]*$/, message: '不能包含 /:?"<>| 等特殊字符', trigger: 'blur' },
+	],
 }
 
 const scopeLabel = computed(() => {

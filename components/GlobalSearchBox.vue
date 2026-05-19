@@ -47,8 +47,9 @@
 							<p>未找到与 "<strong>{{ keyword }}</strong>" 相关的内容</p>
 						</div>
 						<el-scrollbar v-else max-height="400px">
+							<div class="gs-section__hint">仅显示有权限的内容</div>
 							<div v-if="groups.length > 0" class="gs-section">
-								<div class="gs-section__title">组</div>
+								<div class="gs-section__title">组（{{ groups.length }}）</div>
 								<div
 v-for="(g, gi) in groups" :key="g.id" class="gs-item"
 									:class="{ 'gs-item--active': activeIndex === gi }" @click="onGroupClick(g)"
@@ -58,6 +59,7 @@ v-for="(g, gi) in groups" :key="g.id" class="gs-item"
 									</el-icon>
 									<div class="gs-item__content">
 										<span class="gs-item__title">{{ g.name }}</span>
+										<el-tag size="small" type="info" class="gs-item__badge">{{ scopeLabel(g.scopeType) }}</el-tag>
 										<span v-if="g.description" class="gs-item__desc">{{ g.description }}</span>
 									</div>
 									<el-icon class="gs-item__arrow" :size="12">
@@ -66,7 +68,7 @@ v-for="(g, gi) in groups" :key="g.id" class="gs-item"
 								</div>
 							</div>
 							<div v-if="documents.length > 0" class="gs-section">
-								<div class="gs-section__title">文档</div>
+								<div class="gs-section__title">文档（{{ documents.length }}）</div>
 								<div
 v-for="(d, di) in documents" :key="d.id" class="gs-item"
 									:class="{ 'gs-item--active': activeIndex === groups.length + di }" @click="onDocClick(d)"
@@ -76,6 +78,7 @@ v-for="(d, di) in documents" :key="d.id" class="gs-item"
 									</el-icon>
 									<div class="gs-item__content">
 										<span class="gs-item__title">{{ d.title }}</span>
+										<span v-if="d.versionNo" class="gs-item__version">v{{ d.versionNo }}</span>
 										<span class="gs-item__desc">{{ d.groupName }}</span>
 									</div>
 									<el-icon class="gs-item__arrow" :size="12">
@@ -104,6 +107,13 @@ const activeIndex = ref(-1)
 const groups = ref<SearchResult['groups']>([])
 const documents = ref<SearchResult['documents']>([])
 const inputRef = ref<HTMLInputElement>()
+
+function scopeLabel(scopeType: number) {
+	if (scopeType === 1) return '公司'
+	if (scopeType === 2) return '部门'
+	if (scopeType === 3) return '产品线'
+	return ''
+}
 
 let debounceTimer: ReturnType<typeof setTimeout>
 
@@ -397,6 +407,27 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+
+.gs-item__badge {
+	margin-left: 6px;
+	font-size: 11px;
+	vertical-align: middle;
+}
+
+.gs-item__version {
+	margin-left: 6px;
+	font-size: 11px;
+	color: var(--el-color-primary);
+	font-weight: 500;
+}
+
+.gs-section__hint {
+	padding: 6px 16px;
+	font-size: 12px;
+	color: var(--df-subtext);
+	background: var(--df-surface);
+	border-bottom: 1px solid var(--df-border);
 }
 
 .gs-item__arrow {
