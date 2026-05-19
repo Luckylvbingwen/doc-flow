@@ -2,6 +2,7 @@
  * GET /api/departments/:id/groups
  * 部门下属组列表
  */
+import { Prisma } from '@prisma/client'
 import { prisma } from '~/server/utils/prisma'
 import {
 	INVALID_PARAMS,
@@ -20,6 +21,9 @@ interface GroupRow {
 }
 
 export default defineEventHandler(async (event) => {
+	const user = event.context.user
+	if (!user) return fail(event, 401, INVALID_PARAMS, '请先登录')
+
 	const idParam = getRouterParam(event, 'id')
 	const deptId = Number(idParam)
 	if (!Number.isFinite(deptId) || deptId <= 0) {
@@ -28,9 +32,16 @@ export default defineEventHandler(async (event) => {
 
 	const dept = await prisma.doc_departments.findFirst({
 		where: { id: BigInt(deptId), deleted_at: null },
-		select: { id: true },
+		select: { id: true, owner_user_id: true },
 	})
 	if (!dept) return fail(event, 404, DEPARTMENT_NOT_FOUND, '部门不存在')
+
+	// 判断是否为部门负责人或超管（可见全部），否则只看自己创建的组
+	const isDeptHead = dept.owner_user_id != null && Number(dept.owner_user_id) === user.id
+	const isSuperAdmin = user.roles?.includes('super_admin') || user.roles?.includes('company_admin')
+	const ownerFilter = (!isDeptHead && !isSuperAdmin)
+		? Prisma.sql`AND g.owner_user_id = ${BigInt(user.id)}`
+		: Prisma.empty
 
 	// 顶级组（parent_id IS NULL）
 	const rows = await prisma.$queryRaw<GroupRow[]>`
@@ -47,6 +58,7 @@ export default defineEventHandler(async (event) => {
 			AND g.scope_ref_id = ${BigInt(deptId)}
 			AND g.parent_id IS NULL
 			AND g.deleted_at IS NULL
+			${ownerFilter}
 		ORDER BY g.name ASC
 	`
 

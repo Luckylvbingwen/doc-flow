@@ -61,12 +61,12 @@ function buildFeishuCard(opts: CreateNotificationOpts): Record<string, unknown> 
 			tag: 'div',
 			text: {
 				tag: 'lark_md',
-				content: opts.title,
+				content: `**${opts.title}**`,
 			},
 		},
 	]
 
-	// 如果有 content 副文案，追加灰色说明行
+	// 结构化正文（PRD 要求：操作人+所属组+操作时间+操作描述）
 	if (opts.content) {
 		elements.push({
 			tag: 'div',
@@ -76,6 +76,15 @@ function buildFeishuCard(opts: CreateNotificationOpts): Record<string, unknown> 
 			},
 		})
 	}
+
+	// 操作时间
+	elements.push({
+		tag: 'div',
+		text: {
+			tag: 'lark_md',
+			content: `🕐 ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`,
+		},
+	})
 
 	elements.push({ tag: 'hr' })
 

@@ -78,6 +78,25 @@ async function setupCollab(docId: number) {
 		params: { token },
 	})
 
+	// 光标位置同步节流 100ms（PRD 要求）
+	const rawSetLocal = wsProvider.awareness.setLocalStateField.bind(wsProvider.awareness)
+	let cursorThrottleTimer: ReturnType<typeof setTimeout> | null = null
+	let pendingCursor: { field: string; value: unknown } | null = null
+	wsProvider.awareness.setLocalStateField = (field: string, value: unknown) => {
+		if (field === 'cursor' || field === 'selection') {
+			pendingCursor = { field, value }
+			if (!cursorThrottleTimer) {
+				cursorThrottleTimer = setTimeout(() => {
+					if (pendingCursor) rawSetLocal(pendingCursor.field, pendingCursor.value)
+					cursorThrottleTimer = null
+					pendingCursor = null
+				}, 100)
+			}
+		} else {
+			rawSetLocal(field, value)
+		}
+	}
+
 	crepe.editor.use(collab)
 
 	wsProvider.once('sync', (isSynced: boolean) => {

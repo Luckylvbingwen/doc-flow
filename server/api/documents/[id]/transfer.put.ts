@@ -102,7 +102,7 @@ export default defineEventHandler(async (event) => {
         NOTIFICATION_TEMPLATES.M11.build({
           toUserId: user.id,
           fileName: doc.title,
-          result: '转移成功，您已成为归属人',
+          result: '已同意',
         }),
       ),
     ])

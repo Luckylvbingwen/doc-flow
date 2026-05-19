@@ -152,7 +152,7 @@ v-show="avatarReady" class="pf-user-entry-avatar" :src="authStore.user.avatar"
 			<Transition name="offline-bar">
 				<div v-if="!isOnline" class="df-offline-bar">
 					<el-icon :size="16">
-						<WarningFilled />
+						<Warning />
 					</el-icon>
 					网络已断开，请检查网络连接
 				</div>
@@ -312,7 +312,7 @@ import {
 	Setting,
 	Sunny,
 	User,
-	WarningFilled
+	Warning
 } from '@element-plus/icons-vue'
 import { storeToRefs } from 'pinia'
 

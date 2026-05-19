@@ -8,7 +8,7 @@
 		</div>
 		<div v-else-if="error" class="df-share-landing__error">
 			<el-icon :size="48" color="#ef4444">
-				<CircleCloseFilled />
+				<CircleClose />
 			</el-icon>
 			<h3>链接无效</h3>
 			<p>{{ error }}</p>
@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { Loading, CircleCloseFilled } from '@element-plus/icons-vue'
+import { Loading, CircleClose } from '@element-plus/icons-vue'
 import { apiOpenShareLink } from '~/api/share'
 
 definePageMeta({ layout: 'default' })

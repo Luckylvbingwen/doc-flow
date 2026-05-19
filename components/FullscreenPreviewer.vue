@@ -119,7 +119,14 @@ class="fp-doc-preview" :file-type="fileType" :html="displayHtml"
 									<Clock />
 								</el-icon>
 								<span>版本记录 ({{ versions.length }})</span>
-								<el-button text size="small" style="margin-left: auto" @click="versionOpen = false">
+								<el-button
+v-if="mode === 'normal'" type="primary" text size="small" style="margin-left: auto"
+									@click="emit('upload-version')">
+									上传新版本
+								</el-button>
+								<el-button
+text size="small" :style="mode !== 'normal' ? 'margin-left: auto' : ''"
+									@click="versionOpen = false">
 									<el-icon :size="14">
 										<Close />
 									</el-icon>
@@ -189,6 +196,7 @@ const emit = defineEmits<{
 	'update:visible': [val: boolean]
 	'download': []
 	'compare': []
+	'upload-version': []
 }>()
 
 const visible = computed({

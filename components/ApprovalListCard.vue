@@ -14,7 +14,7 @@
 				</span>
 				<span v-if="item.remindCount > 0" class="df-approval-card__remind-badge" :title="`已催办 ${item.remindCount} 次`">
 					<el-icon>
-						<BellFilled />
+						<Bell />
 					</el-icon>
 					已催办 {{ item.remindCount }} 次
 				</span>
@@ -51,7 +51,7 @@
 
 			<div v-if="item.rejectReason" class="df-approval-card__reject-reason">
 				<el-icon>
-					<CircleCloseFilled />
+					<CircleClose />
 				</el-icon>
 				<span>驳回原因：{{ item.rejectReason }}</span>
 			</div>
@@ -72,7 +72,7 @@ v-if="item.canWithdraw" type="danger" text size="small" :loading="withdrawing"
 </template>
 
 <script setup lang="ts">
-import { BellFilled, CircleCloseFilled } from '@element-plus/icons-vue'
+import { Bell, CircleClose } from '@element-plus/icons-vue'
 import { formatTime } from '~/utils/format'
 import { getStatusMeta, getChangeTypeMeta } from '~/utils/approval-meta'
 import type { ApprovalItem, ApprovalTab } from '~/types/approval'

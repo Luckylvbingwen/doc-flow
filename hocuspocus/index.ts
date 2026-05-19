@@ -79,6 +79,8 @@ function parseDocumentId(documentName: string): number | null {
 	return match ? parseInt(match[1], 10) : null
 }
 
+const MAX_CONNECTIONS = 50
+
 const server = Server.configure({
 	port: PORT,
 	timeout: 5000,
@@ -110,6 +112,12 @@ const server = Server.configure({
 	},
 
 	async onConnect({ documentName, context }: { documentName: string; context: any }) {
+		// 并发连接数上限
+		const totalConns = Array.from(server.documents.values())
+			.reduce((sum, doc) => sum + (doc as any).getConnectionsCount(), 0)
+		if (totalConns >= MAX_CONNECTIONS) {
+			throw new Error('服务器连接数已达上限，请稍后再试')
+		}
 		const ctx = context as { userId: number; userName: string }
 		console.log(`[hocuspocus] 用户 ${ctx.userName}(${ctx.userId}) 已加入房间 ${documentName}`)
 	},

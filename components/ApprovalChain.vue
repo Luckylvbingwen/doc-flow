@@ -111,7 +111,7 @@ v-if="showEndpoints" class="df-chain-node df-chain-node--endpoint df-chain-node-
 			:class="{ 'df-chain-node--completed': allApproved }" role="listitem">
 			<div class="df-chain-node__icon df-chain-node__icon--end">
 				<el-icon :size="compact ? 14 : 16">
-					<SuccessFilled v-if="allApproved" />
+					<CircleCheck v-if="allApproved" />
 					<Flag v-else />
 				</el-icon>
 			</div>
@@ -126,7 +126,7 @@ import {
 	ArrowRight,
 	Check,
 	Close,
-	SuccessFilled,
+	CircleCheck,
 	Flag,
 } from '@element-plus/icons-vue'
 import type { ChainNode } from '~/types/approval'

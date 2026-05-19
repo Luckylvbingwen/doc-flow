@@ -38,5 +38,29 @@ export default defineEventHandler(async (event) => {
 		joinedAt: r.joined_at.getTime(),
 	}))
 
+	// 将系统管理员作为虚拟继承成员追加到列表顶部（PRD: 系统管理员自动继承到所有组）
+	const existingUserIds = new Set(members.map(m => m.userId))
+	const superAdmins = await prisma.$queryRaw<Array<{ id: bigint; name: string; email: string | null; avatar_url: string | null }>>`
+		SELECT u.id, u.name, u.email, u.avatar_url
+		FROM doc_user_roles ur
+		JOIN doc_roles r ON r.id = ur.role_id AND r.code = 'super_admin'
+		JOIN doc_users u ON u.id = ur.user_id AND u.deleted_at IS NULL
+	`
+	for (const sa of superAdmins) {
+		const uid = Number(sa.id)
+		if (existingUserIds.has(uid)) continue
+		members.unshift({
+			id: -uid,
+			userId: uid,
+			name: sa.name,
+			email: sa.email,
+			avatar: sa.avatar_url,
+			role: 1,
+			sourceType: 3,
+			immutableFlag: 1,
+			joinedAt: 0,
+		})
+	}
+
 	return ok(members)
 })

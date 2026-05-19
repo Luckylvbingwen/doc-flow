@@ -84,7 +84,7 @@
 		<!-- 审批中提示条 -->
 		<div v-if="reviewingCount > 0" class="gfp__banner">
 			<el-icon>
-				<WarningFilled />
+				<Warning />
 			</el-icon>
 			<span>当前有 <strong>{{ reviewingCount }}</strong> 个文件正在审批中，审批通过后会自动出现在此列表</span>
 			<NuxtLink to="/approvals" class="gfp__banner-link">前往审批中心→</NuxtLink>
@@ -211,20 +211,23 @@ link type="primary"
 						</el-button>
 						<template #dropdown>
 							<el-dropdown-menu>
-								<el-dropdown-item command="download" :icon="Download">下载</el-dropdown-item>
-								<el-dropdown-item command="copy-link" :icon="Link">复制分享链接</el-dropdown-item>
-								<el-dropdown-item
-									v-if="canEdit && row.fileType === 'md' && (canEditInGroup || row.ownerId === authStore.user?.id)"
-									command="edit" :icon="Edit">编辑</el-dropdown-item>
 								<template v-if="row.isReference">
+									<el-dropdown-item command="download" :icon="Download">下载</el-dropdown-item>
 									<el-dropdown-item v-if="canPin" :command="row.isPinned ? 'unpin' : 'pin'" :icon="Top">
 										{{ row.isPinned ? '取消置顶' : '置顶' }}
 									</el-dropdown-item>
-									<el-dropdown-item command="unreference" :icon="Delete" divided style="color: #ef4444">
+									<el-dropdown-item
+v-if="canManagePermissions" command="unreference" :icon="Delete" divided
+										style="color: #ef4444">
 										取消引用
 									</el-dropdown-item>
 								</template>
 								<template v-else>
+									<el-dropdown-item command="download" :icon="Download">下载</el-dropdown-item>
+									<el-dropdown-item command="copy-link" :icon="Link">复制分享链接</el-dropdown-item>
+									<el-dropdown-item
+										v-if="canEdit && row.fileType === 'md' && (canEditInGroup || row.ownerId === authStore.user?.id)"
+										command="edit" :icon="Edit">编辑</el-dropdown-item>
 									<el-dropdown-item :command="row.isFavorited ? 'unfavorite' : 'favorite'" :icon="Star">
 										{{ row.isFavorited ? '取消收藏' : '收藏' }}
 									</el-dropdown-item>
@@ -301,7 +304,7 @@ v-if="(moveRow || batchMoveMode) && groupId" v-model="movePickerVisible"
 
 <script setup lang="ts">
 import {
-	FolderOpened, Folder, Setting, Plus, Upload, Link, WarningFilled,
+	FolderOpened, Folder, Setting, Plus, Upload, Link, Warning,
 	Search, Document, User, Clock, Top, Star, StarFilled, Lock, MoreFilled,
 	Download, Delete, Rank, Edit,
 } from '@element-plus/icons-vue'
@@ -489,6 +492,18 @@ const unreferencePendingIds = new Set<number>()
 const editingDocId = ref<number | null>(null)
 
 async function onEditDoc(row: DocumentListItem) {
+	// 已发布文档需前置确认
+	if (row.status === 4) {
+		const confirmMsg = [
+			`文件名：${row.title}`,
+			`当前版本：${row.versionNo || '-'}`,
+			`归属人：${row.ownerName || '-'}`,
+			'',
+			'⚠️ 编辑将基于当前版本创建副本，发布后将生成新版本。',
+		].join('\n')
+		const ok = await msgConfirm(confirmMsg, '编辑副本确认', { type: 'warning', confirmText: '开始编辑' })
+		if (!ok) return
+	}
 	editingDocId.value = row.id
 	try {
 		const res = await apiCreateEditCopy(row.id)
@@ -599,8 +614,15 @@ async function onRemove(row: DocumentListItem) {
 
 async function onUnreference(row: DocumentListItem) {
 	if (!row.referenceId || unreferencePendingIds.has(row.id)) return
+	const confirmMsg = [
+		`文件名：${row.title}`,
+		`来源组：${row.sourceGroupName || '其他组'}`,
+		`版本：${row.versionNo || '-'}`,
+		'',
+		'取消引用后，该组将不再展示此文档。原文件不受影响。',
+	].join('\n')
 	const ok = await msgConfirm(
-		`确定取消引用「${row.title}」吗？取消后该组将不再展示此文档。`,
+		confirmMsg,
 		'取消引用',
 		{ type: 'warning', confirmText: '确认取消', danger: true },
 	)

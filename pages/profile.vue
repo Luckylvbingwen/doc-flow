@@ -155,7 +155,7 @@ import {
 import { primaryActions, menuActions, type ActionKind } from '~/utils/personal-matrix'
 import { apiGetPersonalDocs, apiGetPersonalHandover, apiDeleteDraft } from '~/api/personal'
 import { apiDownloadDocument, apiSubmitPermissionRequest, apiUnfavoriteDocument, apiGetDocumentApprovals } from '~/api/documents'
-import { apiCreateDraft, apiCreateEditCopy } from '~/api/document-editor'
+import { apiCreateDraft, apiCreateEditCopy, apiGetAnnotations } from '~/api/document-editor'
 import { apiWithdrawApproval } from '~/api/approvals'
 import type {
 	PersonalDocItem,
@@ -410,7 +410,24 @@ async function onEdit(doc: PersonalDocItem) {
 		await navigateTo(`/docs/editor/${doc.id}?from=personal`)
 		return
 	}
-	// 已发布 → 走编辑副本流程（含冲突弹窗）
+	// 已发布 → 前置确认 + 编辑副本流程
+	if (doc.status === 4 && (doc.source === 'mine' || tab.value === 'mine')) {
+		// 检查是否有未解决的批注
+		let annotationHint = ''
+		const annoRes = await apiGetAnnotations(doc.id)
+		if (annoRes.success && annoRes.data) {
+			const unresolvedCount = annoRes.data.filter(a => a.status !== 2).length
+			if (unresolvedCount > 0) {
+				annotationHint = `\n⚠️ 当前有 ${unresolvedCount} 条未解决批注，创建编辑副本后批注将被冻结。`
+			}
+		}
+		const confirmed = await msgConfirm(
+			`即将创建文件《${doc.title}》(${doc.versionNo}) 的编辑副本，原文件在编辑期间保持已发布状态不变。${annotationHint}`,
+			'创建编辑副本',
+			{ confirmText: '确认创建', type: 'warning' },
+		)
+		if (!confirmed) return
+	}
 	busyId.value = doc.id
 	busyKind.value = 'edit'
 	try {

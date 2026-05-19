@@ -76,11 +76,11 @@ export default defineEventHandler(async (event) => {
 		})
 	}
 
-	// M17 通知分享者（若访问者不是分享者本人）
+	// M17 通知被分享人（当前用户）：您收到了文件分享
 	if (Number(link.created_by) !== user.id) {
 		await createNotification(NOTIFICATION_TEMPLATES.M17.build({
-			toUserId: link.created_by,
-			sharer: user.name ?? '',
+			toUserId: BigInt(user.id),
+			sharer: link.doc_users?.name ?? '某人',
 			fileName: link.doc_documents.title,
 			fileId: docId,
 			permLabel: PERM_LABELS[linkPermission] || '可阅读',

@@ -41,7 +41,11 @@ export default defineEventHandler(async (event) => {
   // 查文档
   const doc = await prisma.doc_documents.findFirst({
     where: { id: docId, deleted_at: null },
-    select: { id: true, title: true, owner_user_id: true, group_id: true, group_name: true },
+    select: {
+      id: true, title: true, owner_user_id: true, group_id: true,
+      doc_groups: { select: { name: true } },
+      doc_document_versions_doc_documents_current_version_idTodoc_document_versions: { select: { version_no: true } },
+    },
   })
   if (!doc) return fail(event, 404, DOCUMENT_NOT_FOUND, '文档不存在')
 
@@ -91,6 +95,8 @@ export default defineEventHandler(async (event) => {
       toUserId: body.toUserId,
       initiator: user.name,
       fileName: doc.title,
+      groupName: doc.doc_groups?.name ?? undefined,
+      versionNo: doc.doc_document_versions_doc_documents_current_version_idTodoc_document_versions?.version_no ?? undefined,
     }),
   )
 

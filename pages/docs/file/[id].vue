@@ -301,7 +301,7 @@ v-if="compareLoading"
 								<span style="padding: 2px 8px; background: #fecaca; border-radius: 4px">旧版</span>
 								<span>{{ compareResult.oldVersion.versionNo }}</span>
 							</div>
-							<el-scrollbar>
+							<el-scrollbar ref="compareLeftRef" @scroll="onCompareScroll('left', $event)">
 								<div class="cp-body" v-html="sanitize(compareResult.oldVersion.html)" />
 							</el-scrollbar>
 						</div>
@@ -310,7 +310,7 @@ v-if="compareLoading"
 								<span style="padding: 2px 8px; background: #bbf7d0; border-radius: 4px">新版</span>
 								<span>{{ compareResult.newVersion.versionNo }}</span>
 							</div>
-							<el-scrollbar>
+							<el-scrollbar ref="compareRightRef" @scroll="onCompareScroll('right', $event)">
 								<div class="cp-body" v-html="sanitize(compareResult.newVersion.html)" />
 							</el-scrollbar>
 						</div>
@@ -739,6 +739,19 @@ function exitInlineCompare() {
 	compareTarget.value = null
 	compareResult.value = null
 }
+
+// 页内对比同步滚动
+const compareLeftRef = ref<InstanceType<typeof import('element-plus')['ElScrollbar']> | null>(null)
+const compareRightRef = ref<InstanceType<typeof import('element-plus')['ElScrollbar']> | null>(null)
+let compareSyncLock = false
+function onCompareScroll(source: 'left' | 'right', { scrollTop }: { scrollTop: number }) {
+	if (compareSyncLock) return
+	compareSyncLock = true
+	const target = source === 'left' ? compareRightRef.value : compareLeftRef.value
+	target?.setScrollTop(scrollTop)
+	requestAnimationFrame(() => { compareSyncLock = false })
+}
+
 function openFullscreenCompare() {
 	if (!compareResult.value && compareTarget.value) loadCompareResult()
 	fullscreenCompareVisible.value = true
