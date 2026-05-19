@@ -155,7 +155,7 @@ v-model="filterKeyword" placeholder="搜索文件名…" clearable size="default
 ref="tableRef" v-model:page="currentPage" v-model:page-size="currentPageSize" :data="list"
 			:columns="columns" :total="total" :loading="loading" :page-sizes="[10, 15, 30, 50]" empty-preset="no-docs"
 			row-key="id" show-selection :selection-selectable="isSelectableRow" :row-class-name="getRowClassName"
-			@page-change="onPageChange" @selection-change="onSelectionChange">
+			:pagination-hint="referenceHint" @page-change="onPageChange" @selection-change="onSelectionChange">
 			<template #title="{ row }">
 				<div class="gfp-title-cell">
 					<div class="gfp-file-icon" :class="fileIconClass(row)">
@@ -451,6 +451,11 @@ function fileIconClass(row: DocumentListItem): string {
 function getRowClassName({ row }: { row: Record<string, unknown> }) {
 	return (row as unknown as DocumentListItem).isReference ? 'gfp-row--reference' : ''
 }
+
+const referenceHint = computed(() => {
+	const count = list.value.filter(r => r.isReference).length
+	return count > 0 ? `含 ${count} 条引用` : ''
+})
 
 async function onRowCommand(cmd: string | number | object, row: DocumentListItem) {
 	if (cmd === 'download') {

@@ -37,6 +37,9 @@ class="df-chain-node" :class="nodeClass(node)" role="listitem"
 								<Close />
 							</el-icon>
 						</template>
+						<template v-else-if="node.status === 'current'">
+							<span class="df-chain-node__ellipsis">...</span>
+						</template>
 						<template v-else>
 							{{ node.avatar || (node.name ? node.name[0] : '') }}
 						</template>
@@ -77,6 +80,9 @@ v-for="(node, index) in nodes" :key="index" class="df-chain-node" :class="nodeCl
 								<el-icon>
 									<Close />
 								</el-icon>
+							</template>
+							<template v-else-if="node.status === 'current'">
+								<span class="df-chain-node__ellipsis">...</span>
 							</template>
 							<template v-else>
 								{{ node.avatar || (node.name ? node.name[0] : '') }}

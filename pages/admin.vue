@@ -118,7 +118,11 @@ v-auth="'admin:role_assign'" link type="primary" size="small" :loading="activati
 				</template>
 				<!-- 活跃行 -->
 				<template v-else>
-					<el-button v-auth="'admin:role_assign'" link type="primary" size="small" @click="onOpenAssign(row)">
+					<el-button
+v-auth="'admin:role_assign'" link type="primary" size="small"
+						:disabled="row.roles.some((r: AdminUserRole) => r.code === 'dept_head' && r.feishuSynced)"
+						:title="row.roles.some((r: AdminUserRole) => r.code === 'dept_head' && r.feishuSynced) ? '飞书同步角色，不可修改' : ''"
+						@click="onOpenAssign(row)">
 						角色管理
 					</el-button>
 					<el-button link type="danger" size="small" :loading="deactivatingId === row.id" @click="onDeactivate(row)">

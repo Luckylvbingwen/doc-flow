@@ -1,10 +1,12 @@
 <template>
 	<div class="df-tab-bar">
 		<div class="df-tab-bar-left">
-			<button v-for="tab in tabs" :key="tab.value" class="df-tab-item" :class="{ active: modelValue === tab.value }"
+			<button
+v-for="tab in tabs" :key="tab.value" class="df-tab-item" :class="{ active: modelValue === tab.value }"
 				@click="emit('update:modelValue', tab.value)">
 				<span class="df-tab-name">{{ tab.label }}</span>
 				<span v-if="tab.count !== undefined" class="df-tab-count">({{ tab.count }})</span>
+				<span v-if="tab.badge" class="df-tab-badge">{{ tab.badge }}</span>
 			</button>
 		</div>
 		<div v-if="$slots.right" class="df-tab-bar-right">
@@ -76,5 +78,16 @@ const emit = defineEmits(['update:modelValue'])
 
 .df-tab-count {
 	font-variant-numeric: tabular-nums;
+}
+
+.df-tab-badge {
+	font-size: 10px;
+	line-height: 1;
+	padding: 2px 5px;
+	border-radius: 999px;
+	background: #f56c6c;
+	color: #ffffff;
+	font-weight: 600;
+	margin-left: 2px;
 }
 </style>

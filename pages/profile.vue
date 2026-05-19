@@ -64,6 +64,9 @@ v-else v-model:page="page" v-model:page-size="pageSize" :data="list" :columns="c
 						{{ getFileTypeLabel(row.ext) }}
 					</div>
 					<span class="profile-title-name" :title="row.title">{{ row.title }}</span>
+					<ElIcon v-if="tab === 'favorite' || row.source === 'favorite'" class="profile-star-icon">
+						<StarFilled />
+					</ElIcon>
 				</NuxtLink>
 			</template>
 			<template #source="{ row }">
@@ -140,7 +143,7 @@ v-if="transferTarget" v-model="transferModalVisible" :document-id="transferTarge
 </template>
 
 <script setup lang="ts">
-import { Search, Plus } from '@element-plus/icons-vue'
+import { Search, Plus, StarFilled } from '@element-plus/icons-vue'
 import type { TableColumn } from '~/components/DataTable.vue'
 import { formatTime } from '~/utils/format'
 import { getFileTypeClass, getFileTypeLabel } from '~/utils/file-type'
@@ -182,12 +185,12 @@ const tabCounts = reactive<Record<PersonalTab, number | undefined>>({
 	handover: undefined,
 })
 
-const allTabs: Array<{ value: PersonalTab; label: string }> = [
+const allTabs: Array<{ value: PersonalTab; label: string; badge?: string }> = [
 	{ value: 'all', label: '全部' },
 	{ value: 'mine', label: '我创建的' },
 	{ value: 'shared', label: '分享给我的' },
 	{ value: 'favorite', label: '个人收藏' },
-	{ value: 'handover', label: '离职移交' },
+	{ value: 'handover', label: '离职移交', badge: 'NEW' },
 ]
 const tabs = computed(() =>
 	allTabs
@@ -243,15 +246,20 @@ const emptyPreset = computed(() => {
 	return 'no-content'
 })
 
-const columns: TableColumn[] = [
-	{ label: '文件名', slot: 'title', minWidth: 260 },
-	{ label: '来源', slot: 'source', minWidth: 120 },
-	{ prop: 'versionNo', label: '版本', width: 80, align: 'center' },
-	{ prop: 'ownerName', label: '创建人', minWidth: 100 },
-	{ label: '状态', slot: 'status', width: 100, align: 'center' },
-	{ prop: 'groupName', label: '所属组', minWidth: 120 },
-	{ label: '更新时间', slot: 'updatedAt', width: 170 },
-]
+const columns = computed<TableColumn[]>(() => {
+	const base: TableColumn[] = [
+		{ label: '文件名', slot: 'title', minWidth: 260 },
+		{ label: '来源', slot: 'source', minWidth: 120 },
+		{ prop: 'versionNo', label: '版本', width: 80, align: 'center' },
+		{ prop: 'ownerName', label: '创建人', minWidth: 100 },
+		{ label: '状态', slot: 'status', width: 100, align: 'center' },
+		{ prop: 'groupName', label: '所属组', minWidth: 120 },
+		{ label: '更新时间', slot: 'updatedAt', width: 170 },
+	]
+	// 子 Tab 不显示来源列
+	if (tab.value !== 'all') return base.filter(c => c.label !== '来源')
+	return base
+})
 
 /** PRD: 文件名可点击跳转（草稿/编辑中→编辑器，其他→详情页） */
 function getDocLink(row: PersonalDocItem): string {
@@ -638,6 +646,13 @@ async function onDelete(doc: PersonalDocItem) {
 	&:hover {
 		color: var(--df-primary);
 	}
+}
+
+.profile-star-icon {
+	color: #f5a623;
+	font-size: 14px;
+	flex-shrink: 0;
+	margin-left: 4px;
 }
 
 .profile-source {

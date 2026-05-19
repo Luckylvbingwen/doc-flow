@@ -5,6 +5,7 @@
 			<span class="df-pagination-summary">
 				<slot name="left">{{ defaultSummary }}</slot>
 			</span>
+			<span v-if="hint" class="df-pagination-hint">{{ hint }}</span>
 			<span class="df-pagination-size-label">每页</span>
 			<el-select v-model="currentPageSize" size="small" class="df-pagination-size-select">
 				<el-option v-for="size in pageSizes" :key="size" :label="String(size)" :value="size" />
@@ -30,6 +31,7 @@ interface PaginationProps {
 	disabled?: boolean
 	small?: boolean
 	tableRef?: TableInstance | null
+	hint?: string
 }
 
 const props = withDefaults(defineProps<PaginationProps>(), {
@@ -41,6 +43,7 @@ const props = withDefaults(defineProps<PaginationProps>(), {
 	disabled: false,
 	small: false,
 	tableRef: null,
+	hint: '',
 })
 
 const emit = defineEmits<{
@@ -103,6 +106,12 @@ const onPageChange = (page: number) => {
 
 	&-summary {
 		color: var(--df-text);
+	}
+
+	&-hint {
+		color: var(--df-primary);
+		font-size: 12px;
+		font-weight: 500;
 	}
 
 	&-size-label,

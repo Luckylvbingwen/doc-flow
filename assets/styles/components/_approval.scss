@@ -104,6 +104,14 @@
   animation: df-chain-pulse 2s ease-in-out infinite;
 }
 
+.df-chain-node__ellipsis {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1;
+  color: #ffffff;
+}
+
 .df-chain-node--current .df-chain-node__name {
   color: var(--df-primary);
   font-weight: 600;

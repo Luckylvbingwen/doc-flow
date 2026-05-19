@@ -76,7 +76,8 @@ v-else-if="col.enum" :type="getEnumType(getCellValue(scope.row, col.prop), col.e
 		<!-- ── 分页（独立块） ── -->
 		<Pagination
 v-if="showPagination && total > 0" v-model:page="currentPage" v-model:page-size="currentPageSize"
-			:total="total" :page-sizes="pageSizes" :disabled="loading" :table-ref="tableRef" @change="onPageChange" />
+			:total="total" :page-sizes="pageSizes" :disabled="loading" :table-ref="tableRef" :hint="paginationHint"
+			@change="onPageChange" />
 	</div>
 </template>
 
@@ -135,6 +136,7 @@ interface DataTableProps {
 	actionWidth?: string | number
 	actionFixed?: 'left' | 'right' | boolean
 	showPagination?: boolean
+	paginationHint?: string
 	page?: number
 	pageSize?: number
 	total?: number
@@ -164,6 +166,7 @@ const props = withDefaults(defineProps<DataTableProps>(), {
 	actionWidth: undefined,
 	actionFixed: 'right',
 	showPagination: true,
+	paginationHint: '',
 	page: 1,
 	pageSize: 10,
 	total: 0,
