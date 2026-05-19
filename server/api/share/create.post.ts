@@ -37,6 +37,17 @@ export default defineEventHandler(async (event) => {
 
 	// 校验权限不越级（简化：有 doc:edit 权限可分享编辑权，否则只能分享阅读权）
 	if (body.permission === 2) {
+		// PRD §4.3：role=3（上传下载）分享仅可选"可阅读"
+		if (doc.group_id) {
+			const member = await prisma.doc_group_members.findFirst({
+				where: { group_id: doc.group_id, user_id: BigInt(user.id), deleted_at: null },
+				select: { role: true },
+			})
+			if (member && member.role === 3) {
+				return fail(event, 403, SHARE_PERMISSION_EXCEEDED, '上传下载角色仅可分享可阅读权限')
+			}
+		}
+
 		const roles = await prisma.$queryRaw<Array<{ code: string }>>`
 			SELECT DISTINCT r.code FROM sys_user_roles ur
 			JOIN sys_roles r ON r.id = ur.role_id AND r.deleted_at IS NULL

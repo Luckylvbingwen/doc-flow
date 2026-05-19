@@ -1,14 +1,16 @@
 /**
- * POST /api/documents/:id/pin
+ * POST /api/documents/:id/pin?groupId=xxx
  * 置顶文档（PRD §4.1 / §6.3.8 — 组管理员及上游管理员可执行）
  *
  * 业务：
  *   1. 鉴权：登录 + requireMemberPermission（组内 role=1 / owner / super / company_admin / dept_head / pl_head）
- *   2. 文档存在 + 非软删 + 必须已归组（group_id 非空；草稿不能置顶）
+ *   2. 文档存在 + 非软删 + 必须已归组或被引用到目标组
  *   3. 幂等：
  *      - 已置顶 → 200 ok，不重写日志
  *      - 未置顶 → 新建置顶记录 (pinned_by = self) + 写 pin.add 日志
  *   4. 返回 { isPinned: true }
+ *
+ * groupId 参数：指定置顶生效的组（引用文档在目标组置顶时必传）
  */
 import { prisma } from '~/server/utils/prisma'
 import { generateId } from '~/server/utils/snowflake'
@@ -46,20 +48,54 @@ export default defineEventHandler(async (event) => {
 	if (!doc || doc.deleted_at || doc.deleted_at_real) {
 		return fail(event, 404, DOCUMENT_NOT_FOUND, '文档不存在或已删除')
 	}
-	if (doc.group_id == null || !doc.doc_groups) {
-		return fail(event, 409, DOCUMENT_STATUS_INVALID, '个人草稿未归组，无法置顶')
+
+	// 确定置顶生效的组：优先使用 query.groupId（引用场景），否则使用文档归属组
+	const queryGroupId = getQuery(event).groupId as string | undefined
+	let pinGroupId: bigint
+
+	if (queryGroupId && /^\d+$/.test(queryGroupId)) {
+		const targetGroupId = BigInt(queryGroupId)
+		// 验证文档确实被引用到该组，或文档本身属于该组
+		if (doc.group_id && doc.group_id === targetGroupId) {
+			pinGroupId = targetGroupId
+		} else {
+			const ref = await prisma.doc_document_references.findFirst({
+				where: { source_document_id: docId, target_group_id: targetGroupId },
+				select: { id: true },
+			})
+			if (!ref) {
+				return fail(event, 400, INVALID_PARAMS, '文档不属于该组且未被引用到该组')
+			}
+			pinGroupId = targetGroupId
+		}
+	} else {
+		if (doc.group_id == null) {
+			return fail(event, 409, DOCUMENT_STATUS_INVALID, '个人草稿未归组，无法置顶')
+		}
+		pinGroupId = doc.group_id
+	}
+
+	// 鉴权：用户需是目标组管理员
+	const targetGroup = pinGroupId === doc.group_id && doc.doc_groups
+		? doc.doc_groups
+		: await prisma.doc_groups.findUnique({
+			where: { id: pinGroupId },
+			select: { scope_type: true, scope_ref_id: true, owner_user_id: true },
+		})
+	if (!targetGroup) {
+		return fail(event, 404, INVALID_PARAMS, '目标组不存在')
 	}
 
 	const permErr = await requireMemberPermission(event, {
-		scopeType: doc.doc_groups.scope_type,
-		scopeRefId: doc.doc_groups.scope_ref_id != null ? Number(doc.doc_groups.scope_ref_id) : null,
-		ownerUserId: doc.doc_groups.owner_user_id != null ? Number(doc.doc_groups.owner_user_id) : null,
-		groupId: Number(doc.group_id),
+		scopeType: targetGroup.scope_type,
+		scopeRefId: targetGroup.scope_ref_id != null ? Number(targetGroup.scope_ref_id) : null,
+		ownerUserId: targetGroup.owner_user_id != null ? Number(targetGroup.owner_user_id) : null,
+		groupId: Number(pinGroupId),
 	})
 	if (permErr) return permErr
 
 	const existing = await prisma.doc_document_pins.findFirst({
-		where: { document_id: docId, group_id: doc.group_id },
+		where: { document_id: docId, group_id: pinGroupId },
 		select: { id: true },
 	})
 	if (existing) return ok({ isPinned: true }, '已置顶')
@@ -68,7 +104,7 @@ export default defineEventHandler(async (event) => {
 		data: {
 			id: generateId(),
 			document_id: docId,
-			group_id: doc.group_id,
+			group_id: pinGroupId,
 			pinned_by: BigInt(user.id),
 		},
 	})
@@ -78,7 +114,7 @@ export default defineEventHandler(async (event) => {
 		action: LOG_ACTIONS.PIN_ADD,
 		targetType: 'document',
 		targetId: Number(doc.id),
-		groupId: Number(doc.group_id),
+		groupId: Number(pinGroupId),
 		documentId: Number(doc.id),
 		detail: { desc: `置顶文件「${doc.title}」` },
 	})

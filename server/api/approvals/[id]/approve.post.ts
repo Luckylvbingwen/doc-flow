@@ -22,6 +22,7 @@ import { writeLog } from '~/server/utils/operation-log'
 import { createNotification } from '~/server/utils/notify'
 import { notifyPublishToGroupMembers } from '~/server/utils/document-upload'
 import { freezeOldAnnotations } from '~/server/utils/annotation-freeze'
+import { closeCollabRoom } from '~/server/utils/hocuspocus'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import { APPROVAL_STATUS, NODE_ACTION } from '~/server/constants/approval'
@@ -289,6 +290,9 @@ export default defineEventHandler(async (event) => {
 				triggeredBy: 'approval.pass',
 			},
 		})
+
+		// 关闭协同编辑房间（文档已发布，不可再编辑）
+		await closeCollabRoom(documentId, '审批通过，文档已发布')
 
 		// M3 通知提交人
 		await createNotification(NOTIFICATION_TEMPLATES.M3.build({

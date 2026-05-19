@@ -12,6 +12,7 @@
 import { prisma } from '~/server/utils/prisma'
 import { requireMemberPermission } from '~/server/utils/group-permission'
 import { cleanupDocumentReferences } from '~/server/utils/document-reference'
+import { closeCollabRoom } from '~/server/utils/hocuspocus'
 import { writeLog } from '~/server/utils/operation-log'
 import { createNotification } from '~/server/utils/notify'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
@@ -102,6 +103,9 @@ export default defineEventHandler(async (event) => {
 			groupName: group.name,
 		}))
 	}
+
+	// 关闭协同编辑房间（文档已从组移除）
+	await closeCollabRoom(Number(doc.id), '文档从组移除')
 
 	// PRD §6.10.6：源文档从组中移除 → 自动删除所有引用关系 + M25 通知目标组管理员
 	await cleanupDocumentReferences(doc.id)

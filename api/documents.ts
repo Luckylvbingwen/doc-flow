@@ -97,16 +97,18 @@ export function apiUnfavoriteDocument(id: number) {
 }
 
 /** 置顶文档（幂等；组管理员及上游可用） */
-export function apiPinDocument(id: number) {
+export function apiPinDocument(id: number, groupId?: number) {
 	return useAuthFetch<ApiResult<{ isPinned: boolean }>>(`/api/documents/${id}/pin`, {
 		method: 'POST',
+		query: groupId ? { groupId } : undefined,
 	})
 }
 
 /** 取消置顶（幂等） */
-export function apiUnpinDocument(id: number) {
+export function apiUnpinDocument(id: number, groupId?: number) {
 	return useAuthFetch<ApiResult<{ isPinned: boolean }>>(`/api/documents/${id}/pin`, {
 		method: 'DELETE',
+		query: groupId ? { groupId } : undefined,
 	})
 }
 

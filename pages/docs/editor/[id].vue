@@ -31,6 +31,9 @@
 							<el-dropdown-item @click="snapshotDrawerVisible = true">历史记录</el-dropdown-item>
 							<el-dropdown-item divided @click="handleTransfer">转移归属人</el-dropdown-item>
 							<el-dropdown-item @click="handleShare">分享</el-dropdown-item>
+							<el-dropdown-item divided style="color: #ef4444" @click="handleDeleteOrCancel">
+								{{ docStatus === 1 ? '删除草稿' : '取消编辑' }}
+							</el-dropdown-item>
 						</el-dropdown-menu>
 					</template>
 				</el-dropdown>
@@ -98,6 +101,7 @@ v-if="docId" v-model="snapshotDrawerVisible" :doc-id="docId" @preview="onSnapsho
 import { ArrowLeft, MoreFilled } from '@element-plus/icons-vue'
 import { sanitize } from '~/composables/useSanitize'
 import { apiGetDocContent } from '~/api/document-editor'
+import { apiDeleteDraft } from '~/api/personal'
 import { useDocEditor } from '~/composables/useDocEditor'
 import type { PersonalDocItem } from '~/types/personal'
 
@@ -107,7 +111,7 @@ useHead({ title: '编辑器 - DocFlow' })
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const { msgError } = useNotify()
+const { msgError, msgSuccess, msgConfirm } = useNotify()
 const currentUserId = computed(() => authStore.user?.id ?? 0)
 
 const docId = computed(() => Number(route.params.id))
@@ -117,12 +121,14 @@ const enableCollab = ref(true)
 const title = ref('未命名文档')
 const content = ref<string | null>(null)
 const loading = ref(true)
+const docStatus = ref<number>(1) // 1=草稿 2=编辑中
 
 onMounted(async () => {
 	const res = await apiGetDocContent(docId.value)
 	if (res.success) {
 		title.value = res.data.title
 		content.value = res.data.content
+		docStatus.value = res.data.status
 	} else {
 		msgError(res.message || '加载失败')
 		router.back()
@@ -148,6 +154,16 @@ const onlineUsers = ref<Array<{ id: number; name: string; color: string }>>([])
 function onPresenceUpdate(users: typeof onlineUsers.value) {
 	onlineUsers.value = users.filter(u => u.id !== currentUserId.value)
 }
+
+// ── Ctrl+S 手动保存 ──
+function onKeydown(e: KeyboardEvent) {
+	if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+		e.preventDefault()
+		flushSave()
+	}
+}
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 // ── 返回 ──
 async function handleBack() {
@@ -194,6 +210,28 @@ const shareModalVisible = ref(false)
 
 function handleTransfer() { transferModalVisible.value = true }
 function handleShare() { shareModalVisible.value = true }
+
+// ── 删除草稿 / 取消编辑 ──
+const deleting = ref(false)
+async function handleDeleteOrCancel() {
+	const isDraft = docStatus.value === 1
+	const confirmMsg = isDraft
+		? '确定删除该草稿？删除后将移至回收站，30 天内可恢复。'
+		: '尚未提交审批，取消编辑将不会保存当前的修改，是否确认取消？'
+	const confirmTitle = isDraft ? '删除草稿' : '取消编辑'
+	const confirmed = await msgConfirm(confirmMsg, confirmTitle, { type: 'warning' })
+	if (!confirmed) return
+	deleting.value = true
+	try {
+		const res = await apiDeleteDraft(docId.value)
+		if (res.success) {
+			msgSuccess(isDraft ? '草稿已删除' : '已取消编辑')
+			router.back()
+		}
+	} finally {
+		deleting.value = false
+	}
+}
 
 // ── 历史快照 ──
 const snapshotDrawerVisible = ref(false)

@@ -377,6 +377,7 @@ export type { FeishuSyncResult } from '~/server/types/feishu'
 export async function feishuSyncContacts(): Promise<FeishuSyncResult> {
 	const { prisma } = await import('./prisma')
 	const { generateId } = await import('./snowflake')
+	const { syncInheritedMembers } = await import('./permission-inheritance')
 
 	const emptyResult: FeishuSyncResult = {
 		total: 0, departments: 0,
@@ -653,11 +654,28 @@ export async function feishuSyncContacts(): Promise<FeishuSyncResult> {
 			const leaderDocUserId = docUserIdMap.get(leaderOpenId)
 			if (!leaderDocUserId) continue
 
-			// 6.1 更新部门 owner
+			// 6.1 查旧负责人并更新部门 owner
+			const oldDept = await prisma.$queryRawUnsafe<{ owner_user_id: bigint | null }[]>(
+				`SELECT owner_user_id FROM doc_departments WHERE id = ? LIMIT 1`,
+				deptDbId,
+			)
+			const oldOwnerUserId = oldDept[0]?.owner_user_id ?? null
+
 			await prisma.$executeRawUnsafe(
 				`UPDATE doc_departments SET owner_user_id = ? WHERE id = ?`,
 				leaderDocUserId, deptDbId,
 			)
+
+			// 6.1.1 负责人变更 → 同步继承成员（scope_type=2 部门）
+			if (oldOwnerUserId == null || BigInt(oldOwnerUserId) !== BigInt(leaderDocUserId)) {
+				await syncInheritedMembers(
+					2,
+					BigInt(deptDbId),
+					oldOwnerUserId != null ? BigInt(oldOwnerUserId) : null,
+					BigInt(leaderDocUserId),
+					BigInt(leaderDocUserId),
+				)
+			}
 
 			// 6.2 指派 dept_head 角色（scope_type=1 部门, scope_ref_id=部门id）
 			//     唯一键 uk_user_role_scope (user_id, role_id, scope_type, scope_ref_id) 保证幂等

@@ -14,6 +14,8 @@ import { prisma } from '~/server/utils/prisma'
 import { requireMemberPermission } from '~/server/utils/group-permission'
 import { writeLogs } from '~/server/utils/operation-log'
 import { createNotifications } from '~/server/utils/notify'
+import { cleanupDocumentReferences } from '~/server/utils/document-reference'
+import { closeCollabRoom } from '~/server/utils/hocuspocus'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import { z } from 'zod'
@@ -145,6 +147,10 @@ export default defineEventHandler(async (event) => {
 		if (notifications.length > 0) {
 			await createNotifications(notifications)
 		}
+
+		// 关闭协同编辑房间 + 清理引用关系
+		await Promise.all(removeIds.map(id => closeCollabRoom(id, '批量从组移除')))
+		await Promise.all(removeIds.map(id => cleanupDocumentReferences(id)))
 	}
 
 	return ok({

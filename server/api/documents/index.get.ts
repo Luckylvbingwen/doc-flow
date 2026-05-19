@@ -13,7 +13,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '~/server/utils/prisma'
 import { documentListQuerySchema } from '~/server/schemas/document'
-import { canUserPinInGroup, canUserUploadInGroup } from '~/server/utils/group-permission'
+import { canUserPinInGroup, canUserUploadInGroup, canUserAccessGroup, canUserEditInGroup } from '~/server/utils/group-permission'
 import type { DocumentListItem, DocumentListResponse, DocumentStatus } from '~/types/document'
 
 interface Row {
@@ -56,6 +56,12 @@ export default defineEventHandler(async (event) => {
 	const query = await getValidatedQuery(event, documentListQuerySchema.parse)
 	const { groupId, status, keyword, page, pageSize } = query
 	const offset = (page - 1) * pageSize
+
+	// PRD §6.3.2：非组成员只能看到组名列表，不能查看组内文档
+	const hasAccess = await canUserAccessGroup(user.id, groupId)
+	if (!hasAccess) {
+		return fail(event, 403, 'PERMISSION_DENIED', '非该组成员，无法查看文档列表')
+	}
 
 	const keywordFilter = keyword
 		? Prisma.sql`AND d.title LIKE ${'%' + keyword + '%'}`
@@ -166,9 +172,10 @@ export default defineEventHandler(async (event) => {
 	// 三个组级权限标志（PRD §6.3.3 / §6.3.4 / §4.3 权限矩阵）
 	//   - canPin / canCreateSubgroup / canManagePermissions：组管理员判定（同口径）
 	//   - canUpload：组成员或上游管理员（"上传文件"全员 ✅）
-	const [isGroupAdmin, canUpload] = await Promise.all([
+	const [isGroupAdmin, canUpload, canEditInGroup] = await Promise.all([
 		canUserPinInGroup(user.id, groupId),
 		canUserUploadInGroup(user.id, groupId),
+		canUserEditInGroup(user.id, groupId),
 	])
 
 	const resp: DocumentListResponse = {
@@ -182,6 +189,7 @@ export default defineEventHandler(async (event) => {
 		canManagePermissions: isGroupAdmin,
 		canCreateSubgroup: isGroupAdmin,
 		canUpload,
+		canEditInGroup,
 	}
 
 	return ok(resp)

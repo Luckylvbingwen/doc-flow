@@ -46,6 +46,20 @@ export default defineEventHandler(async (event) => {
 		return fail(event, 403, PERMISSION_DENIED, '仅系统管理员或产品线负责人可移除管理员')
 	}
 
+	// 阻塞校验：该管理员是否仍是产品线下某组的组负责人
+	const ownedGroup = await prisma.doc_groups.findFirst({
+		where: {
+			scope_type: 3,
+			scope_ref_id: BigInt(plId),
+			owner_user_id: BigInt(targetUserId),
+			deleted_at: null,
+		},
+		select: { id: true, name: true },
+	})
+	if (ownedGroup) {
+		return fail(event, 409, INVALID_PARAMS, `该管理员仍是组「${ownedGroup.name}」的负责人，请先移交组负责人后再移除`)
+	}
+
 	// 查找并删除
 	const admin = await prisma.doc_product_line_admins.findFirst({
 		where: {

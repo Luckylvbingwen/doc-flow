@@ -375,6 +375,31 @@
   padding: 6px 8px !important;
 }
 
+/* 引用文档标题旁的链接图标 */
+.df-file-topbar__ref-icon {
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+/* 引用模式提示条 */
+.df-ref-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--df-primary);
+  margin: 0 0 -4px;
+}
+
+html.dark .df-ref-banner {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.25);
+}
+
 /* 小号文件图标（顶栏用） */
 .df-file-icon--sm {
   width: 28px;

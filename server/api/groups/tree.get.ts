@@ -26,7 +26,44 @@ interface DocFileRow {
 	group_id: bigint
 }
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+	const permErr = await requirePermission(event, 'doc:read')
+	if (permErr) return permErr
+	const user = event.context.user!
+
+	// 查询用户可访问的组 ID 集合（成员身份）
+	const memberGroupIds = new Set(
+		(await prisma.doc_group_members.findMany({
+			where: { user_id: BigInt(user.id), deleted_at: null },
+			select: { group_id: true },
+		})).map(m => Number(m.group_id))
+	)
+
+	// 查询用户角色（用于判定 scope 级别穿透）
+	const userRoles = await prisma.$queryRaw<Array<{
+		code: string
+		scope_type: number | null
+		scope_ref_id: bigint | number | null
+	}>>`
+		SELECT r.code, ur.scope_type, ur.scope_ref_id
+		FROM sys_user_roles ur
+		JOIN sys_roles r ON r.id = ur.role_id AND r.deleted_at IS NULL
+		WHERE ur.user_id = ${user.id}
+	`
+	const isSuperAdmin = userRoles.some(r => r.code === 'super_admin')
+	const isCompanyAdmin = userRoles.some(r => r.code === 'company_admin')
+
+	/** 判断用户是否可访问指定组的文件 */
+	function canAccessGroupFiles(g: { id: number; scopeType: number; scopeRefId: number | null; ownerUserId?: number }): boolean {
+		if (isSuperAdmin) return true
+		if (memberGroupIds.has(g.id)) return true
+		if (g.ownerUserId && g.ownerUserId === user.id) return true
+		if (g.scopeType === 1 && isCompanyAdmin) return true
+		if (g.scopeType === 2 && userRoles.some(r => r.code === 'dept_head' && Number(r.scope_ref_id) === g.scopeRefId)) return true
+		if (g.scopeType === 3 && userRoles.some(r => r.code === 'pl_head' && Number(r.scope_ref_id) === g.scopeRefId)) return true
+		return false
+	}
+
 	// 1) 查询所有未删除的组 + 负责人名称 + 已发布文档数
 	const groups = await prisma.$queryRaw<GroupTreeRow[]>`
 		SELECT
@@ -84,19 +121,28 @@ export default defineEventHandler(async () => {
 		docsByGroup.get(gid)!.push({ id: Number(d.id), name: d.title, type: d.ext || '' })
 	}
 
-	// 5) 将平铺组列表构建为树
-	const flatGroups: TreeGroup[] = groups.map(g => ({
-		id: Number(g.id),
-		name: g.name,
-		fileCount: Number(g.file_count),
-		owner: g.owner_name || '',
-		desc: g.description,
-		scopeType: g.scope_type,
-		scopeRefId: g.scope_ref_id ? Number(g.scope_ref_id) : null,
-		parentId: g.parent_id ? Number(g.parent_id) : null,
-		children: [],
-		files: docsByGroup.get(Number(g.id)) || [],
-	}))
+	// 5) 将平铺组列表构建为树（仅用户可访问的组展示 files）
+	const flatGroups: TreeGroup[] = groups.map(g => {
+		const gid = Number(g.id)
+		const accessible = canAccessGroupFiles({
+			id: gid,
+			scopeType: g.scope_type,
+			scopeRefId: g.scope_ref_id ? Number(g.scope_ref_id) : null,
+			ownerUserId: g.owner_user_id ? Number(g.owner_user_id) : undefined,
+		})
+		return {
+			id: gid,
+			name: g.name,
+			fileCount: Number(g.file_count),
+			owner: g.owner_name || '',
+			desc: g.description,
+			scopeType: g.scope_type,
+			scopeRefId: g.scope_ref_id ? Number(g.scope_ref_id) : null,
+			parentId: g.parent_id ? Number(g.parent_id) : null,
+			children: [],
+			files: accessible ? (docsByGroup.get(gid) || []) : [],
+		}
+	})
 
 	// 按 ID 索引，用于快速查找父节点
 	const groupMap = new Map<number, TreeGroup>()

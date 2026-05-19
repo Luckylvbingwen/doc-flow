@@ -64,12 +64,20 @@ export default defineEventHandler(async (event) => {
 	if (!doc || doc.deleted_at) {
 		return fail(event, 404, DOCUMENT_NOT_FOUND, '文档不存在')
 	}
-	if (Number(doc.owner_user_id) !== user.id) {
-		return fail(event, 403, PERMISSION_DENIED, '仅归属人可发布')
+	// 权限：归属人 或 拥有编辑权限的协作者（PRD §6.5.2 编辑中+可编辑可提交发布）
+	const isOwner = Number(doc.owner_user_id) === user.id
+	if (!isOwner) {
+		const perm = await prisma.doc_document_permissions.findFirst({
+			where: { document_id: BigInt(docId), user_id: BigInt(user.id), deleted_at: null },
+			select: { permission: true },
+		})
+		if (!perm || perm.permission > 2) {
+			return fail(event, 403, PERMISSION_DENIED, '仅归属人或拥有编辑权限的协作者可发布')
+		}
 	}
-	// 仅草稿(1)和已驳回(5)可发布
-	if (doc.status !== 1 && doc.status !== 5) {
-		return fail(event, 409, DOCUMENT_STATUS_INVALID, '仅草稿或已驳回文档可提交发布')
+	// 仅草稿(1)、编辑中(2)和已驳回(5)可发布
+	if (doc.status !== 1 && doc.status !== 2 && doc.status !== 5) {
+		return fail(event, 409, DOCUMENT_STATUS_INVALID, '仅草稿、编辑中或已驳回文档可提交发布')
 	}
 
 	// ── 校验目标组存在 ──

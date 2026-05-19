@@ -14,6 +14,11 @@
 					{{ fileTypeAbbr }}
 				</div>
 				<h2 class="df-file-topbar__name">{{ fileName || '加载中...' }}</h2>
+				<el-icon
+v-if="isReferenceMode" class="df-file-topbar__ref-icon" color="var(--df-primary)" :size="15"
+					title="引用文档">
+					<Link />
+				</el-icon>
 				<span v-if="detail" class="file-status" :class="`file-status--${statusKey}`">
 					{{ statusText }}
 				</span>
@@ -25,120 +30,140 @@
 				</el-tooltip>
 			</div>
 			<div v-if="detail" class="df-file-topbar__right">
-				<!-- 收藏 -->
-				<el-tooltip :content="detail.isFavorited ? '取消收藏' : '收藏'" placement="top">
-					<el-button
+				<!-- 引用模式：仅下载 -->
+				<template v-if="isReferenceMode">
+					<el-button v-if="detail.status === 4" size="small" @click="handleDownloadCurrent">
+						<el-icon>
+							<Download />
+						</el-icon>
+						下载
+					</el-button>
+				</template>
+				<!-- 正常模式 -->
+				<template v-else>
+					<!-- 收藏 -->
+					<el-tooltip :content="detail.isFavorited ? '取消收藏' : '收藏'" placement="top">
+						<el-button
 circle size="small" :type="detail.isFavorited ? 'warning' : 'default'" :loading="favoritePending"
-						@click="onToggleFavorite">
-						<el-icon>
-							<StarFilled v-if="detail.isFavorited" />
-							<Star v-else />
-						</el-icon>
-					</el-button>
-				</el-tooltip>
-				<!-- 置顶 -->
-				<el-tooltip v-if="detail.canPin" :content="detail.isPinned ? '取消置顶' : '置顶'" placement="top">
-					<el-button
+							@click="onToggleFavorite">
+							<el-icon>
+								<StarFilled v-if="detail.isFavorited" />
+								<Star v-else />
+							</el-icon>
+						</el-button>
+					</el-tooltip>
+					<!-- 置顶 -->
+					<el-tooltip v-if="detail.canPin" :content="detail.isPinned ? '取消置顶' : '置顶'" placement="top">
+						<el-button
 circle size="small" :type="detail.isPinned ? 'primary' : 'default'" :loading="pinPending"
-						@click="onTogglePin">
+							@click="onTogglePin">
+							<el-icon>
+								<Top />
+							</el-icon>
+						</el-button>
+					</el-tooltip>
+					<span class="df-file-topbar__sep" />
+					<!-- 协作者头像叠层 -->
+					<AvatarStack :users="collaborators" :max="3" />
+					<!-- 核心按钮：编辑/下载/分享 -->
+					<el-button v-if="detail.canEdit" size="small" :loading="creatingCopy" @click="handleEdit">
 						<el-icon>
-							<Top />
+							<Edit />
 						</el-icon>
+						编辑
 					</el-button>
-				</el-tooltip>
-				<span class="df-file-topbar__sep" />
-				<!-- 协作者头像叠层 -->
-				<AvatarStack :users="collaborators" :max="3" />
-				<!-- 核心按钮：编辑/下载/分享 -->
-				<el-button v-if="detail.canEdit" size="small" :loading="creatingCopy" @click="handleEdit">
-					<el-icon>
-						<Edit />
-					</el-icon>
-					编辑
-				</el-button>
-				<el-button
+					<el-button
 v-if="detail.canSubmitApproval" type="primary" size="small" :loading="submitLoading"
-					@click="handleSubmitApproval">
-					<el-icon>
-						<Promotion />
-					</el-icon>
-					提交审批
-				</el-button>
-				<el-button v-if="detail.status === 4" size="small" @click="handleDownloadCurrent">
-					<el-icon>
-						<Download />
-					</el-icon>
-					下载
-				</el-button>
-				<el-button v-if="detail.status === 4" size="small" @click="shareModalVisible = true">
-					<el-icon>
-						<Share />
-					</el-icon>
-					分享
-				</el-button>
-				<el-button v-if="detail.canRequestEditPermission" size="small" @click="handleRequestEditPermission">
-					<el-icon>
-						<Edit />
-					</el-icon>
-					申请编辑权限
-				</el-button>
-				<el-button v-if="canReviewPermissionRequests" size="small" @click="permissionReviewVisible = true">
-					<el-icon>
-						<Lock />
-					</el-icon>
-					审批权限申请{{ pendingPermissionRequestCount > 0 ? `（${pendingPermissionRequestCount}）` : '' }}
-				</el-button>
-				<!-- 更多菜单 -->
-				<el-dropdown trigger="click" placement="bottom-end" @command="handleMoreCommand">
-					<el-button size="small" class="df-file-topbar__more">
+						@click="handleSubmitApproval">
 						<el-icon>
-							<MoreFilled />
+							<Promotion />
 						</el-icon>
+						提交审批
 					</el-button>
-					<template #dropdown>
-						<el-dropdown-menu>
-							<el-dropdown-item v-if="detail.canManagePermissions" command="permission">
-								<el-icon>
-									<Lock />
-								</el-icon>
-								权限设置
-							</el-dropdown-item>
-							<el-dropdown-item v-if="detail.status === 4 && detail.groupId && canMove" command="move">
-								<el-icon>
-									<Rank />
-								</el-icon>
-								跨组移动
-							</el-dropdown-item>
-							<el-dropdown-item v-if="detail.canUploadVersion" command="upload">
-								<el-icon>
-									<Upload />
-								</el-icon>
-								上传新版本
-							</el-dropdown-item>
-							<el-dropdown-item v-if="detail.canTransfer" command="transfer">
-								<el-icon>
-									<Rank />
-								</el-icon>
-								转移归属人
-							</el-dropdown-item>
-							<el-dropdown-item command="history" divided>
-								<el-icon>
-									<List />
-								</el-icon>
-								历史记录
-							</el-dropdown-item>
-							<el-dropdown-item v-if="detail.canRemove" command="remove" divided>
-								<span style="color: var(--el-color-danger)">
+					<el-button v-if="detail.status === 4" size="small" @click="handleDownloadCurrent">
+						<el-icon>
+							<Download />
+						</el-icon>
+						下载
+					</el-button>
+					<el-button v-if="detail.status === 4" size="small" @click="shareModalVisible = true">
+						<el-icon>
+							<Share />
+						</el-icon>
+						分享
+					</el-button>
+					<el-button v-if="detail.canRequestEditPermission" size="small" @click="handleRequestEditPermission">
+						<el-icon>
+							<Edit />
+						</el-icon>
+						申请编辑权限
+					</el-button>
+					<el-button v-if="canReviewPermissionRequests" size="small" @click="permissionReviewVisible = true">
+						<el-icon>
+							<Lock />
+						</el-icon>
+						审批权限申请{{ pendingPermissionRequestCount > 0 ? `（${pendingPermissionRequestCount}）` : '' }}
+					</el-button>
+					<!-- 更多菜单 -->
+					<el-dropdown trigger="click" placement="bottom-end" @command="handleMoreCommand">
+						<el-button size="small" class="df-file-topbar__more">
+							<el-icon>
+								<MoreFilled />
+							</el-icon>
+						</el-button>
+						<template #dropdown>
+							<el-dropdown-menu>
+								<el-dropdown-item v-if="detail.canManagePermissions" command="permission">
 									<el-icon>
-										<Delete />
+										<Lock />
 									</el-icon>
-									从组移除
-								</span>
-							</el-dropdown-item>
-						</el-dropdown-menu>
-					</template>
-				</el-dropdown>
+									权限设置
+								</el-dropdown-item>
+								<el-dropdown-item v-if="detail.status === 4 && detail.groupId && canMove" command="move">
+									<el-icon>
+										<Rank />
+									</el-icon>
+									跨组移动
+								</el-dropdown-item>
+								<el-dropdown-item v-if="detail.canUploadVersion" command="upload">
+									<el-icon>
+										<Upload />
+									</el-icon>
+									上传新版本
+								</el-dropdown-item>
+								<el-dropdown-item v-if="detail.canTransfer" command="transfer">
+									<el-icon>
+										<Rank />
+									</el-icon>
+									转移归属人
+								</el-dropdown-item>
+								<el-dropdown-item command="history" divided>
+									<el-icon>
+										<List />
+									</el-icon>
+									历史记录
+								</el-dropdown-item>
+								<el-dropdown-item v-if="detail.canRemove" command="remove" divided>
+									<span style="color: var(--el-color-danger)">
+										<el-icon>
+											<Delete />
+										</el-icon>
+										从组移除
+									</span>
+								</el-dropdown-item>
+							</el-dropdown-menu>
+						</template>
+					</el-dropdown>
+				</template>
 			</div>
+		</div>
+
+		<!-- 引用模式提示条 -->
+		<div v-if="isReferenceMode && detail" class="df-ref-banner">
+			<el-icon :size="16">
+				<Link />
+			</el-icon>
+			<span>此文档引用自「{{ detail.groupName || '其他组' }}」，仅可查看和下载</span>
 		</div>
 
 		<!-- 文件元数据条 -->
@@ -451,6 +476,7 @@ import {
 	DArrowLeft,
 	DArrowRight,
 	ChatLineSquare,
+	Link,
 } from '@element-plus/icons-vue'
 import type { VersionInfo, CompareResult } from '~/types/version'
 import type { ApiResponse, PaginatedData } from '~/types/api'
@@ -494,6 +520,13 @@ const { msgSuccess, msgError, msgWarning, msgConfirm } = useNotify()
 const route = useRoute()
 const documentId = computed(() => Number(route.params.id))
 const authStore = useAuthStore()
+
+// ── 引用模式（从引用组点击进入） ──
+const refGroupId = computed(() => {
+	const v = route.query.ref
+	return v ? Number(v) : null
+})
+const isReferenceMode = computed(() => refGroupId.value != null)
 
 // ── 文件详情 ──
 const detail = ref<DocumentDetail | null>(null)
@@ -587,8 +620,8 @@ async function onTogglePin() {
 	detail.value.isPinned = !orig
 	try {
 		const res = orig
-			? await apiUnpinDocument(documentId.value)
-			: await apiPinDocument(documentId.value)
+			? await apiUnpinDocument(documentId.value, refGroupId.value || detail.value.groupId || undefined)
+			: await apiPinDocument(documentId.value, refGroupId.value || detail.value.groupId || undefined)
 		if (!res.success) {
 			detail.value.isPinned = orig
 			msgError(res.message || '操作失败')
@@ -1180,14 +1213,17 @@ function onDrawerViewFile(_approval: ApprovalDetail) {
 	approvalDrawerVisible.value = false
 }
 
-/** 返回按钮文案：有组名 → 「返回 [组名]」；否则 → 「返回共享文档」 */
+/** 返回按钮文案：引用模式 → 返回引用组；有组名 → 「返回 [组名]」；否则 → 「返回共享文档」 */
 const backLabel = computed(() => {
+	if (isReferenceMode.value) return '返回引用组'
 	const name = detail.value?.groupName
 	return name ? `返回 ${name}` : '返回共享文档'
 })
 
 function backToGroup() {
-	if (detail.value?.groupId) {
+	if (isReferenceMode.value) {
+		navigateTo(`/docs?groupId=${refGroupId.value}`)
+	} else if (detail.value?.groupId) {
 		navigateTo(`/docs?groupId=${detail.value.groupId}`)
 	} else {
 		navigateTo('/docs')

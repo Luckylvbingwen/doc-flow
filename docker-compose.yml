@@ -69,6 +69,11 @@ services:
     environment:
       - JWT_SECRET=${JWT_SECRET:-please-set-a-strong-random-secret-here-min-32}
       - HOCUSPOCUS_PORT=1234
+      - HOCUSPOCUS_MGMT_PORT=1235
+      - HOCUSPOCUS_INTERNAL_SECRET=${HOCUSPOCUS_INTERNAL_SECRET:-hocuspocus-internal-key}
+      - DATABASE_URL=mysql://root:docflow_pwd@db:3306/docflow
+    depends_on:
+      - db
     restart: unless-stopped
 
   minio:

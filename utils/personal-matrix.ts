@@ -43,9 +43,7 @@ export function getActions(doc: PersonalDocItem, currentUserId: number): ActionS
 		actions.push({ kind: 'edit', label: '编辑', type: 'primary', inMenu: false })
 		actions.push({ kind: 'share', label: '分享', type: 'default', inMenu: true })
 		actions.push({ kind: 'download', label: '下载', type: 'default', inMenu: true })
-		if (isOwner) {
-			actions.push({ kind: 'publish', label: '提交发布', type: 'default', inMenu: true })
-		}
+		actions.push({ kind: 'publish', label: '提交发布', type: 'default', inMenu: true })
 	} else if (doc.status === 3 && source === 'mine') {
 		// 审批中 + 我创建的 → 查看 | 分享/下载/撤回(红)
 		actions.push({ kind: 'view', label: '查看', type: 'primary', inMenu: false })

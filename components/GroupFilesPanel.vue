@@ -155,7 +155,9 @@ ref="tableRef" v-model:page="currentPage" v-model:page-size="currentPageSize" :d
 						{{ (row.ext || 'FILE').toUpperCase().slice(0, 3) }}
 					</div>
 					<div class="gfp-title-text">
-						<NuxtLink :to="`/docs/file/${row.id}`" class="gfp-title-link">{{ row.title }}</NuxtLink>
+						<NuxtLink
+:to="row.isReference ? `/docs/file/${row.id}?ref=${groupId}` : `/docs/file/${row.id}`"
+							class="gfp-title-link">{{ row.title }}</NuxtLink>
 						<div
 v-if="row.isPinned || row.isFavorited || row.hasCustomPermissions || row.isReference"
 							class="gfp-title-flags">
@@ -185,7 +187,9 @@ v-if="row.isPinned || row.isFavorited || row.hasCustomPermissions || row.isRefer
 			</template>
 			<template #actions="{ row }">
 				<div class="gfp-row-actions">
-					<el-button link type="primary" @click="navigateTo(`/docs/file/${row.id}`)">详情</el-button>
+					<el-button
+link type="primary"
+						@click="navigateTo(row.isReference ? `/docs/file/${row.id}?ref=${groupId}` : `/docs/file/${row.id}`)">详情</el-button>
 					<el-dropdown trigger="click" @command="onRowCommand($event, row)">
 						<el-button link type="info" class="gfp-more-btn">
 							<el-icon :size="16">
@@ -196,9 +200,12 @@ v-if="row.isPinned || row.isFavorited || row.hasCustomPermissions || row.isRefer
 							<el-dropdown-menu>
 								<el-dropdown-item command="download" :icon="Download">下载</el-dropdown-item>
 								<el-dropdown-item
-v-if="canEdit && row.fileType === 'md'" command="edit"
-									:icon="Edit">编辑</el-dropdown-item>
+									v-if="canEdit && row.fileType === 'md' && (canEditInGroup || row.ownerId === authStore.user?.id)"
+									command="edit" :icon="Edit">编辑</el-dropdown-item>
 								<template v-if="row.isReference">
+									<el-dropdown-item v-if="canPin" :command="row.isPinned ? 'unpin' : 'pin'" :icon="Top">
+										{{ row.isPinned ? '取消置顶' : '置顶' }}
+									</el-dropdown-item>
 									<el-dropdown-item command="unreference" :icon="Delete" divided style="color: #ef4444">
 										取消引用
 									</el-dropdown-item>
@@ -321,6 +328,7 @@ const emit = defineEmits<{
 }>()
 
 const { can } = useAuth()
+const authStore = useAuthStore()
 const canRemoveDoc = computed(() => can('doc:remove'))
 const canMoveDoc = computed(() => can('doc:move'))
 const canEdit = computed(() => can('doc:edit'))
@@ -331,6 +339,7 @@ const canPin = ref(false)
 const canManagePermissions = ref(false)
 const canCreateSubgroup = ref(false)
 const canUpload = ref(false)
+const canEditInGroup = ref(false)
 
 const filterKeyword = ref('')
 
@@ -351,6 +360,7 @@ function fetchListWithFlags(
 			canManagePermissions.value = res.data.canManagePermissions
 			canCreateSubgroup.value = res.data.canCreateSubgroup
 			canUpload.value = res.data.canUpload
+			canEditInGroup.value = res.data.canEditInGroup
 		}
 		return res
 	})
@@ -453,7 +463,6 @@ async function onEditDoc(row: DocumentListItem) {
 			return
 		}
 
-		const authStore = useAuthStore()
 		const isSelf = res.data.ownerUserId === authStore.user?.id
 		if (isSelf) {
 			await navigateTo(`/docs/editor/${res.data.id}`)
@@ -512,7 +521,9 @@ async function onTogglePin(row: DocumentListItem) {
 	const orig = row.isPinned
 	row.isPinned = !orig
 	try {
-		const res = orig ? await apiUnpinDocument(row.id) : await apiPinDocument(row.id)
+		// 引用文档置顶在当前组（目标组）生效
+		const gId = groupId.value || undefined
+		const res = orig ? await apiUnpinDocument(row.id, gId) : await apiPinDocument(row.id, gId)
 		if (!res.success) {
 			row.isPinned = orig
 			msgError(res.message || '操作失败')

@@ -1,6 +1,6 @@
 /**
  * PUT /api/product-lines/:id
- * 编辑产品线 — 仅 super_admin
+ * 编辑产品线 — super_admin 或产品线负责人
  *
  * 事务内对当前 owner 做一次幂等的 pl_head 授予（治愈历史数据可能的不一致）
  */
@@ -11,6 +11,7 @@ import {
 	PRODUCT_LINE_NOT_FOUND,
 	PRODUCT_LINE_NAME_EXISTS,
 	INVALID_PARAMS,
+	PERMISSION_DENIED,
 } from '~/server/constants/error-codes'
 import { grantRole } from '~/server/utils/system-role'
 import { SYSTEM_ROLE_CODES } from '~/server/constants/system-roles'
@@ -18,8 +19,8 @@ import { writeLog } from '~/server/utils/operation-log'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 
 export default defineEventHandler(async (event) => {
-	const denied = await requirePermission(event, 'super_admin')
-	if (denied) return denied
+	const user = event.context.user
+	if (!user) return fail(event, 401, 'AUTH_REQUIRED', '请先登录')
 
 	const id = Number(getRouterParam(event, 'id'))
 	if (!id || isNaN(id)) return fail(event, 400, INVALID_PARAMS, '无效的产品线ID')
@@ -36,12 +37,19 @@ export default defineEventHandler(async (event) => {
 	})
 	if (!existing) return fail(event, 404, PRODUCT_LINE_NOT_FOUND, '产品线不存在')
 
+	// 权限：super_admin 或产品线负责人
+	const isSuperAdmin = !(await requirePermission(event, 'super_admin'))
+	const isOwner = existing.owner_user_id && Number(existing.owner_user_id) === user.id
+	if (!isSuperAdmin && !isOwner) {
+		return fail(event, 403, PERMISSION_DENIED, '仅系统管理员或产品线负责人可编辑')
+	}
+
 	// 构建更新数据
 	const data: Record<string, unknown> = {}
 	if (body.name) data.name = body.name.trim()
 	if (body.description !== undefined) data.description = body.description?.trim() || null
 
-	const operatorId = event.context.user!.id
+	const operatorId = user.id
 
 	try {
 		await prisma.$transaction(async (tx) => {

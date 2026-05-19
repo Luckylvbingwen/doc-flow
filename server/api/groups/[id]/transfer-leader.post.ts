@@ -6,6 +6,7 @@
  * - 通知三方（原负责人、新负责人、系统管理员）
  */
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 import { prisma } from '~/server/utils/prisma'
 import { generateId } from '~/server/utils/snowflake'
 import { createNotifications } from '~/server/utils/notify'
@@ -107,6 +108,34 @@ export default defineEventHandler(async (event) => {
 					created_by: BigInt(userId),
 				},
 			})
+		}
+
+		// 4. 审批模板节点：将该组模板中旧负责人替换为新负责人
+		const groupTemplateIds = await tx.doc_approval_templates.findMany({
+			where: { group_id: BigInt(id), deleted_at: null },
+			select: { id: true },
+		})
+		if (groupTemplateIds.length > 0) {
+			const tplIds = groupTemplateIds.map(t => t.id)
+			await tx.doc_approval_template_nodes.updateMany({
+				where: {
+					template_id: { in: tplIds },
+					approver_user_id: BigInt(currentOwnerId),
+				},
+				data: { approver_user_id: BigInt(body.newLeaderUserId) },
+			})
+
+			// 5. 进行中的审批实例节点：仅替换待审批(action_status=1)的节点
+			await tx.$executeRaw`
+				UPDATE doc_approval_instance_nodes ain
+				JOIN doc_approval_instances ai ON ai.id = ain.instance_id
+				SET ain.approver_user_id = ${BigInt(body.newLeaderUserId)},
+				    ain.updated_at = NOW()
+				WHERE ai.template_id IN (${Prisma.join(tplIds)})
+				  AND ai.status = 1
+				  AND ain.approver_user_id = ${BigInt(currentOwnerId)}
+				  AND ain.action_status = 1
+			`
 		}
 	})
 

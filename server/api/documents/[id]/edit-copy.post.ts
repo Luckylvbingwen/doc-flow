@@ -26,8 +26,19 @@ export default defineEventHandler(async (event) => {
 	if (doc.status !== 4) return fail(event, 409, DOCUMENT_STATUS_INVALID, '仅已发布文档可创建编辑副本')
 
 	// 权限：归属人 或 可编辑成员（permission <= 2）
+	// PRD §4.3：role=3（上传下载）仅可编辑自己上传的文件
 	const isOwner = Number(doc.owner_user_id) === user.id
 	if (!isOwner) {
+		// 组内角色检查：role=3 不可编辑他人文档
+		if (doc.group_id) {
+			const member = await prisma.doc_group_members.findFirst({
+				where: { group_id: doc.group_id, user_id: BigInt(user.id), deleted_at: null },
+				select: { role: true },
+			})
+			if (member && member.role === 3) {
+				return fail(event, 403, PERMISSION_DENIED, '上传下载角色仅可编辑自己上传的文件')
+			}
+		}
 		const perm = await prisma.doc_document_permissions.findFirst({
 			where: { document_id: docId, user_id: BigInt(user.id), deleted_at: null },
 			select: { permission: true },

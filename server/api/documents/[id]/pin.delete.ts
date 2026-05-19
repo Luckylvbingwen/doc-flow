@@ -1,5 +1,5 @@
 /**
- * DELETE /api/documents/:id/pin
+ * DELETE /api/documents/:id/pin?groupId=xxx
  * 取消置顶
  *
  * 业务：
@@ -7,6 +7,8 @@
  *   2. 幂等：
  *      - 已置顶 → 删除记录 + 写 pin.remove 日志
  *      - 未置顶 → 200 ok，不重写日志
+ *
+ * groupId 参数：指定取消置顶的组（引用文档在目标组取消置顶时必传）
  */
 import { prisma } from '~/server/utils/prisma'
 import { writeLog } from '~/server/utils/operation-log'
@@ -41,21 +43,41 @@ export default defineEventHandler(async (event) => {
 	if (!doc || doc.deleted_at) {
 		return fail(event, 404, DOCUMENT_NOT_FOUND, '文档不存在')
 	}
-	if (doc.group_id == null || !doc.doc_groups) {
-		// 无组信息也无从判定权限；容忍为 404
-		return fail(event, 404, DOCUMENT_NOT_FOUND, '文档已脱离组')
+
+	// 确定取消置顶的组：优先使用 query.groupId（引用场景），否则使用文档归属组
+	const queryGroupId = getQuery(event).groupId as string | undefined
+	let pinGroupId: bigint
+
+	if (queryGroupId && /^\d+$/.test(queryGroupId)) {
+		pinGroupId = BigInt(queryGroupId)
+	} else {
+		if (doc.group_id == null) {
+			return fail(event, 404, DOCUMENT_NOT_FOUND, '文档已脱离组')
+		}
+		pinGroupId = doc.group_id
+	}
+
+	// 鉴权：用户需是目标组管理员
+	const targetGroup = pinGroupId === doc.group_id && doc.doc_groups
+		? doc.doc_groups
+		: await prisma.doc_groups.findUnique({
+			where: { id: pinGroupId },
+			select: { scope_type: true, scope_ref_id: true, owner_user_id: true },
+		})
+	if (!targetGroup) {
+		return fail(event, 404, INVALID_PARAMS, '目标组不存在')
 	}
 
 	const permErr = await requireMemberPermission(event, {
-		scopeType: doc.doc_groups.scope_type,
-		scopeRefId: doc.doc_groups.scope_ref_id != null ? Number(doc.doc_groups.scope_ref_id) : null,
-		ownerUserId: doc.doc_groups.owner_user_id != null ? Number(doc.doc_groups.owner_user_id) : null,
-		groupId: Number(doc.group_id),
+		scopeType: targetGroup.scope_type,
+		scopeRefId: targetGroup.scope_ref_id != null ? Number(targetGroup.scope_ref_id) : null,
+		ownerUserId: targetGroup.owner_user_id != null ? Number(targetGroup.owner_user_id) : null,
+		groupId: Number(pinGroupId),
 	})
 	if (permErr) return permErr
 
 	const existing = await prisma.doc_document_pins.findFirst({
-		where: { document_id: docId, group_id: doc.group_id },
+		where: { document_id: docId, group_id: pinGroupId },
 		select: { id: true },
 	})
 	if (!existing) return ok({ isPinned: false }, '未置顶')
@@ -67,7 +89,7 @@ export default defineEventHandler(async (event) => {
 		action: LOG_ACTIONS.PIN_REMOVE,
 		targetType: 'document',
 		targetId: Number(doc.id),
-		groupId: Number(doc.group_id),
+		groupId: Number(pinGroupId),
 		documentId: Number(doc.id),
 		detail: { desc: `取消置顶文件「${doc.title}」` },
 	})

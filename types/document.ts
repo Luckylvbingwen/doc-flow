@@ -113,6 +113,8 @@ export interface DocumentListResponse {
 	canCreateSubgroup: boolean
 	/** 当前用户是否可上传新文件到此组（组内活跃成员 OR 上游管理员） */
 	canUpload: boolean
+	/** 当前用户是否可在线编辑他人文档（组内 role=1/2 OR 上游管理员） */
+	canEditInGroup: boolean
 }
 
 /** 预览响应 */

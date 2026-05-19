@@ -1,17 +1,18 @@
 /**
  * DELETE /api/documents/:id/draft
- * 删除草稿（PRD §6.5.2 操作矩阵：草稿 + 我创建的 → 删除 红色）
+ * 删除草稿 / 取消编辑（PRD §6.5.2 操作矩阵）
  *
  * 规则：
  *   - 仅 owner_user_id = self 可删
- *   - 仅 status=1（草稿）可删；其他状态拒绝
- *   - 软删：status=6 已删除 / deleted_at_real=NOW() / deleted_by_user_id=self
- *   - 写 doc.draft_delete 操作日志
+ *   - status=1（草稿）：软删除到回收站
+ *   - status=2（编辑副本）：软删除（丢弃编辑副本）
+ *   - 写操作日志
  *
- * 鉴权：登录即可（本接口仅操作自己的草稿）
+ * 鉴权：登录即可（本接口仅操作自己的草稿/编辑副本）
  */
 import { prisma } from '~/server/utils/prisma'
 import { cleanupDocumentReferences } from '~/server/utils/document-reference'
+import { closeCollabRoom } from '~/server/utils/hocuspocus'
 import {
 	AUTH_REQUIRED,
 	INVALID_PARAMS,
@@ -23,6 +24,7 @@ import { writeLog } from '~/server/utils/operation-log'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 
 const STATUS_DRAFT = 1
+const STATUS_EDITING = 2
 const STATUS_DELETED = 6
 
 export default defineEventHandler(async (event) => {
@@ -49,10 +51,10 @@ export default defineEventHandler(async (event) => {
 	})
 	if (!doc || doc.deleted_at) return fail(event, 404, DRAFT_NOT_FOUND, '草稿不存在')
 	if (Number(doc.owner_user_id) !== user.id) {
-		return fail(event, 403, DRAFT_NOT_OWNER, '仅归属人可删除草稿')
+		return fail(event, 403, DRAFT_NOT_OWNER, '仅归属人可删除')
 	}
-	if (doc.status !== STATUS_DRAFT) {
-		return fail(event, 409, DRAFT_NOT_DELETABLE, '仅草稿可删除')
+	if (doc.status !== STATUS_DRAFT && doc.status !== STATUS_EDITING) {
+		return fail(event, 409, DRAFT_NOT_DELETABLE, '仅草稿或编辑中文档可删除')
 	}
 	if (doc.deleted_at_real) {
 		return fail(event, 409, DRAFT_NOT_DELETABLE, '已在回收站，不可重复删除')
@@ -75,6 +77,9 @@ export default defineEventHandler(async (event) => {
 			updated_by: BigInt(user.id),
 		},
 	})
+
+	// 关闭协同编辑房间（草稿已删除）
+	await closeCollabRoom(Number(docId), '草稿删除')
 
 	// PRD §6.10.6：源文档被归属人删除 → 自动失效所有引用关系 + M25 通知
 	await cleanupDocumentReferences(docId)

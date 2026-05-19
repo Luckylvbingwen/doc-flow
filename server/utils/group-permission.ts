@@ -142,6 +142,44 @@ export async function isUserGroupMember(
 }
 
 /**
+ * 布尔版：当前用户是否可查看指定组的文档列表
+ *
+ * 判定规则（PRD §6.3.2 — 非组成员只能看到组名，不能看到文档）：
+ *   - 组内活跃成员（任意 role）
+ *   - 组负责人
+ *   - super_admin / company_admin / dept_head(同部门) / pl_head(同产品线)
+ */
+export async function canUserAccessGroup(
+	userId: number,
+	groupId: number | bigint | null,
+): Promise<boolean> {
+	if (groupId == null) return false
+	// 1) 组内成员
+	if (await isUserGroupMember(userId, groupId)) return true
+	// 2) 上游管理员/负责人 (复用 canUserPinInGroup 同口径)
+	return canUserPinInGroup(userId, groupId)
+}
+
+/**
+ * 布尔版：当前用户是否可在线编辑指定组的文档
+ *   = 组内活跃成员 role ∈ {1, 2} OR 上游管理员
+ * PRD §4.3：role=3（上传下载）仅可编辑自己上传的文件，不可编辑他人文档
+ */
+export async function canUserEditInGroup(
+	userId: number,
+	groupId: number | bigint | null,
+): Promise<boolean> {
+	if (groupId == null) return false
+	const member = await prisma.doc_group_members.findFirst({
+		where: { group_id: BigInt(groupId), user_id: BigInt(userId), deleted_at: null },
+		select: { role: true },
+	})
+	if (member && (member.role === 1 || member.role === 2)) return true
+	// 上游管理员视为可编辑
+	return canUserPinInGroup(userId, groupId)
+}
+
+/**
  * 布尔版：当前用户是否能上传新文件到指定组
  *   = 组内活跃成员（role ∈ {1, 2, 3}） OR 组管理员 / 上游管理员
  * 上游管理员同样视为可上传（PRD §4.3 权限矩阵：上传文件全部 ✅）

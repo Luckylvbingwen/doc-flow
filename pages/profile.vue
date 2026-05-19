@@ -57,12 +57,12 @@ v-else v-model:page="page" v-model:page-size="pageSize" :data="list" :columns="c
 			:loading="loading" :page-sizes="[10, 15, 30, 50]" :empty-preset="emptyPreset" row-key="id" fill-height
 			:action-width="260" @page-change="onPageChange">
 			<template #title="{ row }">
-				<div class="profile-title">
+				<NuxtLink class="profile-title" :to="getDocLink(row)">
 					<div class="profile-file-icon" :class="getFileTypeClass(row.ext)">
 						{{ getFileTypeLabel(row.ext) }}
 					</div>
 					<span class="profile-title-name" :title="row.title">{{ row.title }}</span>
-				</div>
+				</NuxtLink>
 			</template>
 			<template #source="{ row }">
 				<span v-if="tab === 'all'" class="profile-source">
@@ -243,6 +243,14 @@ const columns: TableColumn[] = [
 	{ prop: 'groupName', label: '所属组', minWidth: 120 },
 	{ label: '更新时间', slot: 'updatedAt', width: 170 },
 ]
+
+/** PRD: 文件名可点击跳转（草稿/编辑中→编辑器，其他→详情页） */
+function getDocLink(row: PersonalDocItem): string {
+	if ((row.status === 1 || row.status === 2) && row.docType === 2) {
+		return `/docs/editor/${row.id}`
+	}
+	return `/docs/file/${row.id}`
+}
 
 // 加载操作态
 const busyId = ref<number | null>(null)
@@ -576,6 +584,8 @@ async function onDelete(doc: PersonalDocItem) {
 	align-items: center;
 	gap: 10px;
 	min-width: 0;
+	text-decoration: none;
+	color: inherit;
 }
 
 .profile-file-icon {
