@@ -88,18 +88,28 @@ function buildFeishuCard(opts: CreateNotificationOpts): Record<string, unknown> 
 
 	elements.push({ tag: 'hr' })
 
-	// 查看详情按钮 — 跳转到通知中心
-	elements.push({
-		tag: 'action',
-		actions: [
-			{
-				tag: 'button',
-				text: { tag: 'plain_text', content: '查看详情' },
-				type: 'primary',
-				url: `${siteUrl}/notifications`,
-			},
-		],
-	})
+	// 按消息类型区分操作按钮
+	const APPROVE_CODES = ['M10', 'M12', 'M14', 'M15']
+	const REVOKE_CODES = ['M6']
+	const actions: Record<string, unknown>[] = []
+
+	if (APPROVE_CODES.includes(opts.msgCode)) {
+		actions.push(
+			{ tag: 'button', text: { tag: 'plain_text', content: '同意' }, type: 'primary', url: `${siteUrl}/notifications` },
+			{ tag: 'button', text: { tag: 'plain_text', content: '拒绝' }, type: 'danger', url: `${siteUrl}/notifications` },
+		)
+	} else if (REVOKE_CODES.includes(opts.msgCode)) {
+		actions.push(
+			{ tag: 'button', text: { tag: 'plain_text', content: '撤回' }, type: 'default', url: `${siteUrl}/notifications` },
+			{ tag: 'button', text: { tag: 'plain_text', content: '查看' }, type: 'primary', url: `${siteUrl}/notifications` },
+		)
+	} else {
+		actions.push(
+			{ tag: 'button', text: { tag: 'plain_text', content: '查看详情' }, type: 'primary', url: `${siteUrl}/notifications` },
+		)
+	}
+
+	elements.push({ tag: 'action', actions })
 
 	return {
 		config: { wide_screen_mode: true },
@@ -172,7 +182,7 @@ export async function createNotification(opts: CreateNotificationOpts): Promise<
 	const openIdMap = await batchGetFeishuOpenIds([userIdBI])
 	const openId = openIdMap.get(String(userIdBI))
 	if (openId) {
-		pushFeishuCard(openId, opts).catch(() => {})
+		pushFeishuCard(openId, opts).catch(() => { })
 	}
 }
 
@@ -209,7 +219,7 @@ export async function createNotifications(list: CreateNotificationOpts[]): Promi
 		}
 	}
 	if (feishuTasks.length > 0) {
-		Promise.allSettled(feishuTasks).catch(() => {})
+		Promise.allSettled(feishuTasks).catch(() => { })
 	}
 }
 
