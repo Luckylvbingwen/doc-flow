@@ -21,9 +21,9 @@
 import { prisma } from '~/server/utils/prisma'
 import { generateId } from '~/server/utils/snowflake'
 import { wsSendToUser } from '~/server/utils/ws'
-import { feishuSendCard } from '~/server/utils/feishu'
+import { feishuSendCard, feishuUpdateCard } from '~/server/utils/feishu'
 import type { WsServerMessage } from '~/types/ws'
-import type { CreateNotificationOpts } from '~/server/types/notification'
+import type { CreateNotificationOpts, NotificationCategory, NotificationBizType } from '~/server/types/notification'
 
 // ================================================================
 //  飞书推送 — 内部辅助
@@ -121,6 +121,50 @@ function buildFeishuCard(opts: CreateNotificationOpts): Record<string, unknown> 
 	}
 }
 
+function buildFeishuResultCard(opts: { title: string; content?: string | null; category: NotificationCategory; resultLabel: string }): Record<string, unknown> {
+	const headerTemplate = CATEGORY_CARD_TEMPLATE[opts.category] || 'blue'
+	const categoryLabel = CATEGORY_LABEL[opts.category] || '通知'
+	const elements: Record<string, unknown>[] = [
+		{
+			tag: 'div',
+			text: {
+				tag: 'lark_md',
+				content: `**${opts.title}**`,
+			},
+		},
+	]
+
+	if (opts.content) {
+		elements.push({
+			tag: 'div',
+			text: {
+				tag: 'lark_md',
+				content: opts.content,
+			},
+		})
+	}
+
+	elements.push(
+		{ tag: 'hr' },
+		{
+			tag: 'div',
+			text: {
+				tag: 'lark_md',
+				content: `**处理结果：${opts.resultLabel}**`,
+			},
+		},
+	)
+
+	return {
+		config: { wide_screen_mode: true },
+		header: {
+			title: { tag: 'plain_text', content: `[DocFlow] ${categoryLabel}` },
+			template: headerTemplate,
+		},
+		elements,
+	}
+}
+
 /**
  * 批量查询用户 feishu_open_id
  * @returns Map<userId(string), feishu_open_id>
@@ -145,13 +189,61 @@ async function batchGetFeishuOpenIds(userIds: bigint[]): Promise<Map<string, str
 /**
  * 推送飞书卡片给单个用户（fire-and-forget，不阻塞站内通知）
  */
-async function pushFeishuCard(openId: string, opts: CreateNotificationOpts): Promise<void> {
+async function pushFeishuCard(notificationId: bigint, openId: string, opts: CreateNotificationOpts): Promise<void> {
 	try {
 		const card = buildFeishuCard(opts)
-		await feishuSendCard(openId, card)
+		const res = await feishuSendCard(openId, card)
+		if (res.message_id || res.open_message_id) {
+			await prisma.doc_notifications.update({
+				where: { id: notificationId },
+				data: {
+					feishu_message_id: res.message_id ?? null,
+					feishu_open_message_id: res.open_message_id ?? null,
+				},
+			})
+		}
 	} catch (err) {
 		// 飞书推送失败不应影响站内通知，仅记录日志
 		logger.warn({ err, userId: String(opts.userId), msgCode: opts.msgCode }, '飞书通知推送失败')
+	}
+}
+
+export async function updateLatestFeishuCardResultByBiz(opts: {
+	userId: bigint | number
+	msgCode: string
+	bizType: NotificationBizType
+	bizId: bigint | number
+	resultLabel: string
+}): Promise<void> {
+	const row = await prisma.doc_notifications.findFirst({
+		where: {
+			user_id: BigInt(opts.userId),
+			msg_code: opts.msgCode,
+			biz_type: opts.bizType,
+			biz_id: BigInt(opts.bizId),
+			feishu_message_id: { not: null },
+		},
+		orderBy: { created_at: 'desc' },
+		select: {
+			id: true,
+			category: true,
+			title: true,
+			content: true,
+			feishu_message_id: true,
+		},
+	})
+
+	if (!row?.feishu_message_id) return
+
+	try {
+		await feishuUpdateCard(row.feishu_message_id, buildFeishuResultCard({
+			title: row.title,
+			content: row.content,
+			category: row.category as NotificationCategory,
+			resultLabel: opts.resultLabel,
+		}))
+	} catch (err) {
+		logger.warn({ err, notificationId: String(row.id), msgCode: opts.msgCode }, '飞书通知卡片更新失败')
 	}
 }
 
@@ -162,10 +254,11 @@ async function pushFeishuCard(openId: string, opts: CreateNotificationOpts): Pro
 /** 创建一条通知并推送 WS 'badge' 消息 + 飞书卡片 */
 export async function createNotification(opts: CreateNotificationOpts): Promise<void> {
 	const userIdBI = BigInt(opts.userId)
+	const notificationId = generateId()
 
 	await prisma.doc_notifications.create({
 		data: {
-			id: generateId(),
+			id: notificationId,
 			user_id: userIdBI,
 			category: opts.category,
 			msg_code: opts.msgCode,
@@ -182,7 +275,7 @@ export async function createNotification(opts: CreateNotificationOpts): Promise<
 	const openIdMap = await batchGetFeishuOpenIds([userIdBI])
 	const openId = openIdMap.get(String(userIdBI))
 	if (openId) {
-		pushFeishuCard(openId, opts).catch(() => { })
+		pushFeishuCard(notificationId, openId, opts).catch(() => { })
 	}
 }
 
@@ -212,10 +305,11 @@ export async function createNotifications(list: CreateNotificationOpts[]): Promi
 	// 飞书推送（异步，不阻塞主流程）
 	const openIdMap = await batchGetFeishuOpenIds(uniqueUserIds)
 	const feishuTasks: Promise<void>[] = []
-	for (const opts of list) {
+	for (const [index, opts] of list.entries()) {
+		const row = rows[index]
 		const openId = openIdMap.get(String(BigInt(opts.userId)))
 		if (openId) {
-			feishuTasks.push(pushFeishuCard(openId, opts))
+			feishuTasks.push(pushFeishuCard(row.id, openId, opts))
 		}
 	}
 	if (feishuTasks.length > 0) {

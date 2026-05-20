@@ -189,7 +189,7 @@ export const NOTIFICATION_TEMPLATES = {
 		msgCode: 'M10',
 		triggerModule: 'ownership-transfer',
 		triggerPoint: '发起归属人转移 — 通知目标新归属人',
-		build: (p: ToUser & { initiator: string, fileName: string, groupName?: string, versionNo?: string }) => ({
+		build: (p: ToUser & { initiator: string, fileName: string, fileId: bigint | number, groupName?: string, versionNo?: string }) => ({
 			userId: p.toUserId,
 			category: 2 as const,
 			msgCode: 'M10',
@@ -198,6 +198,8 @@ export const NOTIFICATION_TEMPLATES = {
 				p.groupName ? `文档所在组: ${p.groupName}` : '',
 				p.versionNo ? `当前版本: v${p.versionNo}` : '',
 			].filter(Boolean).join(' | ') || undefined,
+			bizType: 'document' as const,
+			bizId: p.fileId,
 		}),
 	},
 	M11: {

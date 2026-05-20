@@ -472,17 +472,19 @@ model doc_groups {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model doc_notifications {
-  id         BigInt    @id @db.UnsignedBigInt
-  user_id    BigInt    @db.UnsignedBigInt
-  category   Int       @db.TinyInt
-  msg_code   String?   @db.VarChar(10)
-  title      String    @db.VarChar(200)
-  content    String?   @db.VarChar(2000)
-  biz_type   String?   @db.VarChar(50)
-  biz_id     BigInt?   @db.UnsignedBigInt
-  read_at    DateTime?
-  created_at DateTime  @default(now())
-  doc_users  doc_users @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_notifications_user")
+  id                     BigInt    @id @db.UnsignedBigInt
+  user_id                BigInt    @db.UnsignedBigInt
+  category               Int       @db.TinyInt
+  msg_code               String?   @db.VarChar(10)
+  title                  String    @db.VarChar(200)
+  content                String?   @db.VarChar(2000)
+  biz_type               String?   @db.VarChar(50)
+  biz_id                 BigInt?   @db.UnsignedBigInt
+  feishu_message_id      String?   @db.VarChar(100)
+  feishu_open_message_id String?   @db.VarChar(100)
+  read_at                DateTime?
+  created_at             DateTime  @default(now())
+  doc_users              doc_users @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_notifications_user")
 
   @@index([user_id, category], map: "idx_category")
   @@index([user_id, read_at, created_at], map: "idx_user_read_created")

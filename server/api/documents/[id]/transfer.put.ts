@@ -10,7 +10,8 @@
  * - 过期检查：PUT 时若已过期则自动关闭并返回 409
  */
 import { prisma } from '~/server/utils/prisma'
-import { createNotification } from '~/server/utils/notify'
+import { createNotification, updateLatestFeishuCardResultByBiz  } from '~/server/utils/notify'
+
 import { writeLog } from '~/server/utils/operation-log'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
@@ -107,6 +108,14 @@ export default defineEventHandler(async (event) => {
       ),
     ])
 
+    await updateLatestFeishuCardResultByBiz({
+      userId: transfer.to_user_id,
+      msgCode: 'M10',
+      bizType: 'document',
+      bizId: docId,
+      resultLabel: '已同意',
+    })
+
     // 操作日志
     await writeLog({
       actorUserId: user.id,
@@ -137,6 +146,14 @@ export default defineEventHandler(async (event) => {
         result: '已拒绝',
       }),
     )
+
+		await updateLatestFeishuCardResultByBiz({
+			userId: transfer.to_user_id,
+			msgCode: 'M10',
+			bizType: 'document',
+			bizId: docId,
+			resultLabel: '已拒绝',
+		})
 
     await writeLog({
       actorUserId: user.id,

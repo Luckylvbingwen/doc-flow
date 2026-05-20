@@ -330,7 +330,7 @@
 | G-F53 | 选字批注 | ~~编辑副本提示未解决批注时机不符~~ | PRD 要求在创建确认弹窗中追加提示行（事前） | ✅ 2025-05-19 | onEdit 前置确认弹窗中查询未解决批注数并追加警告提示 | P3 |
 | G-F54 | 选字批注 | ~~冻结卡片灰度样式待补~~ | PRD 要求冻结批注卡片整体灰度 60% | ✅ 2025-05-19 | 添加 .annotation-item--frozen { opacity: 0.6; pointer-events: none } | P3 |
 | G-F55 | 归属人转移 | ~~飞书卡片缺组名和版本信息~~ | PRD 卡片要求含"文档所在组: {组名}/{部门or产品线}"+"当前版本: v{X.Y}" | ✅ 2025-05-19 | M10 模板 build 新增 groupName/versionNo 参数，content 字段展示；transfer.post 查询 group+version 传入 | P3 |
-| G-F56 | 归属人转移 | 飞书卡片不会就地更新 | PRD 要求同意后卡片更新为"✓已同意"，拒绝后更新为"✗已拒绝" | ❌ 缺失 | 当前只发新通知，不更新原卡片（需飞书 update API + 存储 message_id） | P3 |
+| G-F56 | 归属人转移 | 飞书卡片不会就地更新 | PRD 要求同意后卡片更新为"✓已同意"，拒绝后更新为"✗已拒绝" | ✅ 已完成 | `doc_notifications` 持久化飞书 `message_id/open_message_id`；M10 发卡后回写消息 ID；`transfer.put.ts` 在同意/拒绝后调用飞书更新接口，将原卡片就地改写为结果态 | P3 |
 | G-F57 | 归属人转移 | ~~同意后未通知新归属人自己~~ | PRD 要求"消息通知双方" | ✅ 2025-05-19 | accept 分支增加对新归属人的 M11 通知 | P3 |
 | G-F58 | 审批中心 | ~~审批模式全屏预览未接通~~ | PRD 要求审批抽屉内打开全屏预览器(审批模式)，关闭后回到抽屉 | ✅ 2025-05-20 | 审批页内嵌 FullscreenPreviewer(mode=approval)，onViewFile 加载文档预览 HTML 并展示 | P2 |
 | G-F59 | 审批中心 | ~~全屏预览器缺"上传新版本"入口~~ | PRD 要求普通模式版本侧栏有"上传新版本"按钮 | ✅ 2025-05-19 | FullscreenPreviewer 版本侧栏 header 添加"上传新版本"按钮(仅 normal 模式)，emit upload-version 事件 | P3 |

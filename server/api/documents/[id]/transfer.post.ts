@@ -95,6 +95,7 @@ export default defineEventHandler(async (event) => {
       toUserId: body.toUserId,
       initiator: user.name,
       fileName: doc.title,
+      fileId: doc.id,
       groupName: doc.doc_groups?.name ?? undefined,
       versionNo: doc.doc_document_versions_doc_documents_current_version_idTodoc_document_versions?.version_no ?? undefined,
     }),

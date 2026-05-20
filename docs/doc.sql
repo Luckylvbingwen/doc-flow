@@ -611,16 +611,18 @@ CREATE TABLE doc_document_references (
 -- ---------------------------------------------------------
 DROP TABLE IF EXISTS doc_notifications;
 CREATE TABLE doc_notifications (
-  id         BIGINT UNSIGNED PRIMARY KEY,
-  user_id    BIGINT UNSIGNED NOT NULL COMMENT '接收人',
-  category   TINYINT         NOT NULL COMMENT '1审批通知(M1-M7) 2系统通知(M8-M17,M24,M25) 3成员变更(M18-M23)',
-  msg_code   VARCHAR(10)     DEFAULT NULL COMMENT '消息编号 M1-M25',
-  title      VARCHAR(200)    NOT NULL,
-  content    VARCHAR(2000)   DEFAULT NULL,
-  biz_type   VARCHAR(50)     DEFAULT NULL COMMENT '关联业务类型',
-  biz_id     BIGINT UNSIGNED DEFAULT NULL COMMENT '关联业务ID',
-  read_at    DATETIME(3)     DEFAULT NULL,
-  created_at DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  id                     BIGINT UNSIGNED PRIMARY KEY,
+  user_id                BIGINT UNSIGNED NOT NULL COMMENT '接收人',
+  category               TINYINT         NOT NULL COMMENT '1审批通知(M1-M7) 2系统通知(M8-M17,M24,M25) 3成员变更(M18-M23)',
+  msg_code               VARCHAR(10)     DEFAULT NULL COMMENT '消息编号 M1-M25',
+  title                  VARCHAR(200)    NOT NULL,
+  content                VARCHAR(2000)   DEFAULT NULL,
+  biz_type               VARCHAR(50)     DEFAULT NULL COMMENT '关联业务类型',
+  biz_id                 BIGINT UNSIGNED DEFAULT NULL COMMENT '关联业务ID',
+  feishu_message_id      VARCHAR(100)    DEFAULT NULL COMMENT '飞书消息ID，用于原卡更新',
+  feishu_open_message_id VARCHAR(100)    DEFAULT NULL COMMENT '飞书开放消息ID',
+  read_at                DATETIME(3)     DEFAULT NULL,
+  created_at             DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   KEY idx_user_read_created (user_id, read_at, created_at),
   KEY idx_category          (user_id, category),
   CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES doc_users(id)

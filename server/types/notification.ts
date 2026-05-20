@@ -14,6 +14,8 @@ export interface NotificationRow {
 	content: string | null
 	biz_type: string | null
 	biz_id: bigint | null
+	feishu_message_id: string | null
+	feishu_open_message_id: string | null
 	read_at: Date | null
 	created_at: Date
 }

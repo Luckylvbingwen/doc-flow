@@ -902,3 +902,17 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
   - `components/AnnotationPanel.vue` 暴露 `upsertAnnotation/removeAnnotation/addReply` 增量方法
   - `pages/docs/file/[id].vue`、`pages/docs/editor/[id].vue` 收到事件后直接本地合并；文件详情页同步重算高亮
 - **结果**：批注协同从“事件触发刷新”升级为“文档级订阅 + 增量合并渲染”，满足实时协同链路要求。
+
+### feat: 归属人转移飞书卡片就地更新（G-F56）
+
+- **消息持久化**：
+  - `doc_notifications` 新增 `feishu_message_id`、`feishu_open_message_id`
+  - 同步更新 `docs/doc.sql`、`prisma/schema.prisma`，并新增 deploy patch `docs/patch-002-notification-feishu-message-id.sql`
+- **通知发送链路**：
+  - `server/utils/notify.ts` 改为先落通知行，再异步发送飞书卡片，并把飞书返回的消息 ID 回写到通知表
+  - `server/utils/feishu.ts` 新增交互卡片更新能力，用于回写已发送原卡
+- **业务接入**：
+  - `server/constants/notification-templates.ts` 为 M10 补齐 `bizType/bizId`
+  - `server/api/documents/[id]/transfer.post.ts` 发起归属人转移时，将文档 ID 写入通知业务字段
+  - `server/api/documents/[id]/transfer.put.ts` 在同意/拒绝后定位接收人的原始 M10 卡片，并就地更新为“处理结果：已同意/已拒绝”
+- **结果**：归属人转移不再只发结果通知，飞书内原始操作卡片会同步进入终态，满足 PRD 对原卡状态回写的要求。

@@ -132,6 +132,39 @@ export async function feishuPost<T = Record<string, unknown>>(
 	}
 }
 
+/** 带鉴权的 PATCH 请求 */
+export async function feishuPatch<T = Record<string, unknown>>(
+	path: string,
+	body?: Record<string, unknown>,
+	query?: Record<string, string>,
+): Promise<T> {
+	const token = await getFeishuTenantToken()
+
+	try {
+		const res = await $fetch<FeishuApiResponse>(
+			`${FEISHU_BASE_URL}${path}`,
+			{
+				method: 'PATCH',
+				headers: { Authorization: `Bearer ${token}` },
+				body,
+				query,
+			},
+		)
+
+		if (res.code !== 0) {
+			throw new Error(`飞书 API [${path}]: code=${res.code} ${res.msg}`)
+		}
+
+		return (res.data ?? {}) as T
+	} catch (err: unknown) {
+		const fetchErr = err as { data?: { code?: number; msg?: string }; statusCode?: number }
+		if (fetchErr?.data?.code !== undefined) {
+			throw new Error(`飞书 API [${path}] HTTP ${fetchErr.statusCode}: code=${fetchErr.data.code} ${fetchErr.data.msg || ''}`)
+		}
+		throw err
+	}
+}
+
 // ================================================================
 //  消息发送
 // ================================================================
@@ -150,7 +183,7 @@ export async function feishuSendMessage(
 	content: string,
 	receiveIdType: 'open_id' | 'user_id' | 'union_id' | 'email' | 'chat_id' = 'open_id',
 ) {
-	return feishuPost(
+	return feishuPost<{ message_id?: string; open_message_id?: string }>(
 		'/im/v1/messages',
 		{
 			receive_id: receiveId,
@@ -176,6 +209,17 @@ export async function feishuSendCard(openId: string, card: Record<string, unknow
 		openId,
 		'interactive',
 		JSON.stringify(card),
+	)
+}
+
+/** 更新已发送的交互卡片 */
+export async function feishuUpdateCard(messageId: string, card: Record<string, unknown>) {
+	return feishuPatch<{ message_id?: string }>(
+		`/im/v1/messages/${messageId}`,
+		{
+			msg_type: 'interactive',
+			content: JSON.stringify(card),
+		},
 	)
 }
 
