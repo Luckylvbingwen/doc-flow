@@ -151,6 +151,7 @@ export default defineEventHandler(async (event) => {
 			fileName: movableDocs.length > 1 ? `${fileNames}（共${movableDocs.length}个文件）` : fileNames,
 			fromGroup: sourceGroup.name,
 			toGroup: targetGroup.name,
+			moveIds: moveRecords.map(record => record.id),
 		}))
 	}
 

@@ -95,6 +95,7 @@ export default defineEventHandler(async (event) => {
             document_id: docId,
             user_id: applicantId,
             permission: targetPermission,
+            granted_by: BigInt(user.id),
             created_at: now,
             updated_at: now,
           },

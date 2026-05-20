@@ -1,6 +1,21 @@
 /** 通知分类 */
 export type NotificationCategory = 1 | 2 | 3
 
+export type FeishuCardActionPayload =
+	| {
+		kind: 'ownership-transfer'
+		documentId: number
+	}
+	| {
+		kind: 'cross-move'
+		moveIds: number[]
+	}
+	| {
+		kind: 'permission-request'
+		documentId: number
+		requestId: number
+	}
+
 /** biz_type 允许值（A 阶段） */
 export type NotificationBizType = 'document' | 'group' | 'group_approval' | 'department'
 
@@ -57,4 +72,5 @@ export interface CreateNotificationOpts {
 	content?: string
 	bizType?: NotificationBizType
 	bizId?: bigint | number
+	feishuActionPayload?: FeishuCardActionPayload
 }

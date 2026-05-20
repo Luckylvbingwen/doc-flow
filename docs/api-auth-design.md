@@ -96,6 +96,7 @@
 | POST | /api/integrations/feishu/sync-contacts | 是 | 同步飞书通讯录 |
 | POST | /api/integrations/feishu/webhook/employee | 否 | 飞书人事事件 Webhook（员工离职自动交接） |
 | POST | /api/integrations/feishu/webhook/bot-message | 否 | 飞书 Bot 消息 Webhook（文档链接自动归档） |
+| POST | /api/integrations/feishu/webhook/card-action | 否 | 飞书交互卡片动作 Webhook（同意/拒绝直接回调 DocFlow） |
 
 ### 文档组管理 (groups)
 
@@ -709,6 +710,50 @@
 4. 通过 Bot 回复用户归档结果
 
 **响应：** `{ "code": 0, "msg": "ok" }`
+
+---
+
+### 3.21d POST /api/integrations/feishu/webhook/card-action
+
+飞书交互卡片动作 Webhook 回调。接收 M10/M12/M14/M15 卡片按钮的回调请求，解析操作者飞书身份和卡片内业务 payload，直接在 DocFlow 后端执行对应业务动作。
+
+**鉴权：** 免登（飞书服务器调用），通过 `verification_token` 校验合法性。
+
+**URL 验证请求（首次配置）：**
+```json
+{ "type": "url_verification", "challenge": "xxx", "token": "xxx" }
+```
+**响应：** `{ "challenge": "xxx" }`
+
+**动作回调 Body（字段形态按飞书版本可能略有差异，DocFlow 兼容多种嵌套路径）：**
+```json
+{
+  "header": {
+    "event_id": "xxx",
+    "token": "verification_token"
+  },
+  "operator": {
+    "open_id": "ou_xxx"
+  },
+  "open_message_id": "om_xxx",
+  "action": {
+    "value": {
+      "kind": "permission-request",
+      "documentId": 123,
+      "requestId": 456,
+      "intent": "approve"
+    }
+  }
+}
+```
+
+**处理逻辑：**
+1. 通过 `verification_token` 验证请求来源
+2. 通过 `operator.open_id` 匹配 DocFlow 用户
+3. 解析按钮内 `value` 的业务 payload，分发到归属人转移 / 跨组移动 / 权限申请处理逻辑
+4. 成功后按 `message_id/open_message_id` 更新原飞书卡片为结果态
+
+**响应：** `{ "code": 0, "msg": "已同意申请" }`
 
 ---
 

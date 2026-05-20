@@ -200,6 +200,10 @@ export const NOTIFICATION_TEMPLATES = {
 			].filter(Boolean).join(' | ') || undefined,
 			bizType: 'document' as const,
 			bizId: p.fileId,
+			feishuActionPayload: {
+				kind: 'ownership-transfer' as const,
+				documentId: Number(p.fileId),
+			},
 		}),
 	},
 	M11: {
@@ -221,11 +225,15 @@ export const NOTIFICATION_TEMPLATES = {
 		msgCode: 'M12',
 		triggerModule: 'cross-move',
 		triggerPoint: '发起跨组移动 — 通知目标组负责人',
-		build: (p: ToUser & { initiator: string, fileName: string, fromGroup: string, toGroup: string }) => ({
+		build: (p: ToUser & { initiator: string, fileName: string, fromGroup: string, toGroup: string, moveIds: Array<bigint | number> }) => ({
 			userId: p.toUserId,
 			category: 2 as const,
 			msgCode: 'M12',
 			title: `${p.initiator} 申请将文件《${p.fileName}》从组《${p.fromGroup}》移动到您负责的组《${p.toGroup}》`,
+			feishuActionPayload: {
+				kind: 'cross-move' as const,
+				moveIds: p.moveIds.map(id => Number(id)),
+			},
 		}),
 	},
 	M13: {
@@ -247,11 +255,18 @@ export const NOTIFICATION_TEMPLATES = {
 		msgCode: 'M14',
 		triggerModule: 'permission-request',
 		triggerPoint: '无权限用户申请阅读 — 通知文档归属人',
-		build: (p: ToUser & { applicant: string, fileName: string }) => ({
+		build: (p: ToUser & { applicant: string, fileName: string, fileId: bigint | number, requestId: bigint | number }) => ({
 			userId: p.toUserId,
 			category: 2 as const,
 			msgCode: 'M14',
 			title: `${p.applicant} 申请阅读文件《${p.fileName}》`,
+			bizType: 'document' as const,
+			bizId: p.fileId,
+			feishuActionPayload: {
+				kind: 'permission-request' as const,
+				documentId: Number(p.fileId),
+				requestId: Number(p.requestId),
+			},
 		}),
 	},
 	M15: {
@@ -261,12 +276,19 @@ export const NOTIFICATION_TEMPLATES = {
 		triggerPoint: '可阅读用户申请升级编辑 — 通知归属人（reason 存 content）',
 		// PRD §6.8.2 原模板："{申请人} 申请文件《{文件名}》的编辑权限，理由：{申请理由}"
 		// 实现刻意将「理由：xxx」从 title 拆到 content，NotificationCard 两行显示
-		build: (p: ToUser & { applicant: string, fileName: string, reason: string }) => ({
+		build: (p: ToUser & { applicant: string, fileName: string, fileId: bigint | number, requestId: bigint | number, reason: string }) => ({
 			userId: p.toUserId,
 			category: 2 as const,
 			msgCode: 'M15',
 			title: `${p.applicant} 申请文件《${p.fileName}》的编辑权限`,
 			content: p.reason,
+			bizType: 'document' as const,
+			bizId: p.fileId,
+			feishuActionPayload: {
+				kind: 'permission-request' as const,
+				documentId: Number(p.fileId),
+				requestId: Number(p.requestId),
+			},
 		}),
 	},
 	M16: {

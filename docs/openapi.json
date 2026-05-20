@@ -731,6 +731,74 @@
         }
       }
     },
+    "/api/integrations/feishu/webhook/card-action": {
+      "post": {
+        "tags": ["飞书集成"],
+        "summary": "飞书交互卡片动作 Webhook",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": { "type": "string", "description": "URL 验证时为 url_verification" },
+                  "challenge": { "type": "string" },
+                  "token": { "type": "string", "description": "飞书 verification_token" },
+                  "header": {
+                    "type": "object",
+                    "properties": {
+                      "event_id": { "type": "string" },
+                      "token": { "type": "string" }
+                    }
+                  },
+                  "operator": {
+                    "type": "object",
+                    "properties": {
+                      "open_id": { "type": "string" }
+                    }
+                  },
+                  "open_message_id": { "type": "string" },
+                  "action": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "object",
+                        "properties": {
+                          "kind": { "type": "string", "enum": ["ownership-transfer", "cross-move", "permission-request"] },
+                          "documentId": { "type": "integer" },
+                          "requestId": { "type": "integer" },
+                          "moveIds": { "type": "array", "items": { "type": "integer" } },
+                          "intent": { "type": "string", "enum": ["approve", "reject"] }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "处理成功或忽略",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "example": 0 },
+                    "msg": { "type": "string", "example": "ok" },
+                    "challenge": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/groups/tree": {
       "get": {
         "tags": ["文档组"],

@@ -916,3 +916,18 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
   - `server/api/documents/[id]/transfer.post.ts` 发起归属人转移时，将文档 ID 写入通知业务字段
   - `server/api/documents/[id]/transfer.put.ts` 在同意/拒绝后定位接收人的原始 M10 卡片，并就地更新为“处理结果：已同意/已拒绝”
 - **结果**：归属人转移不再只发结果通知，飞书内原始操作卡片会同步进入终态，满足 PRD 对原卡状态回写的要求。
+
+### feat: 飞书卡片按钮回调闭环（G-F77）
+
+- **动作 payload 下发**：
+  - `server/types/notification.ts` 为通知发送链路新增 `feishuActionPayload`
+  - `server/constants/notification-templates.ts` 为 M10/M12/M14/M15 注入动作参数，卡片按钮不再只是跳通知中心 URL
+  - `server/api/documents/[id]/move.post.ts`、`server/api/documents/batch-move.post.ts`、`server/api/documents/[id]/permission-requests.post.ts` 在创建通知时补齐 moveIds / requestId / documentId
+- **Webhook 执行链路**：
+  - 新增 `POST /api/integrations/feishu/webhook/card-action`
+  - `server/middleware/auth.ts` 将该路由加入免鉴权白名单，继续使用飞书 `verification_token` 校验
+  - 新增 `server/utils/feishu-card-actions.ts`，按卡片 payload 分发处理归属人转移、跨组移动、权限申请三类动作
+- **结果回写**：
+  - `server/utils/notify.ts` 支持按 `message_id/open_message_id` 定位通知记录并回写原卡片结果态
+  - 飞书内点击 M10/M12/M14/M15 的“同意/拒绝”后，DocFlow 后端会执行真实业务处理并把当前卡片更新为终态
+- **结果**：飞书卡片按钮从“仅跳转”升级为“直接驱动 DocFlow 业务动作 + 原卡结果回写”，完成 PRD 要求的回调闭环。

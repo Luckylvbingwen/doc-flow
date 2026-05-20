@@ -23,7 +23,7 @@ import { generateId } from '~/server/utils/snowflake'
 import { wsSendToUser } from '~/server/utils/ws'
 import { feishuSendCard, feishuUpdateCard } from '~/server/utils/feishu'
 import type { WsServerMessage } from '~/types/ws'
-import type { CreateNotificationOpts, NotificationCategory, NotificationBizType } from '~/server/types/notification'
+import type { CreateNotificationOpts, NotificationCategory, NotificationBizType, FeishuCardActionPayload } from '~/server/types/notification'
 
 // ================================================================
 //  飞书推送 — 内部辅助
@@ -92,12 +92,26 @@ function buildFeishuCard(opts: CreateNotificationOpts): Record<string, unknown> 
 	const APPROVE_CODES = ['M10', 'M12', 'M14', 'M15']
 	const REVOKE_CODES = ['M6']
 	const actions: Record<string, unknown>[] = []
+	const buildActionValue = (intent: 'approve' | 'reject') => {
+		if (!opts.feishuActionPayload) return undefined
+		return {
+			...opts.feishuActionPayload,
+			intent,
+		} satisfies FeishuCardActionPayload & { intent: 'approve' | 'reject' }
+	}
 
 	if (APPROVE_CODES.includes(opts.msgCode)) {
-		actions.push(
-			{ tag: 'button', text: { tag: 'plain_text', content: '同意' }, type: 'primary', url: `${siteUrl}/notifications` },
-			{ tag: 'button', text: { tag: 'plain_text', content: '拒绝' }, type: 'danger', url: `${siteUrl}/notifications` },
-		)
+		if (opts.feishuActionPayload) {
+			actions.push(
+				{ tag: 'button', text: { tag: 'plain_text', content: '同意' }, type: 'primary', value: buildActionValue('approve') },
+				{ tag: 'button', text: { tag: 'plain_text', content: '拒绝' }, type: 'danger', value: buildActionValue('reject') },
+			)
+		} else {
+			actions.push(
+				{ tag: 'button', text: { tag: 'plain_text', content: '同意' }, type: 'primary', url: `${siteUrl}/notifications` },
+				{ tag: 'button', text: { tag: 'plain_text', content: '拒绝' }, type: 'danger', url: `${siteUrl}/notifications` },
+			)
+		}
 	} else if (REVOKE_CODES.includes(opts.msgCode)) {
 		actions.push(
 			{ tag: 'button', text: { tag: 'plain_text', content: '撤回' }, type: 'default', url: `${siteUrl}/notifications` },
@@ -194,13 +208,12 @@ async function pushFeishuCard(notificationId: bigint, openId: string, opts: Crea
 		const card = buildFeishuCard(opts)
 		const res = await feishuSendCard(openId, card)
 		if (res.message_id || res.open_message_id) {
-			await prisma.doc_notifications.update({
-				where: { id: notificationId },
-				data: {
-					feishu_message_id: res.message_id ?? null,
-					feishu_open_message_id: res.open_message_id ?? null,
-				},
-			})
+			await prisma.$executeRaw`
+				UPDATE doc_notifications
+				SET feishu_message_id = ${res.message_id ?? null},
+					feishu_open_message_id = ${res.open_message_id ?? null}
+				WHERE id = ${notificationId}
+			`
 		}
 	} catch (err) {
 		// 飞书推送失败不应影响站内通知，仅记录日志
@@ -244,6 +257,50 @@ export async function updateLatestFeishuCardResultByBiz(opts: {
 		}))
 	} catch (err) {
 		logger.warn({ err, notificationId: String(row.id), msgCode: opts.msgCode }, '飞书通知卡片更新失败')
+	}
+}
+
+export async function updateFeishuCardResultByMessage(opts: {
+	messageId?: string | null
+	openMessageId?: string | null
+	resultLabel: string
+}): Promise<void> {
+	if (!opts.messageId && !opts.openMessageId) return
+
+	const orWhere: Array<Record<string, string>> = []
+	if (opts.messageId) {
+		orWhere.push({ feishu_message_id: opts.messageId })
+	}
+	if (opts.openMessageId) {
+		orWhere.push({ feishu_open_message_id: opts.openMessageId })
+	}
+
+	const row = await prisma.doc_notifications.findFirst({
+		where: {
+			OR: orWhere,
+			feishu_message_id: { not: null },
+		},
+		orderBy: { created_at: 'desc' },
+		select: {
+			id: true,
+			category: true,
+			title: true,
+			content: true,
+			feishu_message_id: true,
+		},
+	})
+
+	if (!row?.feishu_message_id) return
+
+	try {
+		await feishuUpdateCard(row.feishu_message_id, buildFeishuResultCard({
+			title: row.title,
+			content: row.content,
+			category: row.category as NotificationCategory,
+			resultLabel: opts.resultLabel,
+		}))
+	} catch (err) {
+		logger.warn({ err, notificationId: String(row.id) }, '飞书通知卡片按消息ID更新失败')
 	}
 }
 

@@ -97,6 +97,8 @@ export default defineEventHandler(async (event) => {
           toUserId: Number(ownerUser.id),
           applicant: user.name,
           fileName: doc.title,
+				fileId: doc.id,
+				requestId: reqId,
         }),
       )
     } else {
@@ -105,6 +107,8 @@ export default defineEventHandler(async (event) => {
           toUserId: Number(ownerUser.id),
           applicant: user.name,
           fileName: doc.title,
+				fileId: doc.id,
+				requestId: reqId,
           reason: body.reason ?? '（未填写理由）',
         }),
       )

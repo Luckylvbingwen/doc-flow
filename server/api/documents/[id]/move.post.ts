@@ -147,6 +147,7 @@ export default defineEventHandler(async (event) => {
 			fileName: doc.title,
 			fromGroup: sourceGroup.name,
 			toGroup: targetGroup.name,
+			moveIds: [moveId],
 		}))
 	}
 

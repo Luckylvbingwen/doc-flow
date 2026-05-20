@@ -351,7 +351,7 @@
 | G-F74 | 操作日志 | ~~多个日志子项未实际埋点~~ | PRD 要求完整覆盖所有操作子项 | ✅ 2025-05-19 | 已补充6项埋点：DOC_IMPORT_FEISHU/SHARE_REQUEST_EDIT/MEMBER_FEISHU_SYNC/ANNOTATION_ADD/REPLY/RESOLVE；DOC_MOVE_EXPIRE和OWNERSHIP_HANDOVER无对应端点暂不埋 | P2 |
 | G-F75 | 操作日志 | ~~按角色分范围查看未实现~~ | PRD 要求不同角色看到不同范围的日志(已记录于G-F2) | ✅ 2025-05-19 | 同 G-F2，由 buildLogScopeFilter 统一处理 | P2 |
 | G-F76 | 通知中心 | ~~飞书卡片缺按类型操作按钮~~ | PRD 要求 M10/M12/M14/M15 显示"同意/拒绝"，M6 显示"撤回/查看"，其他显示"查看" | ✅ 2025-05-19 | buildFeishuCard 按 msgCode 区分渲染不同操作按钮 | P2 |
-| G-F77 | 通知中心 | 飞书卡片按钮回调闭环缺失 | PRD 要求用户在飞书内点击按钮后回调 DocFlow 后端执行操作 | ❌ 缺失 | 无处理卡片按钮动作的 webhook；仅有员工事件和机器人收消息两个 webhook | P2 |
+| G-F77 | 通知中心 | 飞书卡片按钮回调闭环缺失 | PRD 要求用户在飞书内点击按钮后回调 DocFlow 后端执行操作 | ✅ 已完成 | 新增 `/api/integrations/feishu/webhook/card-action`；M10/M12/M14/M15 按钮改为携带动作 payload 的飞书回调按钮；Webhook 解析操作者飞书身份后执行 DocFlow 业务处理，并按消息 ID 将原卡片回写为结果态 | P2 |
 | G-F78 | 通知中心 | ~~飞书卡片内容规范不符~~ | PRD 要求结构化正文(操作人+所属组+操作时间+操作描述) | ✅ 2025-05-19 | buildFeishuCard 标题加粗、content 结构化渲染、追加操作时间行 | P3 |
 | G-F79 | 通知中心 | ~~M13 跨组移动过期分支未落地~~ | PRD 要求移动请求超时自动过期并通知发起人 | ✅ 2025-05-20 | 新增 cross-move:expire-moves 定时任务，3天超时自动过期+M13通知+日志 | P2 |
 | G-F80 | 通知中心 | ~~M17 触发语义反转~~ | PRD 要求“有人分享给我→通知被分享人”，当前是“访问链接者触发通知给分享者” | ✅ 2025-05-19 | M17 通知收件人改为被分享人（链接访问者），分享者名称从关联关系获取 | P2 |
