@@ -46,6 +46,9 @@ ref="tableRef" v-model:page="currentPage" v-model:page-size="currentPageSize" :d
 			<template #deletedAt="{ row }">
 				<span class="recycle-time">{{ formatTime(row.deletedAt, 'YYYY-MM-DD HH:mm:ss') }}</span>
 			</template>
+			<template #groupName="{ row }">
+				<el-tag size="small" type="info" effect="plain">{{ row.groupName || '无组' }}</el-tag>
+			</template>
 			<template #versionCount="{ row }">
 				<span class="recycle-version">v{{ row.versionCount }}</span>
 			</template>
@@ -160,7 +163,7 @@ const busy = computed(() => restoringId.value != null || purgingId.value != null
 
 const columns: TableColumn[] = [
 	{ label: '文件名', slot: 'title', minWidth: 240 },
-	{ prop: 'groupName', label: '原组', minWidth: 120 },
+	{ label: '原组', slot: 'groupName', minWidth: 120 },
 	{ prop: 'deletedByName', label: '删除人', minWidth: 100 },
 	{ label: '删除时间', slot: 'deletedAt', width: 170 },
 	{ label: '大小', slot: 'fileSize', width: 100, align: 'right' },

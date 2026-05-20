@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
 		LEFT JOIN doc_users             du ON du.id = d.deleted_by_user_id
 		LEFT JOIN doc_document_versions v  ON v.id = d.current_version_id
 		WHERE ${whereSql}
-		ORDER BY d.deleted_at_real DESC, d.id DESC
+		ORDER BY g.name ASC, d.deleted_at_real DESC, d.id DESC
 		LIMIT ${pageSize} OFFSET ${offset}
 	`
 

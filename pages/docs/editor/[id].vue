@@ -10,6 +10,32 @@
 				</el-button>
 				<input v-model="title" class="editor-title-input" placeholder="未命名文档" maxlength="100" @input="onTitleInput">
 				<span class="editor-save-status" :class="`is-${saveStatus}`">{{ saveStatusLabel }}</span>
+				<el-button
+link size="small" :type="tocOpen ? 'primary' : ''" class="editor-toc-toggle"
+					@click="tocOpen = !tocOpen">
+					<el-icon>
+						<Document />
+					</el-icon>
+				</el-button>
+			</div>
+
+			<div class="editor-topbar__center">
+				<!-- Presence 在线协作者 -->
+				<el-tooltip v-if="onlineUsers.length > 0" placement="bottom">
+					<template #content>
+						<div v-for="u in onlineUsers" :key="u.id">{{ u.name }}</div>
+					</template>
+					<div class="editor-presence">
+						<span
+v-for="u in onlineUsers.slice(0, 3)" :key="u.id" class="editor-presence__avatar"
+							:style="{ background: u.color }">
+							{{ u.name.slice(0, 1) }}
+						</span>
+						<span v-if="onlineUsers.length > 3" class="editor-presence__more">
+							+{{ onlineUsers.length - 3 }}
+						</span>
+					</div>
+				</el-tooltip>
 			</div>
 
 			<div class="editor-topbar__right">
@@ -60,6 +86,25 @@
 
 		<!-- ─── 主体 ─── -->
 		<div class="editor-body">
+			<!-- TOC 目录侧栏 -->
+			<aside v-if="tocOpen && tocHeadings.length > 0" class="editor-toc">
+				<div class="editor-toc__header">
+					<span>目录</span>
+					<el-button link size="small" @click="tocOpen = false">
+						<el-icon>
+							<Close />
+						</el-icon>
+					</el-button>
+				</div>
+				<el-scrollbar class="editor-toc__body">
+					<div
+v-for="item in tocHeadings" :key="item.id" class="editor-toc__item"
+						:style="{ paddingLeft: `${(item.level - 1) * 12 + 8}px` }" :title="item.text">
+						{{ item.text }}
+					</div>
+				</el-scrollbar>
+			</aside>
+
 			<!-- 编辑区 -->
 			<main ref="editorMainRef" class="editor-main" @click="activeAnnotationId = undefined">
 				<!-- 快照预览内容（只读覆盖） -->
@@ -107,7 +152,7 @@ v-if="docId" v-model="snapshotDrawerVisible" :doc-id="docId" @preview="onSnapsho
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Download, MoreFilled } from '@element-plus/icons-vue'
+import { ArrowLeft, Close, Document, Download, MoreFilled } from '@element-plus/icons-vue'
 import { sanitize } from '~/composables/useSanitize'
 import { apiGetDocContent } from '~/api/document-editor'
 import { apiCreateSnapshot } from '~/api/documents'
@@ -139,6 +184,7 @@ onMounted(async () => {
 		title.value = res.data.title
 		content.value = res.data.content
 		docStatus.value = res.data.status
+		extractHeadings(res.data.content)
 	} else {
 		msgError(res.message || '加载失败')
 		router.back()
@@ -149,10 +195,31 @@ onMounted(async () => {
 // ── 自动保存 ──
 const { saveStatus, saveStatusLabel, autoSnapshotFailed, onContentChange, flushSave } = useDocEditor(docId)
 
+// ── TOC 目录 ──
+interface TocItem { level: number; text: string; id: string }
+const tocOpen = ref(true)
+const tocHeadings = ref<TocItem[]>([])
+
+function extractHeadings(markdown: string) {
+	const lines = markdown.split('\n')
+	const items: TocItem[] = []
+	for (const line of lines) {
+		const match = line.match(/^(#{1,6})\s+(.+)/)
+		if (match) {
+			const text = match[2].replace(/[#*`[\]]/g, '').trim()
+			if (text) {
+				items.push({ level: match[1].length, text, id: `heading-${items.length}` })
+			}
+		}
+	}
+	tocHeadings.value = items
+}
+
 const milkdownRef = ref<{ getMarkdown: () => string } | null>(null)
 
 function onEditorUpdate(markdown: string) {
 	onContentChange(markdown, undefined)
+	extractHeadings(markdown)
 }
 
 function onTitleInput() {
@@ -413,5 +480,48 @@ function onSnapshotRestored() {
 	margin: 0 auto;
 	font-size: 15px;
 	line-height: 1.75;
+}
+
+.editor-toc-toggle {
+	margin-left: 8px;
+}
+
+.editor-toc {
+	width: 220px;
+	border-right: 1px solid var(--df-border);
+	display: flex;
+	flex-direction: column;
+	flex-shrink: 0;
+	background: var(--df-surface);
+}
+
+.editor-toc__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 12px 8px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--df-subtext);
+}
+
+.editor-toc__body {
+	flex: 1;
+}
+
+.editor-toc__item {
+	padding: 4px 12px;
+	font-size: 13px;
+	line-height: 1.6;
+	color: var(--df-text);
+	cursor: pointer;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+
+	&:hover {
+		color: var(--df-primary);
+		background: var(--df-primary-soft);
+	}
 }
 </style>

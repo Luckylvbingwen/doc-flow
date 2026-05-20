@@ -22,10 +22,7 @@ v-model="filterStatus" placeholder="全部状态" clearable @change="onFilterCha
 
 		<div class="approvals-body">
 			<div v-if="loading && list.length === 0" class="approvals-loading">
-				<el-icon class="is-loading">
-					<Loading />
-				</el-icon>
-				<span>加载中...</span>
+				<el-skeleton :rows="5" animated style="padding: 16px" />
 			</div>
 
 			<EmptyState v-else-if="list.length === 0" :preset="emptyPreset" />
@@ -49,11 +46,16 @@ v-model:page="page" v-model:page-size="pageSize" :total="total" :page-sizes="[10
 v-model="drawerVisible" :approval="currentApproval" :approve-loading="approveLoading"
 			:reject-loading="rejectLoading" @approve="onApprove" @reject="onReject" @view-file="onViewFile"
 			@compare="onCompare" />
+
+		<!-- 审批模式全屏预览器 -->
+		<FullscreenPreviewer
+:visible="previewerVisible" :title="previewerTitle" :file-type="previewerFileType"
+			:html="previewerHtml" :loading="previewerLoading" mode="approval" :doc-id="previewerDocId"
+			@update:visible="previewerVisible = $event" />
 	</ListPageShell>
 </template>
 
 <script setup lang="ts">
-import { Loading } from '@element-plus/icons-vue'
 import {
 	apiGetApprovals,
 	apiWithdrawApproval,
@@ -61,6 +63,7 @@ import {
 	apiApproveApproval,
 	apiRejectApproval,
 } from '~/api/approvals'
+import { apiPreviewDocument } from '~/api/documents'
 import type {
 	ApprovalItem,
 	ApprovalListQuery,
@@ -315,11 +318,31 @@ async function onReject(payload: { id: number | string; opinion: string }) {
 	}
 }
 
+// ── 审批模式全屏预览 ──
+const previewerVisible = ref(false)
+const previewerTitle = ref('')
+const previewerFileType = ref('md')
+const previewerHtml = ref('')
+const previewerLoading = ref(false)
+const previewerDocId = ref(0)
+
 function onViewFile(approval: ApprovalDetail) {
 	const docId = approval.documentId
 	if (!docId) return
-	drawerVisible.value = false
-	navigateTo(`/docs/file/${docId}?from=approval`)
+	previewerDocId.value = docId
+	previewerTitle.value = approval.fileName || '文档预览'
+	previewerFileType.value = approval.fileType || 'md'
+	previewerHtml.value = ''
+	previewerLoading.value = true
+	previewerVisible.value = true
+
+	apiPreviewDocument(docId).then((res) => {
+		if (res.success) {
+			previewerHtml.value = res.data.html
+		}
+	}).finally(() => {
+		previewerLoading.value = false
+	})
 }
 
 function onCompare(approval: ApprovalDetail) {

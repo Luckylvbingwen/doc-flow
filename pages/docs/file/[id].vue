@@ -641,8 +641,28 @@ async function onTogglePin() {
 const versions = ref<VersionInfo[]>([])
 const currentVersion = computed(() => versions.value.find(v => v.isCurrent))
 
-/** 协作者：从版本上传者 + 文档归属人去重 */
+/** 协作者：实时在线用户（Redis Presence），回退到版本上传者 */
+const onlineViewers = ref<{ id: number; name: string }[]>([])
+let presenceTimer: ReturnType<typeof setInterval> | null = null
+
+async function fetchPresence() {
+	try {
+		const res = await useAuthFetch<ApiResponse<{ id: number; name: string }[]>>(
+			`/api/documents/${documentId.value}/presence`,
+		)
+		if (res.success) onlineViewers.value = res.data
+	} catch { /* ignore */ }
+}
+
+async function heartbeatPresence() {
+	try {
+		await useAuthFetch(`/api/documents/${documentId.value}/presence`, { method: 'POST' })
+	} catch { /* ignore */ }
+}
+
 const collaborators = computed(() => {
+	if (onlineViewers.value.length > 0) return onlineViewers.value
+	// fallback: 版本上传者
 	const map = new Map<number, { id: number; name: string }>()
 	if (detail.value) {
 		map.set(detail.value.ownerId, { id: detail.value.ownerId, name: detail.value.ownerName })
@@ -1316,6 +1336,20 @@ onMounted(async () => {
 	// 从审批中心跳转：自动打开批注面板供审批人添加审批意见
 	if (route.query.annotation === '1' || route.query.from === 'approval') {
 		annotationOpen.value = true
+	}
+	// 实时 Presence 心跳
+	heartbeatPresence()
+	fetchPresence()
+	presenceTimer = setInterval(() => {
+		heartbeatPresence()
+		fetchPresence()
+	}, 30000)
+})
+
+onBeforeUnmount(() => {
+	if (presenceTimer) {
+		clearInterval(presenceTimer)
+		presenceTimer = null
 	}
 })
 </script>

@@ -6,7 +6,9 @@ v-model="visible" title="跨组移动" width="520px" :confirm-loading="loading" 
 			<p class="df-move-picker__hint">
 				选择目标组，文件将移动到该组中。移动后权限将依赖目标组的成员权限。
 			</p>
-			<DocNavTree v-model="selectedGroupId" :categories="treeData" mode="picker" :exclude-id="excludeGroupId" />
+			<el-input v-model="searchKeyword" placeholder="搜索组名..." clearable class="df-move-picker__search" />
+			<DocNavTree v-model="selectedGroupId" :categories="filteredTree" mode="picker" :exclude-id="excludeGroupId" />
+			<el-alert v-if="selectedGroupId" type="warning" :closable="false" show-icon title="移动后，目标组负责人将收到通知，文档权限将跟随目标组" />
 			<div class="df-move-picker__ack">
 				<el-checkbox v-model="acknowledged">
 					我已知悉移动后文件权限将跟随目标组
@@ -37,6 +39,28 @@ const loading = defineModel<boolean>('loading', { default: false })
 const treeData = ref<NavTreeCategory[]>([])
 const selectedGroupId = ref<number | null>(null)
 const acknowledged = ref(false)
+const searchKeyword = ref('')
+
+/** 根据关键字过滤组树 */
+const filteredTree = computed(() => {
+	const kw = searchKeyword.value.trim().toLowerCase()
+	if (!kw) return treeData.value
+	return treeData.value.map(cat => ({
+		...cat,
+		groups: filterGroups(cat.groups ?? [], kw),
+	})).filter(cat => (cat.groups?.length ?? 0) > 0)
+})
+
+function filterGroups(groups: NavTreeCategory['groups'] & any[], kw: string): any[] {
+	const result: any[] = []
+	for (const g of groups) {
+		const childMatches = g.children?.length ? filterGroups(g.children, kw) : []
+		if (g.name.toLowerCase().includes(kw) || childMatches.length > 0) {
+			result.push({ ...g, children: childMatches.length > 0 ? childMatches : g.children })
+		}
+	}
+	return result
+}
 
 watch(visible, async (val) => {
 	if (val) {

@@ -29,8 +29,9 @@ v-if="unreadByTab(t.value) > 0" :value="unreadByTab(t.value) > 99 ? '99+' : unre
 			<el-segmented v-model="onlyUnread" :options="unreadOptions" size="small" @change="onFilterChange" />
 		</div>
 
-		<div v-loading="loading" class="df-notifications-page__list">
-			<EmptyState v-if="!loading && list.length === 0" preset="no-notifications" />
+		<div class="df-notifications-page__list">
+			<el-skeleton v-if="loading && list.length === 0" :rows="6" animated />
+			<EmptyState v-else-if="!loading && list.length === 0" preset="no-notifications" />
 			<NotificationCard v-for="item in list" :key="item.id" :item="item" @click="handleCardClick" />
 		</div>
 
