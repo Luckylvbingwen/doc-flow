@@ -4,7 +4,7 @@
  * - 断线自动重连（指数退避）
  * - 解析服务端消息并更新 wsStore
  */
-import type { WsServerMessage, WsBadgePayload } from '~/types/ws'
+import type { WsServerMessage, WsBadgePayload, WsClientMessage } from '~/types/ws'
 
 let ws: WebSocket | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -15,6 +15,13 @@ const MAX_RECONNECT_ATTEMPTS = 10
 const BASE_DELAY = 2000
 const MAX_DELAY = 30000
 const PING_INTERVAL = 30000
+const wsMessageListeners = new Set<(msg: WsServerMessage) => void>()
+const subscribedDocumentIds = new Set<number>()
+
+function sendClientMessage(msg: WsClientMessage) {
+	if (ws?.readyState !== WebSocket.OPEN) return
+	ws.send(JSON.stringify(msg))
+}
 
 function getWsUrl(token: string): string {
 	const loc = window.location
@@ -36,7 +43,7 @@ function clearTimers() {
 function startPing() {
 	pingTimer = setInterval(() => {
 		if (ws?.readyState === WebSocket.OPEN) {
-			ws.send(JSON.stringify({ type: 'ping' }))
+			sendClientMessage({ type: 'ping' })
 		}
 	}, PING_INTERVAL)
 }
@@ -57,8 +64,37 @@ function handleMessage(event: MessageEvent) {
 		if (msg.type === 'badge') {
 			wsStore.updateBadges(msg.payload as WsBadgePayload)
 		}
+		for (const listener of wsMessageListeners) {
+			try {
+				listener(msg)
+			} catch {
+				// 单个监听器异常不影响其他监听器
+			}
+		}
 	} catch {
 		// 忽略非法消息
+	}
+}
+
+/** 订阅 WebSocket 消息（用于业务增量同步） */
+export function wsSubscribe(listener: (msg: WsServerMessage) => void) {
+	wsMessageListeners.add(listener)
+	return () => {
+		wsMessageListeners.delete(listener)
+	}
+}
+
+/** 订阅某个文档的实时消息 */
+export function wsSubscribeDocument(documentId: number) {
+	if (!Number.isFinite(documentId) || documentId <= 0) {
+		return () => { }
+	}
+	subscribedDocumentIds.add(documentId)
+	sendClientMessage({ type: 'subscribe-document', payload: { documentId } })
+
+	return () => {
+		subscribedDocumentIds.delete(documentId)
+		sendClientMessage({ type: 'unsubscribe-document', payload: { documentId } })
 	}
 }
 
@@ -76,6 +112,9 @@ function connectWs(token: string) {
 		wsStore.setConnected(true)
 		reconnectAttempts = 0
 		startPing()
+		for (const documentId of subscribedDocumentIds) {
+			sendClientMessage({ type: 'subscribe-document', payload: { documentId } })
+		}
 		// 重连成功后对账未读数（动态 import 避免 useWs 强耦合通知模块）
 		import('~/composables/useNotificationBadge').then(m => m.reconcileNotificationBadge())
 	})

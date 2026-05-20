@@ -481,6 +481,8 @@ import {
 import type { VersionInfo, CompareResult } from '~/types/version'
 import type { ApiResponse, PaginatedData } from '~/types/api'
 import type { DocumentDetail, DocumentStatus } from '~/types/document'
+import type { WsServerMessage, WsAnnotationSyncPayload } from '~/types/ws'
+import type { AnnotationItem, AnnotationReply } from '~/types/document-editor'
 import type {
 	ApprovalItem,
 	ApprovalDetail,
@@ -488,6 +490,7 @@ import type {
 	ChangeSummaryItem,
 	ChainNode,
 } from '~/types/approval'
+import { wsSubscribe, wsSubscribeDocument } from '~/composables/useWs'
 import {
 	apiGetDocument,
 	apiPreviewDocument,
@@ -987,7 +990,14 @@ const bottomTabs: Array<{ value: BottomTab; label: string }> = [
 // ── 批注右侧面板 ──
 const annotationOpen = ref(false)
 const annotationTotalCount = ref(0)
-const annotationPanelRef = ref<{ refresh: () => void; scrollTo: (id: string) => void; addAnnotation: (item: any) => void } | null>(null)
+const annotationPanelRef = ref<{
+	refresh: () => void
+	scrollTo: (id: string) => void
+	addAnnotation: (item: AnnotationItem) => void
+	upsertAnnotation: (item: AnnotationItem) => void
+	removeAnnotation: (annotationId: string) => void
+	addReply: (annotationId: string, reply: AnnotationReply) => void
+} | null>(null)
 const activeAnnotationId = ref<string>()
 const previewBodyRef = ref<HTMLElement | null>(null)
 
@@ -1000,7 +1010,7 @@ function onAnnotationLocate(item: { id: string; quoteText?: string }) {
 	activeAnnotationId.value = item.id
 }
 
-function onAnnotationCreated(item: any) {
+function onAnnotationCreated(item: AnnotationItem) {
 	// 展开批注面板并添加到面板
 	annotationOpen.value = true
 	annotationPanelRef.value?.addAnnotation(item)
@@ -1033,6 +1043,27 @@ function refreshAnnotationHighlights() {
 			})
 		})
 	})
+}
+
+let unsubscribeWs: (() => void) | null = null
+let unsubscribeDocWs: (() => void) | null = null
+
+function onWsMessage(msg: WsServerMessage) {
+	if (msg.type !== 'annotation-sync') return
+	const payload = msg.payload as WsAnnotationSyncPayload
+	if (!payload || payload.documentId !== documentId.value) return
+	if (payload.action === 'created' || payload.action === 'updated') {
+		if (payload.annotation) {
+			annotationPanelRef.value?.upsertAnnotation(payload.annotation)
+		}
+	}
+	if (payload.action === 'deleted' && payload.annotationId) {
+		annotationPanelRef.value?.removeAnnotation(payload.annotationId)
+	}
+	if (payload.action === 'replied' && payload.annotationId && payload.reply) {
+		annotationPanelRef.value?.addReply(payload.annotationId, payload.reply)
+	}
+	refreshAnnotationHighlights()
 }
 
 // 预览内容加载完毕后应用高亮
@@ -1333,6 +1364,8 @@ function handleMoreCommand(command: string) {
 onMounted(async () => {
 	await loadDetail()
 	await Promise.all([fetchVersions(), loadPreview(), loadApprovalRecords(), loadComments()])
+	unsubscribeWs = wsSubscribe(onWsMessage)
+	unsubscribeDocWs = wsSubscribeDocument(documentId.value)
 	// 从审批中心跳转：自动打开批注面板供审批人添加审批意见
 	if (route.query.annotation === '1' || route.query.from === 'approval') {
 		annotationOpen.value = true
@@ -1347,6 +1380,14 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+	if (unsubscribeWs) {
+		unsubscribeWs()
+		unsubscribeWs = null
+	}
+	if (unsubscribeDocWs) {
+		unsubscribeDocWs()
+		unsubscribeDocWs = null
+	}
 	if (presenceTimer) {
 		clearInterval(presenceTimer)
 		presenceTimer = null

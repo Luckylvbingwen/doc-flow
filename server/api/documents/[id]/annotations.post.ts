@@ -7,6 +7,8 @@ import { generateId } from '~/server/utils/snowflake'
 import { createAnnotationSchema } from '~/server/schemas/annotation'
 import { createNotifications } from '~/server/utils/notify'
 import { writeLog } from '~/server/utils/operation-log'
+import { wsBroadcastAnnotationSync } from '~/server/utils/ws'
+import { getAnnotationSyncItem } from '~/server/utils/annotation-sync'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import { DOCUMENT_NOT_FOUND, INVALID_PARAMS } from '~/server/constants/error-codes'
@@ -40,6 +42,17 @@ export default defineEventHandler(async (event) => {
 			anchor_data: JSON.parse(JSON.stringify(body.anchorData)),
 			status: 1,
 		},
+	})
+
+	const annotation = await getAnnotationSyncItem(docId, id, doc.current_version_id)
+
+	wsBroadcastAnnotationSync({
+		documentId: Number(docId),
+		action: 'created',
+		annotationId: id.toString(),
+		annotation: annotation ?? undefined,
+		actorUserId: user.id,
+		timestamp: Date.now(),
 	})
 
 	// @提及通知

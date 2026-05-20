@@ -882,3 +882,23 @@ UI 渲染权限徽章共享一套 meta；业务规则按数值大小天然成立
   - `api/documents.ts` — `apiDownloadDocumentUrl()` 改为 `apiDownloadDocument()`，使用 `useAuthFetch` 携带 token 调用
   - `pages/docs/file/[id].vue` — 下载逻辑改为 `apiDownloadDocument` → `window.location.href = url`（Content-Disposition 阻止页面跳转）+ 成功后 `downloadCount++`
 - **解决的问题**：下载时 AUTH_TOKEN_MISSING 401 错误、浏览器直接打开文件而非下载、页面闪白、下载次数不更新
+
+### feat: 批注实时同步通道（G-F44）
+
+- **协议与路由**：
+  - `types/ws.ts` 扩展客户端消息：`subscribe-document` / `unsubscribe-document`
+  - `types/ws.ts` 扩展服务端 `annotation-sync` 载荷：支持 `annotation` / `reply` 增量数据
+  - `server/routes/_ws.ts` 处理文档订阅/退订消息
+- **服务端定向推送**：
+  - `server/utils/ws.ts` 增加 docId→peer 集合管理，`wsBroadcastAnnotationSync()` 改为仅向订阅该文档的连接发送
+  - 新增 `server/utils/annotation-sync.ts`，统一构建批注增量对象
+  - 批注写接口推送增量载荷：
+    - `POST /api/documents/:id/annotations`（携带完整 annotation）
+    - `PUT /api/documents/:id/annotations/:annotationId`（携带最新 annotation）
+    - `DELETE /api/documents/:id/annotations/:annotationId`（携带 annotationId）
+    - `POST /api/documents/:id/annotations/:annotationId/replies`（携带 reply）
+- **前端本地合并**：
+  - `composables/useWs.ts` 新增 `wsSubscribeDocument()`，并支持断线重连后自动恢复文档订阅
+  - `components/AnnotationPanel.vue` 暴露 `upsertAnnotation/removeAnnotation/addReply` 增量方法
+  - `pages/docs/file/[id].vue`、`pages/docs/editor/[id].vue` 收到事件后直接本地合并；文件详情页同步重算高亮
+- **结果**：批注协同从“事件触发刷新”升级为“文档级订阅 + 增量合并渲染”，满足实时协同链路要求。

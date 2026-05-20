@@ -158,6 +158,9 @@ import { apiGetDocContent } from '~/api/document-editor'
 import { apiCreateSnapshot } from '~/api/documents'
 import { apiDeleteDraft } from '~/api/personal'
 import { useDocEditor } from '~/composables/useDocEditor'
+import { wsSubscribe, wsSubscribeDocument } from '~/composables/useWs'
+import type { WsServerMessage, WsAnnotationSyncPayload } from '~/types/ws'
+import type { AnnotationItem, AnnotationReply } from '~/types/document-editor'
 import type { PersonalDocItem } from '~/types/personal'
 
 definePageMeta({ layout: 'editor' })
@@ -265,7 +268,21 @@ function onKeydown(e: KeyboardEvent) {
 	}
 }
 onMounted(() => window.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+onMounted(() => {
+	unsubscribeWs = wsSubscribe(onWsMessage)
+	unsubscribeDocWs = wsSubscribeDocument(docId.value)
+})
+onBeforeUnmount(() => {
+	window.removeEventListener('keydown', onKeydown)
+	if (unsubscribeWs) {
+		unsubscribeWs()
+		unsubscribeWs = null
+	}
+	if (unsubscribeDocWs) {
+		unsubscribeDocWs()
+		unsubscribeDocWs = null
+	}
+})
 
 // ── 返回 ──
 async function handleBack() {
@@ -306,7 +323,14 @@ function onPublishSuccess() {
 
 // ── 批注面板 ──
 const annotationOpen = ref(false)
-const annotationPanelRef = ref<{ refresh: () => void; scrollTo: (id: string) => void; addAnnotation: (item: any) => void } | null>(null)
+const annotationPanelRef = ref<{
+	refresh: () => void
+	scrollTo: (id: string) => void
+	addAnnotation: (item: AnnotationItem) => void
+	upsertAnnotation: (item: AnnotationItem) => void
+	removeAnnotation: (annotationId: string) => void
+	addReply: (annotationId: string, reply: AnnotationReply) => void
+} | null>(null)
 const activeAnnotationId = ref<string>()
 const editorMainRef = ref<HTMLElement | null>(null)
 
@@ -314,11 +338,31 @@ function onAnnotationLocate(item: { id: string }) {
 	activeAnnotationId.value = item.id
 }
 
-function onAnnotationCreated(item: any) {
+function onAnnotationCreated(item: AnnotationItem) {
 	// 展开批注面板并刷新
 	annotationOpen.value = true
 	annotationPanelRef.value?.addAnnotation(item)
 	nextTick(() => annotationPanelRef.value?.scrollTo(item.id))
+}
+
+let unsubscribeWs: (() => void) | null = null
+let unsubscribeDocWs: (() => void) | null = null
+
+function onWsMessage(msg: WsServerMessage) {
+	if (msg.type !== 'annotation-sync') return
+	const payload = msg.payload as WsAnnotationSyncPayload
+	if (!payload || payload.documentId !== docId.value) return
+	if (payload.action === 'created' || payload.action === 'updated') {
+		if (payload.annotation) {
+			annotationPanelRef.value?.upsertAnnotation(payload.annotation)
+		}
+	}
+	if (payload.action === 'deleted' && payload.annotationId) {
+		annotationPanelRef.value?.removeAnnotation(payload.annotationId)
+	}
+	if (payload.action === 'replied' && payload.annotationId && payload.reply) {
+		annotationPanelRef.value?.addReply(payload.annotationId, payload.reply)
+	}
 }
 
 // ── 转移/分享弹窗 ──

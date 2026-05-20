@@ -5,6 +5,8 @@
 import { prisma } from '~/server/utils/prisma'
 import { updateAnnotationSchema } from '~/server/schemas/annotation'
 import { writeLog } from '~/server/utils/operation-log'
+import { wsBroadcastAnnotationSync } from '~/server/utils/ws'
+import { getAnnotationSyncItem } from '~/server/utils/annotation-sync'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { DOCUMENT_NOT_FOUND, INVALID_PARAMS, PERMISSION_DENIED, ANNOTATION_FROZEN } from '~/server/constants/error-codes'
 
@@ -53,6 +55,17 @@ export default defineEventHandler(async (event) => {
 	await prisma.doc_document_annotations.update({
 		where: { id: annId },
 		data: updateData,
+	})
+
+	const updatedAnnotation = await getAnnotationSyncItem(docId, annId, doc.current_version_id)
+
+	wsBroadcastAnnotationSync({
+		documentId: Number(docId),
+		action: 'updated',
+		annotationId: annId.toString(),
+		annotation: updatedAnnotation ?? undefined,
+		actorUserId: user.id,
+		timestamp: Date.now(),
 	})
 
 	if (body.status !== undefined) {

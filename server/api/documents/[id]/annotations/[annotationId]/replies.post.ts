@@ -7,6 +7,7 @@ import { generateId } from '~/server/utils/snowflake'
 import { createReplySchema } from '~/server/schemas/annotation'
 import { createNotifications } from '~/server/utils/notify'
 import { writeLog } from '~/server/utils/operation-log'
+import { wsBroadcastAnnotationSync } from '~/server/utils/ws'
 import { LOG_ACTIONS } from '~/server/constants/log-actions'
 import { NOTIFICATION_TEMPLATES } from '~/server/constants/notification-templates'
 import { INVALID_PARAMS, ANNOTATION_FROZEN } from '~/server/constants/error-codes'
@@ -61,6 +62,23 @@ export default defineEventHandler(async (event) => {
 		select: { avatar_url: true },
 	})
 
+	const replyPayload = {
+		id: id.toString(),
+		content: body.content,
+		authorName: user.name,
+		authorAvatar: userInfo?.avatar_url || null,
+		createdAt: Date.now(),
+	}
+
+	wsBroadcastAnnotationSync({
+		documentId: Number(docId),
+		action: 'replied',
+		annotationId: annId.toString(),
+		reply: replyPayload,
+		actorUserId: user.id,
+		timestamp: Date.now(),
+	})
+
 	// @提及通知
 	if (body.mentionedUserIds.length > 0) {
 		const validIds = body.mentionedUserIds.filter(uid => uid !== user.id)
@@ -85,11 +103,5 @@ export default defineEventHandler(async (event) => {
 	})
 
 	// 返回新回复数据
-	return ok({
-		id: id.toString(),
-		content: body.content,
-		authorName: user.name,
-		authorAvatar: userInfo?.avatar_url || null,
-		createdAt: Date.now(),
-	}, '回复成功')
+	return ok(replyPayload, '回复成功')
 })

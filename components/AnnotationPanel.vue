@@ -97,7 +97,7 @@ import { Close } from '@element-plus/icons-vue'
 import { apiGetAnnotations, apiUpdateAnnotation, apiDeleteAnnotation, apiCreateAnnotationReply } from '~/api/document-editor'
 import type { MentionUser } from '~/api/document-editor'
 import { formatTime } from '~/utils/format'
-import type { AnnotationItem } from '~/types/document-editor'
+import type { AnnotationItem, AnnotationReply } from '~/types/document-editor'
 
 const props = defineProps<{
 	docId: number
@@ -241,11 +241,34 @@ function addAnnotation(item: AnnotationItem) {
 	annotations.value.unshift(item)
 }
 
+/** 供父组件调用：新增或覆盖批注（实时同步） */
+function upsertAnnotation(item: AnnotationItem) {
+	const idx = annotations.value.findIndex(a => a.id === item.id)
+	if (idx === -1) {
+		annotations.value.unshift(item)
+		return
+	}
+	annotations.value[idx] = item
+}
+
+/** 供父组件调用：删除批注（实时同步） */
+function removeAnnotation(annotationId: string) {
+	annotations.value = annotations.value.filter(a => a.id !== annotationId)
+}
+
+/** 供父组件调用：追加回复（实时同步） */
+function addReply(annotationId: string, reply: AnnotationReply) {
+	const ann = annotations.value.find(a => a.id === annotationId)
+	if (!ann) return
+	if (ann.replies.some(r => r.id === reply.id)) return
+	ann.replies.push(reply)
+}
+
 /** 供父组件调用：滚动到指定批注 */
 function scrollTo(annotationId: string) {
 	const el = itemRefs.get(annotationId)
 	if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
-defineExpose({ refresh: load, scrollTo, addAnnotation })
+defineExpose({ refresh: load, scrollTo, addAnnotation, upsertAnnotation, removeAnnotation, addReply })
 </script>

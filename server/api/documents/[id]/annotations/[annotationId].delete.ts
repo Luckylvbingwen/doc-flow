@@ -3,6 +3,7 @@
  * 软删除批注（仅作者可删）
  */
 import { prisma } from '~/server/utils/prisma'
+import { wsBroadcastAnnotationSync } from '~/server/utils/ws'
 import { DOCUMENT_NOT_FOUND, INVALID_PARAMS, PERMISSION_DENIED, ANNOTATION_FROZEN } from '~/server/constants/error-codes'
 
 export default defineEventHandler(async (event) => {
@@ -39,6 +40,14 @@ export default defineEventHandler(async (event) => {
 	await prisma.doc_document_annotations.update({
 		where: { id: annId },
 		data: { deleted_at: new Date(), updated_at: new Date() },
+	})
+
+	wsBroadcastAnnotationSync({
+		documentId: Number(docId),
+		action: 'deleted',
+		annotationId: annId.toString(),
+		actorUserId: user.id,
+		timestamp: Date.now(),
 	})
 
 	return ok(null, '已删除')
